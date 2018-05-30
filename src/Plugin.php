@@ -38,6 +38,11 @@ class Plugin {
    */
   public static function plugins_loaded() {
     add_filter('site_url', __CLASS__ . '::site_url', 10, 3);
+
+    // Automatically log in anonymous users having an SSO session cookie if all
+    // other authentication methods did not result in an active user session.
+    // (only possible if SSO server and client share a common domain)
+    add_filter('determine_current_user', __CLASS__ . '::determine_current_user', 100);
   }
 
   /**
@@ -58,6 +63,16 @@ class Plugin {
   }
 
   /**
+   * @implements site_url
+   */
+  public static function site_url($url, $path, $scheme) {
+    if ($path === '/openid-connect-authorize') {
+      $url = strtr($url, ['/openid-connect-authorize' => '/shop/openid-connect/ssofact']);
+    }
+    return $url;
+  }
+
+  /**
    * @implements init
    */
   public static function redirectLogin() {
@@ -70,13 +85,26 @@ class Plugin {
   }
 
   /**
-   * @implements site_url
+   * @implements determine_current_user
    */
-  public static function site_url($url, $path, $scheme) {
-    if ($path === '/openid-connect-authorize') {
-      $url = strtr($url, ['/openid-connect-authorize' => '/shop/openid-connect/ssofact']);
+  public static function determine_current_user($user_id) {
+    if ($user_id) {
+      return $user_id;
     }
-    return $url;
+    // If there is a session cookie from the SSO server, attempt to authenticate
+    // the client against it on the server, unless the current path is a
+    // OpenID Connection endpoint.
+    if (!empty($_COOKIE['RF_OAUTH_SERVER']) && FALSE === strpos($_SERVER['REQUEST_URI'], 'ssofact')) {
+      $authorize_url = OpenID_Connect_Generic::getClient()->make_authentication_url();
+      $target = '&' . http_build_query([
+        'target' => $_SERVER['REQUEST_URI'],
+      ]);
+      $authorize_url = preg_replace('@&redirect_uri=[^&]+@', '$0' . $target, $authorize_url);
+      if (wp_redirect($authorize_url, 307)) {
+        exit();
+      }
+    }
+    return $user_id;
   }
 
   /**

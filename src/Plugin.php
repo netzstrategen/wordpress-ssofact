@@ -60,6 +60,11 @@ class Plugin {
     if (is_admin()) {
       return;
     }
+    // Replaces the front-end login form of WooCommerce to submit to the SSO
+    // server instead of WordPress. The administrative login on /wp-login.php is
+    // not changed and still authenticates against the local WordPress site only.
+    add_action('woocommerce_before_customer_login_form', __CLASS__ . '::woocommerce_before_customer_login_form');
+    add_action('woocommerce_after_customer_login_form', __CLASS__ . '::woocommerce_after_customer_login_form');
   }
 
   /**
@@ -95,16 +100,33 @@ class Plugin {
     // the client against it on the server, unless the current path is a
     // OpenID Connection endpoint.
     if (!empty($_COOKIE['RF_OAUTH_SERVER']) && FALSE === strpos($_SERVER['REQUEST_URI'], 'ssofact')) {
-      $authorize_url = OpenID_Connect_Generic::getClient()->make_authentication_url();
-      $target = '&' . http_build_query([
-        'target' => $_SERVER['REQUEST_URI'],
-      ]);
-      $authorize_url = preg_replace('@&redirect_uri=[^&]+@', '$0' . $target, $authorize_url);
-      if (wp_redirect($authorize_url, 307)) {
+      $authorize_uri = static::getAuthorizeUrl();
+      if (wp_redirect($authorize_uri, 307)) {
         exit();
       }
     }
     return $user_id;
+  }
+
+  /**
+   * Returns the authorization URI, optionally with custom redirect destination.
+   *
+   * @param string $destination
+   *   (optional) The path to redirect to after successful login.
+   *
+   * @return string
+   *   The authorization URI to use for login redirects and form actions.
+   */
+  public static function getAuthorizeUrl($destination = '') {
+    if (empty($destination)) {
+      $destination = $_SERVER['REQUEST_URI'];
+    }
+    $authorize_uri = OpenID_Connect_Generic::getClient()->make_authentication_url();
+    $destination = '&' . http_build_query([
+      'target' => $destination,
+    ]);
+    $authorize_uri = preg_replace('@&redirect_uri=[^&]+@', '$0' . $destination, $authorize_uri);
+    return $authorize_uri;
   }
 
   /**
@@ -116,6 +138,35 @@ class Plugin {
       'post_logout_redirect_uri' => 'target',
     ]);
     return $url;
+  }
+
+  /**
+   * @implements woocommerce_before_customer_login_form
+   */
+  public static function woocommerce_before_customer_login_form() {
+    ob_start();
+  }
+
+  /**
+   * @implements woocommerce_after_customer_login_form
+   */
+  public static function woocommerce_after_customer_login_form() {
+    $output = ob_get_clean();
+    $authorize_uri = static::getAuthorizeUrl();
+    $server_domain = 'stage-login.stimme.de';
+    $action = 'https://' . $server_domain . '/index.php?' . http_build_query([
+      'next' => $authorize_uri,
+    ]);
+    $output = strtr($output, [
+      'login" method="post">' => 'login" method="post" action="' . $action . '">',
+      'name="login"' => 'name="submit"',
+      'name="username"' => 'name="login"',
+      'name="password"' => 'name="pass"',
+      'checkbox inline">' => 'checkbox inline" hidden>',
+      'name="rememberme" type="checkbox"' => 'name="permanent_login" type="hidden"',
+      'value="forever"' => 'value="1"',
+    ]);
+    echo $output;
   }
 
   /**

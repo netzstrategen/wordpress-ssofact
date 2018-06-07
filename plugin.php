@@ -2,7 +2,7 @@
 
 /*
   Plugin Name: ssoFACT
-  Version: 1.0.0
+  Version: 1.1.0
   Text Domain: ssofact
   Description: Integrates ssoFACT into WordPress. Requires plugin daggerhart-openid-connect-generic.
   Author: netzstrategen

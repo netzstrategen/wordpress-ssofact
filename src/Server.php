@@ -7,6 +7,11 @@
 
 namespace Netzstrategen\Ssofact;
 
+use OpenID_Connect_Generic;
+
+/**
+ * Methods to perform remote operations on ssoFACT server.
+ */
 class Server {
 
   /**
@@ -18,6 +23,11 @@ class Server {
    * @var string
    */
   const ENDPOINT_SUBSCRIPTION_NUMBER = '/REST/services/authenticate/user/checkAboNo';
+
+  /**
+   * @var string
+   */
+  const ENDPOINT_REGISTER = '/REST/services/authenticate/user/registerUser';
 
   /**
    * Checks if the email is already registered.

@@ -70,6 +70,9 @@ class Plugin {
     // Run after daggerhart-openid-connect-generic (99).
     add_filter('logout_redirect', __CLASS__ . '::logout_redirect', 100);
 
+    // Update user profile meta data upon login.
+    add_action('updated_user_meta', __CLASS__ . '::updated_user_meta', 10, 4);
+
     if (is_admin()) {
       return;
     }
@@ -185,6 +188,44 @@ class Plugin {
       'post_logout_redirect_uri' => 'target',
     ]);
     return $url;
+  }
+
+  /**
+   * @implements updated_{$meta_type}_meta
+   */
+  public static function updated_user_meta($meta_id, $user_id, $meta_key, $user_claims) {
+    if ($meta_key !== 'openid-connect-generic-last-user-claim') {
+      return;
+    }
+    update_user_meta($user_id, 'first_name', $user_claims['firstname']);
+    update_user_meta($user_id, 'last_name', $user_claims['lastname']);
+
+    update_user_meta($user_id, 'billing_salutation', $user_claims['salutation']);
+    // update_user_meta($user_id, '', $user_claims['title']);
+    update_user_meta($user_id, 'billing_first_name', $user_claims['firstname']);
+    update_user_meta($user_id, 'billing_last_name', $user_claims['lastname']);
+    update_user_meta($user_id, 'billing_company', $user_claims['company']);
+    update_user_meta($user_id, 'billing_address_1', $user_claims['street']);
+    update_user_meta($user_id, 'billing_house_number', $user_claims['housenr']);
+    update_user_meta($user_id, 'billing_postcode', $user_claims['zipcode']);
+    update_user_meta($user_id, 'billing_city', $user_claims['city']);
+    update_user_meta($user_id, 'billing_country', $user_claims['country']);
+    // update_user_meta($user_id, 'billing_state', $user_claims['']);
+    update_user_meta($user_id, 'billing_phone', $user_claims['phone_prefix'] . '-' . $user_claims['phone']);
+    update_user_meta($user_id, 'billing_email', $user_claims['email']);
+
+    update_user_meta($user_id, 'subscription_id', $user_claims['subscribernr']);
+    // update_user_meta($user_id, '', $user_claims['fcms_id']);
+    // update_user_meta($user_id, '', $user_claims['facebook_id']);
+
+    // update_user_meta($user_id, '', $user_claims['confirmed']);
+    update_user_meta($user_id, 'last_update', $user_claims['lastchgdate']);
+
+    // update_user_meta($user_id, 'roles', $user_claims['']);
+    // update_user_meta($user_id, '', $user_claims['optins']); // array ( 'email_doi' => '0', 'list_premium' => '0', 'list_noch-fragen' => '0', 'list_freizeit' => '0', 'confirm_agb' => '0', 'acquisitionMail' => '0', 'acquisitionEmail' => '0', 'acquisitionPhone' => '0', 'changemail' => '0', )
+
+    // wp_capabilities | {"administrator":true}                                                                                                                                 |
+    // wp_user_level | 10
   }
 
   /**

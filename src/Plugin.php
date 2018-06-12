@@ -31,12 +31,25 @@ class Plugin {
   /**
    * @var string
    */
+  const ENDPOINT_AUTHORIZE = '/REST/oauth/authorize';
+  const ENDPOINT_TOKEN = '/REST/oauth/access_token';
+  const ENDPOINT_USERINFO = '/REST/oauth/user';
+  const ENDPOINT_END_SESSION = '/REST/oauth/logout';
+
+  /**
+   * @var string
+   */
   private static $baseUrl;
 
   /**
    * @implements plugins_loaded
    */
   public static function plugins_loaded() {
+    // Populate openid-connect-generic settings if constants are defined in
+    // wp-config.php.
+    add_filter('option_openid_connect_generic_settings', __CLASS__ . '::option_openid_connect_generic_settings');
+    add_filter('option_default_openid_connect_generic_settings', __CLASS__ . '::option_openid_connect_generic_settings');
+
     add_filter('site_url', __CLASS__ . '::site_url', 10, 3);
 
     // Automatically log in anonymous users having an SSO session cookie if all
@@ -69,6 +82,36 @@ class Plugin {
 
     // Validates checkout fields against SSO.
     add_action('woocommerce_checkout_process', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_process');
+  }
+
+  /**
+   * @implements option_NAME
+   * @implements option_default_NAME
+   */
+  public static function option_openid_connect_generic_settings($value) {
+    // @todo Move into openid-connect-generic plugin.
+    if (defined('OPENID_CONNECT_CLIENT_ID')) {
+      $value['client_id'] = OPENID_CONNECT_CLIENT_ID;
+    }
+    if (defined('OPENID_CONNECT_CLIENT_SECRET')) {
+      $value['client_secret'] = OPENID_CONNECT_CLIENT_SECRET;
+    }
+    if (defined('SSOFACT_SERVER_DOMAIN')) {
+      $value['scope'] = '';
+      $value['endpoint_login'] = 'https://' . SSOFACT_SERVER_DOMAIN . static::ENDPOINT_AUTHORIZE;
+      $value['endpoint_token'] = 'https://' . SSOFACT_SERVER_DOMAIN . static::ENDPOINT_TOKEN;
+      $value['endpoint_userinfo'] = 'https://' . SSOFACT_SERVER_DOMAIN . static::ENDPOINT_USERINFO;
+      $value['endpoint_end_session'] = 'https://' . SSOFACT_SERVER_DOMAIN . static::ENDPOINT_END_SESSION;
+      $value['identity_key'] = 'email';
+      $value['nickname_key'] = 'email';
+      $value['email_format'] = '{email}';
+      $value['displayname_format'] = '{firstname} {lastname}';
+      $value['identify_with_username'] = 0;
+      $value['link_existing_users'] = 1;
+      $value['redirect_user_back'] = 1;
+      $value['redirect_on_logout'] = 1;
+    }
+    return $value;
   }
 
   /**

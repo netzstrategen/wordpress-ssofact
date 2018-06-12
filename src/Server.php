@@ -24,7 +24,7 @@ class Server {
    *
    * @param string email
    *
-   * @return array
+   * @return null|array
    */
   public static function isEmailRegistered($email) {
     $api_url = 'https://' . SSOFACT_SERVER_DOMAIN . static::ENDPOINT_IS_EMAIL_REGISTERED;
@@ -39,7 +39,7 @@ class Server {
       ],
     ]);
     if ($response instanceof \WP_Error) {
-      trigger_error($response->get_error_message(), E_USER_ERROR);
+      static::displaySsoResponseError();
       return;
     }
     return json_decode($response['body'], JSON_OBJECT_AS_ARRAY);
@@ -53,10 +53,10 @@ class Server {
    * @param string lastName
    * @param int zipCode
    *
-   * @return array
+   * @return null!array
    */
   public static function checkSubscriptionNumber($subscriptionId, $firstName, $lastName, $zipCode) {
-    $api_url = 'https://' . SSOFACT_SERVER_DOMAIN . static::ENDPOINT_SUBSCRIPTION_NUMBER;
+    $api_url = 'https://' . 'lol.com'. static::ENDPOINT_SUBSCRIPTION_NUMBER;
     $response = wp_remote_post($api_url, [
       'body' => [
         "abono" => $subscriptionId,
@@ -71,10 +71,24 @@ class Server {
       ],
     ]);
     if ($response instanceof \WP_Error) {
-      trigger_error($response->get_error_message(), E_USER_ERROR);
+      static::displaySsoResponseError();
       return;
     }
     return json_decode($response['body'], JSON_OBJECT_AS_ARRAY);
+  }
+
+  /**
+   * Displays woocommerce notice message if the SSO server connection fails.
+   *
+   * @return null
+   */
+  public static function displaySsoResponseError() {
+    wp_send_json([
+      'result' => 'failure',
+      'messages' => wc_add_notice(__('An error occurred while processing your data. Please try again in a few minutes.', Plugin::L10N), 'error'),
+      'reload' => TRUE,
+    ]);
+    trigger_error($response->get_error_message(), E_USER_ERROR);
   }
 
 }

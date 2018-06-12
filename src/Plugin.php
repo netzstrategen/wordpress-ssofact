@@ -70,6 +70,7 @@ class Plugin {
     // Run after daggerhart-openid-connect-generic (99).
     add_filter('logout_redirect', __CLASS__ . '::logout_redirect', 100);
 
+    // Update user profile meta data upon login.
     add_action('updated_user_meta', __CLASS__ . '::updated_user_meta', 10, 4);
 
     if (is_admin()) {
@@ -186,7 +187,6 @@ class Plugin {
       '/logout' => '/logout/' . OpenID_Connect_Generic::getSettings()->client_id,
       'post_logout_redirect_uri' => 'target',
     ]);
-    // echo "<pre>\n"; var_dump($url); echo "</pre>";
     return $url;
   }
 

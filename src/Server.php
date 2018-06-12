@@ -56,7 +56,7 @@ class Server {
    * @return null!array
    */
   public static function checkSubscriptionNumber($subscriptionId, $firstName, $lastName, $zipCode) {
-    $api_url = 'https://' . 'lol.com'. static::ENDPOINT_SUBSCRIPTION_NUMBER;
+    $api_url = 'https://' . SSOFACT_SERVER_DOMAIN . static::ENDPOINT_SUBSCRIPTION_NUMBER;
     $response = wp_remote_post($api_url, [
       'body' => [
         "abono" => $subscriptionId,

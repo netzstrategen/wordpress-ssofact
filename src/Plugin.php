@@ -60,11 +60,15 @@ class Plugin {
     if (is_admin()) {
       return;
     }
+
     // Replaces the front-end login form of WooCommerce to submit to the SSO
     // server instead of WordPress. The administrative login on /wp-login.php is
     // not changed and still authenticates against the local WordPress site only.
-    add_action('woocommerce_before_customer_login_form', __CLASS__ . '::woocommerce_before_customer_login_form');
-    add_action('woocommerce_after_customer_login_form', __CLASS__ . '::woocommerce_after_customer_login_form');
+    add_action('woocommerce_before_customer_login_form', __NAMESPACE__ . '\WooCommerce::woocommerce_before_customer_login_form');
+    add_action('woocommerce_after_customer_login_form', __NAMESPACE__ . '\WooCommerce::woocommerce_after_customer_login_form');
+
+    // Validates checkout fields against SSO.
+    add_action('woocommerce_checkout_process', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_process');
   }
 
   /**
@@ -138,35 +142,6 @@ class Plugin {
       'post_logout_redirect_uri' => 'target',
     ]);
     return $url;
-  }
-
-  /**
-   * @implements woocommerce_before_customer_login_form
-   */
-  public static function woocommerce_before_customer_login_form() {
-    ob_start();
-  }
-
-  /**
-   * @implements woocommerce_after_customer_login_form
-   */
-  public static function woocommerce_after_customer_login_form() {
-    $output = ob_get_clean();
-    $authorize_uri = static::getAuthorizeUrl();
-    $server_domain = 'stage-login.stimme.de';
-    $action = 'https://' . $server_domain . '/index.php?' . http_build_query([
-      'next' => $authorize_uri,
-    ]);
-    $output = strtr($output, [
-      'login" method="post">' => 'login" method="post" action="' . $action . '">',
-      'name="login"' => 'name="submit"',
-      'name="username"' => 'name="login"',
-      'name="password"' => 'name="pass"',
-      'checkbox inline">' => 'checkbox inline" hidden>',
-      'name="rememberme" type="checkbox"' => 'name="permanent_login" type="hidden"',
-      'value="forever"' => 'value="1"',
-    ]);
-    echo $output;
   }
 
   /**

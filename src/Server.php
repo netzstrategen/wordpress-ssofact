@@ -27,15 +27,15 @@ class Server {
    * @return array
    */
   public static function isEmailRegistered($email) {
-    $api_url = 'https://' . SERVER_DOMAIN . static::ENDPOINT_IS_EMAIL_REGISTERED;
+    $api_url = 'https://' . SSOFACT_SERVER_DOMAIN . static::ENDPOINT_IS_EMAIL_REGISTERED;
     $response = wp_remote_post($api_url, [
       'body' => [
         'email' => $email
       ],
       'headers' => [
         'Accept' => 'application/json',
-        'rfbe-key' => RFBE_KEY,
-        'rfbe-secret' => RFBE_SECRET,
+        'rfbe-key' => SSOFACT_RFBE_KEY,
+        'rfbe-secret' => SSOFACT_RFBE_SECRET,
       ],
     ]);
     if ($response instanceof \WP_Error) {
@@ -56,7 +56,7 @@ class Server {
    * @return array
    */
   public static function checkSubscriptionNumber($subscriptionId, $firstName, $lastName, $zipCode) {
-    $api_url = 'https://' . SERVER_DOMAIN . static::ENDPOINT_SUBSCRIPTION_NUMBER;
+    $api_url = 'https://' . SSOFACT_SERVER_DOMAIN . static::ENDPOINT_SUBSCRIPTION_NUMBER;
     $response = wp_remote_post($api_url, [
       'body' => [
         "abono" => $subscriptionId,
@@ -66,8 +66,8 @@ class Server {
       ],
       'headers' => [
         'Accept' => 'application/json',
-        'rfbe-key' => RFBE_KEY,
-        'rfbe-secret' => RFBE_SECRET,
+        'rfbe-key' => SSOFACT_RFBE_KEY,
+        'rfbe-secret' => SSOFACT_RFBE_SECRET,
       ],
     ]);
     if ($response instanceof \WP_Error) {

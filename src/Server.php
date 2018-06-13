@@ -20,6 +20,11 @@ class Server {
   const ENDPOINT_SUBSCRIPTION_NUMBER = '/REST/services/authenticate/user/checkAboNo';
 
   /**
+   * @var string
+   */
+  const ENDPOINT_USER_UPDATE = '/REST/services/authenticate/user/updateUser';
+
+  /**
    * Checks if the email is already registered.
    *
    * @param string email
@@ -39,7 +44,7 @@ class Server {
       ],
     ]);
     if ($response instanceof \WP_Error) {
-      static::displaySsoResponseError();
+      static::triggerCommunicationError();
       return;
     }
     return json_decode($response['body'], JSON_OBJECT_AS_ARRAY);
@@ -71,18 +76,44 @@ class Server {
       ],
     ]);
     if ($response instanceof \WP_Error) {
-      static::displaySsoResponseError();
+      static::triggerCommunicationError();
       return;
     }
     return json_decode($response['body'], JSON_OBJECT_AS_ARRAY);
   }
 
   /**
-   * Displays woocommerce notice message if the SSO server connection fails.
+   * Updates the info of a user.
    *
-   * @return null
+   * @param array $userinfo
+   *   The new user info to set.
+   *
+   * @return null|array
    */
-  public static function displaySsoResponseError() {
+  public static function updateUser(array $userinfo) {
+    if (!isset($userinfo['id'])) {
+      throw new \InvalidArgumentException('Missing user ID to update.');
+    }
+    $api_url = 'https://' . SSOFACT_SERVER_DOMAIN . static::ENDPOINT_USER_UPDATE;
+    $response = wp_remote_post($api_url, [
+      'body' => json_encode($userinfo),
+      'headers' => [
+        'Accept' => 'application/json',
+        'rfbe-key' => SSOFACT_RFBE_KEY,
+        'rfbe-secret' => SSOFACT_RFBE_SECRET,
+      ],
+    ]);
+    if ($response instanceof \WP_Error) {
+      static::triggerCommunicationError();
+      return;
+    }
+    return json_decode($response['body'], JSON_OBJECT_AS_ARRAY);
+  }
+
+  /**
+   * Triggers WooCommerce error message if SSO server does not respond.
+   */
+  public static function triggerCommunicationError() {
     wp_send_json([
       'result' => 'failure',
       'messages' => wc_add_notice(__('An error occurred while processing your data. Please try again in a few minutes.', Plugin::L10N), 'error'),

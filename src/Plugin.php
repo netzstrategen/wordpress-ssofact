@@ -85,6 +85,9 @@ class Plugin {
 
     // Validates checkout fields against SSO.
     add_action('woocommerce_checkout_process', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_process');
+
+    // Validates and updates user info in SSO upon editing address.
+    add_action('woocommerce_after_save_address_validation', __NAMESPACE__ . '\WooCommerce::woocommerce_after_save_address_validation', 10, 3);
   }
 
   /**
@@ -197,6 +200,10 @@ class Plugin {
     if ($meta_key !== 'openid-connect-generic-last-user-claim') {
       return;
     }
+    // Save last known userinfo for editing.
+    // @see Server::updateUser()
+    update_user_meta($user_id, 'ssofact_userinfo', $user_claims);
+
     update_user_meta($user_id, 'first_name', $user_claims['firstname']);
     update_user_meta($user_id, 'last_name', $user_claims['lastname']);
 

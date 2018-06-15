@@ -88,7 +88,7 @@ class WooCommerce {
     $userinfo['lastname'] = $_POST[$load_address . '_last_name'];
     // $userinfo['company'] = $_POST[$load_address . '_company'];
     $userinfo['street'] = $_POST[$load_address . '_address_1'];
-    $userinfo['housenr'] = $_POST[$load_address . '_address_2'];
+    $userinfo['housenr'] = $_POST[$load_address . '_house_number'];
     $userinfo['zipcode'] = $_POST[$load_address . '_postcode'];
     $userinfo['city'] = $_POST[$load_address . '_city'];
     // $userinfo['country'] = $_POST[$load_address . '_country']; // Deutschland vs. DE

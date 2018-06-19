@@ -25,6 +25,11 @@ class Server {
   const ENDPOINT_USER_UPDATE = '/REST/services/authenticate/user/updateUser';
 
   /**
+   * @var string
+   */
+  const ENDPOINT_PURCHASE_CREATE = '/REST/services/authorize/purchase/registerPurchase';
+
+  /**
    * Checks if the email is already registered.
    *
    * @param string email
@@ -97,6 +102,34 @@ class Server {
     $api_url = 'https://' . SSOFACT_SERVER_DOMAIN . static::ENDPOINT_USER_UPDATE;
     $response = wp_remote_post($api_url, [
       'body' => json_encode($userinfo),
+      'headers' => [
+        'Accept' => 'application/json',
+        'rfbe-key' => SSOFACT_RFBE_KEY,
+        'rfbe-secret' => SSOFACT_RFBE_SECRET,
+      ],
+    ]);
+    if ($response instanceof \WP_Error) {
+      static::triggerCommunicationError();
+      return;
+    }
+    return json_decode($response['body'], JSON_OBJECT_AS_ARRAY);
+  }
+
+  /**
+   * Creates a purchase for a user.
+   *
+   * @param array $purchase
+   *   The purchase data to register; see Plugin::buildPurchaseInfo().
+   *
+   * @return null|array
+   */
+  public static function registerPurchase(array $purchase) {
+    if (!isset($purchase['id'])) {
+      throw new \InvalidArgumentException('Missing user ID to update.');
+    }
+    $api_url = 'https://' . SSOFACT_SERVER_DOMAIN . static::ENDPOINT_PURCHASE_CREATE;
+    $response = wp_remote_post($api_url, [
+      'body' => json_encode($purchase),
       'headers' => [
         'Accept' => 'application/json',
         'rfbe-key' => SSOFACT_RFBE_KEY,

@@ -72,6 +72,18 @@ class WooCommerce {
         'reload' => TRUE,
       ]);
     }
+    // @todo Move from checkout validation into submission?
+    //   @see woocommerce_checkout_order_processed
+    if (is_user_logged_in()) {
+      $purchase = Plugin::buildPurchaseInfo();
+      $response = Server::registerPurchase($purchase);
+      if ($response['statuscode'] !== 200) {
+        if (WP_DEBUG) {
+          echo "<pre>\n"; var_dump(json_encode($purchase, JSON_PRETTY_PRINT), json_encode($response, JSON_PRETTY_PRINT)); echo "</pre>";
+        }
+        wc_add_notice(implode('<br>', $response['userMessages']), 'error');
+      }
+    }
   }
 
   /**

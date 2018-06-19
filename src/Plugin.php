@@ -91,6 +91,8 @@ class Plugin {
 
     // Adds opt-in checkboxes to user account edit form.
     add_action('woocommerce_edit_account_form', __NAMESPACE__ . '\WooCommerce::woocommerce_edit_account_form');
+    // Updates user info in SSO upon editing account details.
+    add_action('woocommerce_save_account_details', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details');
   }
 
   /**

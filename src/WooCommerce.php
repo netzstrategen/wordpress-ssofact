@@ -103,6 +103,30 @@ class WooCommerce {
     }
   }
 
+  /**
+   * @implements woocommerce_save_account_details
+   */
+  public static function woocommerce_save_account_details($user_id) {
+    $userinfo = [];
+    $userinfo['id'] = $user_id;
+    $userinfo['firstname'] = $_POST['account_first_name'];
+    $userinfo['lastname'] = $_POST['account_last_name'];
+    $userinfo['email'] = $_POST['account_email'];
+
+    if ($_POST['password_1'] && $_POST['password_1'] === $_POST['password_2']) {
+      $userinfo['password'] = $_POST['password_1'];
+    }
+
+    $userinfo['list_noch-fragen'] = $_POST['list_noch-fragen'] ?? 0;
+    $userinfo['list_premium'] = $_POST['list_freizeit'] ?? 0;
+    $userinfo['list_freizeit'] = $_POST['list_freizeit'] ?? 0;
+    $userinfo['confirm_agb'] = $_POST['list_freizeit'] ?? 0;
+
+    $response = Server::updateUser($userinfo);
+    if ($response['statuscode'] !== 200) {
+      wc_add_notice(implode('<br>', $response['userMessages']), 'error');
+    }
+  }
 
   /*
    * Displays opt-in checkboxes in user account edit form.

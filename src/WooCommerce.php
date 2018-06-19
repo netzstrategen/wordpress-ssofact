@@ -103,4 +103,45 @@ class WooCommerce {
     }
   }
 
+
+  /*
+   * Displays opt-in checkboxes in user account edit form.
+   *
+   * @implements woocommerce_edit_account_form
+   */
+  public static function woocommerce_edit_account_form() {
+    echo '<fieldset class="account-edit-optin-checks">';
+
+    $opt_ins = [
+      'list_noch-fragen' => [
+        'label' => 'Newsletter Noch Fragen',
+        'priority' => 100,
+      ],
+      'list_premium' => [
+        'label' => 'Newsletter Premium',
+        'priority' => 110,
+      ],
+      'list_freizeit' => [
+        'label' => 'Newsletter Freizeit',
+        'priority' => 120,
+      ],
+      'confirm_agb' => [
+        'label' => 'AGB-Bestätigung',
+        'priority' => 130,
+      ],
+    ];
+
+    foreach ($opt_ins as $opt_in_id => $opt_in_args) {
+      $args = [
+        'type' => 'checkbox',
+        'label' => __($opt_in_args['label'], Plugin::L10N),
+        'required' => FALSE,
+        'id' => $opt_in_id,
+        'priority' => $opt_in_args['priority']
+      ];
+
+      woocommerce_form_field($opt_in_id, $args);
+    }
+    echo '</fieldset>';
+  }
 }

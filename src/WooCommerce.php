@@ -45,15 +45,17 @@ class WooCommerce {
    */
   public static function woocommerce_checkout_process() {
     // Checks if the email address is already registered.
-    if ($_POST['billing_email']) {
+    // @todo Handle email change for logged-in users.
+    if (!empty($_POST['billing_email']) && !is_user_logged_in()) {
       $response = Server::isEmailRegistered($_POST['billing_email']);
-      // 202 and 602: email already in use
-      if ($response[0]['statuscode'] === 200 || $response[0]['statuscode'] === 602) {
-        $message = $response[0]['userMessages'][0];
+      // @todo Remove error 607: "Given email is unknown" (false error)
+      if ($response['statuscode'] !== 200 && $response['statuscode'] !== 607) {
+        $message = implode('<br>', $response['userMessages']);
+        static::addDebugMessage($_POST['billing_email'], $response);
       }
     }
     // Checks if the subscription ID matches.
-    if ($_POST['subscription_id']) {
+    if (!empty($_POST['subscription_id'])) {
       $response = Server::checkSubscriptionNumber(
         $_POST['subscription_id'],
         $_POST['billing_first_name'],
@@ -62,10 +64,10 @@ class WooCommerce {
       );
       // 614: abono combination not ok
       if ($response['statuscode'] === 614) {
-        $message = $response['userMessages'][0];
+        $message = implode('<br>', $response['userMessages']);
       }
     }
-    if ($message) {
+    if (!empty($message)) {
       wp_send_json([
         'result' => 'failure',
         'messages' => wc_add_notice($message, 'error'),
@@ -77,12 +79,17 @@ class WooCommerce {
     if (is_user_logged_in()) {
       $purchase = Plugin::buildPurchaseInfo();
       $response = Server::registerPurchase($purchase);
-      if ($response['statuscode'] !== 200) {
-        if (WP_DEBUG) {
-          echo "<pre>\n"; var_dump(json_encode($purchase, JSON_PRETTY_PRINT), json_encode($response, JSON_PRETTY_PRINT)); echo "</pre>";
-        }
-        wc_add_notice(implode('<br>', $response['userMessages']), 'error');
-      }
+    }
+    else {
+      $purchase = Plugin::buildPurchaseInfo();
+      $response = Server::registerUserAndPurchase($purchase);
+    }
+    if ($response['statuscode'] !== 200) {
+      wp_send_json([
+        'result' => 'failure',
+        'messages' => wc_add_notice(implode('<br>', $response['userMessages']), 'error') . static::addDebugMessage($purchase, $response),
+        'reload' => TRUE,
+      ]);
     }
   }
 
@@ -154,10 +161,8 @@ class WooCommerce {
 
     $response = Server::updateUser($userinfo);
     if ($response['statuscode'] !== 200) {
-      if (WP_DEBUG) {
-        echo "<pre>\n"; var_dump(json_encode($userinfo, JSON_PRETTY_PRINT), json_encode($response, JSON_PRETTY_PRINT)); echo "</pre>";
-      }
       wc_add_notice(implode('<br>', $response['userMessages']), 'error');
+      static::addDebugMessage($userinfo, $response);
     }
   }
 
@@ -183,6 +188,7 @@ class WooCommerce {
     $response = Server::updateUser($userinfo);
     if ($response['statuscode'] !== 200) {
       wc_add_notice(implode('<br>', $response['userMessages']), 'error');
+      static::addDebugMessage($userinfo, $response);
     }
   }
 
@@ -226,4 +232,21 @@ class WooCommerce {
     }
     echo '</fieldset>';
   }
+
+  /**
+   * Adds WooCommerce notice with debug information if WP_DEBUG is enabled.
+   *
+   * @param mixed $request_data
+   * @param mixed $response_data
+   */
+  public static function addDebugMessage($request_data, $response_data) {
+    if (WP_DEBUG) {
+      return wc_add_notice("<pre>\n"
+        . json_encode($request_data, JSON_PRETTY_PRINT) . "\n"
+        . json_encode($response_data, JSON_PRETTY_PRINT)
+        . "\n</pre>"
+      , 'notice');
+    }
+  }
+
 }

@@ -25,6 +25,11 @@ class Server {
   const ENDPOINT_USER_UPDATE = '/REST/services/authenticate/user/updateUser';
 
   /**
+  * @var string
+  */
+  const ENDPOINT_USER_CREATE_WITH_PURCHASE = '/REST/services/authorize/purchase/registerUserAndPurchase';
+
+  /**
    * @var string
    */
   const ENDPOINT_PURCHASE_CREATE = '/REST/services/authorize/purchase/registerPurchase';
@@ -40,7 +45,7 @@ class Server {
     $api_url = 'https://' . SSOFACT_SERVER_DOMAIN . static::ENDPOINT_IS_EMAIL_REGISTERED;
     $response = wp_remote_post($api_url, [
       'body' => [
-        'email' => $email
+        'email' => $email,
       ],
       'headers' => [
         'Accept' => 'application/json',
@@ -52,7 +57,12 @@ class Server {
       static::triggerCommunicationError();
       return;
     }
-    return json_decode($response['body'], JSON_OBJECT_AS_ARRAY);
+    $response = json_decode($response['body'], JSON_OBJECT_AS_ARRAY);
+    // @todo Fix bogus nested list in server response.
+    if (isset($response[0])) {
+      $response = $response[0];
+    }
+    return $response;
   }
 
   /**
@@ -123,9 +133,37 @@ class Server {
    *
    * @return null|array
    */
+  public static function registerUserAndPurchase(array $purchase) {
+    if (isset($purchase['id'])) {
+      throw new \InvalidArgumentException('Cannot register user: pre-existing user ID.');
+    }
+    $api_url = 'https://' . SSOFACT_SERVER_DOMAIN . static::ENDPOINT_USER_CREATE_WITH_PURCHASE;
+    $response = wp_remote_post($api_url, [
+      'body' => json_encode($purchase),
+      'headers' => [
+        'Accept' => 'application/json',
+        'rfbe-key' => SSOFACT_RFBE_KEY,
+        'rfbe-secret' => SSOFACT_RFBE_SECRET,
+      ],
+    ]);
+    if ($response instanceof \WP_Error) {
+      static::triggerCommunicationError();
+      return;
+    }
+    return json_decode($response['body'], JSON_OBJECT_AS_ARRAY);
+  }
+
+  /**
+   * Creates a purchase for a user.
+   *
+   * @param array $purchase
+   *   The purchase data to register; see Plugin::buildPurchaseInfo().
+   *
+   * @return null|array
+   */
   public static function registerPurchase(array $purchase) {
     if (!isset($purchase['id'])) {
-      throw new \InvalidArgumentException('Missing user ID to update.');
+      throw new \InvalidArgumentException('Missing user ID for purchase.');
     }
     $api_url = 'https://' . SSOFACT_SERVER_DOMAIN . static::ENDPOINT_PURCHASE_CREATE;
     $response = wp_remote_post($api_url, [

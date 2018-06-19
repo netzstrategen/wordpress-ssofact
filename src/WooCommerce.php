@@ -45,7 +45,7 @@ class WooCommerce {
    */
   public static function woocommerce_checkout_process() {
     // Checks if the email address is already registered.
-    if ($_POST['billing_email']) {
+    if (!empty($_POST['billing_email']) && !is_user_logged_in()) {
       $response = Server::isEmailRegistered($_POST['billing_email']);
       // 202 and 602: email already in use
       if ($response[0]['statuscode'] === 200 || $response[0]['statuscode'] === 602) {
@@ -53,7 +53,7 @@ class WooCommerce {
       }
     }
     // Checks if the subscription ID matches.
-    if ($_POST['subscription_id']) {
+    if (!empty($_POST['subscription_id'])) {
       $response = Server::checkSubscriptionNumber(
         $_POST['subscription_id'],
         $_POST['billing_first_name'],
@@ -65,7 +65,7 @@ class WooCommerce {
         $message = $response['userMessages'][0];
       }
     }
-    if ($message) {
+    if (!empty($message)) {
       wp_send_json([
         'result' => 'failure',
         'messages' => wc_add_notice($message, 'error'),

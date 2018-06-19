@@ -118,9 +118,9 @@ class WooCommerce {
     }
 
     $userinfo['list_noch-fragen'] = $_POST['list_noch-fragen'] ?? 0;
-    $userinfo['list_premium'] = $_POST['list_freizeit'] ?? 0;
+    $userinfo['list_premium'] = $_POST['list_premium'] ?? 0;
     $userinfo['list_freizeit'] = $_POST['list_freizeit'] ?? 0;
-    $userinfo['confirm_agb'] = $_POST['list_freizeit'] ?? 0;
+    $userinfo['confirm_agb'] = $_POST['confirm_agb'] ?? 0;
 
     $response = Server::updateUser($userinfo);
     if ($response['statuscode'] !== 200) {
@@ -158,10 +158,10 @@ class WooCommerce {
     foreach ($opt_ins as $opt_in_id => $opt_in_args) {
       $args = [
         'type' => 'checkbox',
-        'label' => __($opt_in_args['label'], Plugin::L10N),
+        'label' => $opt_in_args['label'],
         'required' => FALSE,
         'id' => $opt_in_id,
-        'priority' => $opt_in_args['priority']
+        'priority' => $opt_in_args['priority'],
       ];
 
       woocommerce_form_field($opt_in_id, $args);

@@ -243,6 +243,99 @@ class Plugin {
   }
 
   /**
+   * Builds userinfo for use in updateUser, registerUser, and registerUserAndPurchase.
+   *
+   * @param int $user_id
+   *   The user ID for which the generate the user info for. Defaults to the
+   *   currently logged-in user.
+   */
+  public static function buildUserInfo($user_id = 0) {
+    if ($user_id < 1) {
+      $user_id = get_current_user_ID();
+    }
+    if (!$user_id) {
+      throw new \InvalidArgumentException('Unable to build user info: Empty user ID.', 1);
+    }
+    $last_known_userinfo = get_user_meta($user_id, 'ssofact_userinfo', TRUE);
+    if (empty($last_known_userinfo['id'])) {
+      throw new \LogicException('Unable to build user info: Missing SSO ID.', 1);
+    }
+    $address_type = 'billing';
+    $address_source = $_POST;
+    $phone = explode('-', $address_source[$address_type . '_phone'], 2);
+    $optin_source = $_POST;
+    $terms_accepted = !empty($_POST['terms']);
+
+    $userinfo = [
+      'id' => $last_known_userinfo['id'],
+      'email' => !empty($last_known_userinfo['email']) ? $last_known_userinfo['email'] : $address_source[$address_type . '_email'],
+      'salutation' => $address_source[$address_type . '_salutation'],
+      'firstname' => $address_source[$address_type . '_first_name'],
+      'lastname' => $address_source[$address_type . '_last_name'],
+      // 'title' => $address_source[$address_type . '_title'],
+      'street' => $address_source[$address_type . '_address_1'],
+      'housenr' => $address_source[$address_type . '_house_number'],
+      'zipcode' => $address_source[$address_type . '_postcode'],
+      'city' => $address_source[$address_type . '_city'],
+      'country' => 'DE', // $address_source[$address_type . '_country'],
+      // 'birthday' => ,
+      'phone_prefix' => $phone[0] ?? '',
+      'phone' => $phone[1] ?? '',
+      // 'mobile_prefix' => ,
+      // 'mobile' => ,
+      'optins' => [
+        'list_noch-fragen' => (int) !empty($optin_source['list_noch-fragen']),
+        'list_premium' => (int) !empty($optin_source['list_premium']),
+        'list_freizeit' => (int) !empty($optin_source['list_freizeit']),
+        'confirm_agb' => (int) $terms_accepted,
+        'acquisitionEmail' => (int) !empty($optin_source['confirm_agb']),
+        'acquisitionMail' => (int) !empty($optin_source['confirm_mail']),
+        'acquisitionPhone' =>(int) !empty($optin_source['confirm_phone']),
+      ],
+    ];
+    return $userinfo;
+  }
+
+  /**
+   * Builds purchase payload for registerPurchase and registerUserAndPurchase.
+   *
+   * @param int $user_id
+   *   The user ID for which the generate the user info for. Defaults to the
+   *   currently logged-in user.
+   * @param string $sku
+   *   The SKU to purchase.
+   */
+  public static function buildPurchaseInfo($user_id = 0, $sku = '') {
+    $purchase = static::buildUserInfo($user_id);
+
+    $sku = 'premiumAboNEU';
+    $sku_parts = preg_split('@[:-]@', $sku);
+    $accessType = $sku_parts[0];
+    $edition = $sku_parts[1] ?? '';
+
+    $purchase['permission'] = [
+      'type' => 'Product',
+      'accessType' => $accessType,
+      'object' => 'Zeitung',
+      'edition' => $edition,
+      // @todo Is timestamp expected to be now or midnight?
+      'fromDay' => strtotime('today 00:00'),
+      // @todo Does the shop specify this freely on the client-side?
+      // 'toDay' => 1524822637,
+      'acquisitionEMail' => $purchase['optins']['acquisitionEmail'] ? 'j' : 'n',
+      'acquisitionMail' => $purchase['optins']['acquisitionMail'] ? 'j' : 'n',
+      'acquisitionPhone' => $purchase['optins']['acquisitionPhone'] ? 'j' : 'n',
+      'paymentMethod' => '',
+      'paymentPattern' => '',
+      'accessCount' => 1,
+      'promotionId' => '',
+      'agentNumber' => '',
+      'deviceType' => '', // Gerätetyp zB. iPhone9,3
+    ];
+    return $purchase;
+  }
+
+  /**
    * Loads the plugin textdomain.
    */
   public static function loadTextdomain() {

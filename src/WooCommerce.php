@@ -89,28 +89,69 @@ class WooCommerce {
   /**
    * @implements woocommerce_after_save_address_validation
    */
-  public static function woocommerce_after_save_address_validation($user_id, $load_address, $address) {
+  public static function woocommerce_after_save_address_validation($user_id, $address_type, $address) {
     $last_known_userinfo = get_user_meta($user_id, 'ssofact_userinfo', TRUE);
 
     $userinfo = $last_known_userinfo;
-    $userinfo['email'] = $_POST[$load_address . '_email'];
-    // $userinfo['salutation'] = $_POST[$load_address . '_'];
-    // $userinfo['title'] = $_POST[$load_address . '_'];
-    $userinfo['firstname'] = $_POST[$load_address . '_first_name'];
-    $userinfo['lastname'] = $_POST[$load_address . '_last_name'];
-    // $userinfo['company'] = $_POST[$load_address . '_company'];
-    $userinfo['street'] = $_POST[$load_address . '_address_1'];
-    $userinfo['housenr'] = $_POST[$load_address . '_house_number'];
-    $userinfo['zipcode'] = $_POST[$load_address . '_postcode'];
-    $userinfo['city'] = $_POST[$load_address . '_city'];
-    // $userinfo['country'] = $_POST[$load_address . '_country']; // Deutschland vs. DE
-    $phone = explode('-', $_POST[$load_address . '_phone'], 2);
+    // $userinfo['id'] = (string) $userinfo['id'];
+    $userinfo['email'] = $_POST[$address_type . '_email'];
+    $userinfo['salutation'] = $_POST[$address_type . '_salutation'];
+    // $userinfo['title'] = $_POST[$address_type . '_title'];
+    $userinfo['firstname'] = $_POST[$address_type . '_first_name'];
+    $userinfo['lastname'] = $_POST[$address_type . '_last_name'];
+    // $userinfo['company'] = $_POST[$address_type . '_company'];
+    $userinfo['street'] = $_POST[$address_type . '_address_1'];
+    $userinfo['housenr'] = $_POST[$address_type . '_house_number'];
+    $userinfo['zipcode'] = $_POST[$address_type . '_postcode'];
+    $userinfo['city'] = $_POST[$address_type . '_city'];
+    // $userinfo['country'] = $_POST[$address_type . '_country']; // Deutschland vs. DE
+    $phone = explode('-', $_POST[$address_type . '_phone'], 2);
     $userinfo['phone_prefix'] = $phone[0] ?? '';
     $userinfo['phone'] = $phone[1] ?? '';
     // $userinfo['optins'] = $_POST[''];
 
+    // @todo Which user profile data will be accepted by SSO in updateUser?
+    // unset($userinfo['moddate']);
+    // unset($userinfo['lastchgdate']);
+    // unset($userinfo['last_login']);
+    //
+    // unset($userinfo['email']);
+    // unset($userinfo['customer_id']);
+    // unset($userinfo['subscribernr']);
+    // unset($userinfo['fcms_id']);
+    // unset($userinfo['facebook_id']);
+    // unset($userinfo['confirmed']);
+    // unset($userinfo['deactivated']);
+    // unset($userinfo['roles']);
+    // unset($userinfo['article_test']);
+    //
+    // unset($userinfo['title']);
+    // unset($userinfo['mobile_prefix']);
+    // unset($userinfo['mobile']);
+    // unset($userinfo['phone_prefix']);
+    // unset($userinfo['phone']);
+    // $userinfo['country'] = 'DE';
+    // unset($userinfo['country']);
+    // unset($userinfo['optins']);
+
+    // @todo Existing postal address data cannot be updated until v2; needs to
+    //   be sent via email instead.
+    // @todo Nice-to-have for UX: Save edited values in local user profile along
+    //   with a last_edited timestamp and only replace the local values when
+    //   last_updated timestamp from SSO is newer.
+    // @todo Coordinate how to handle the shipping address or which one to send.
+    // @todo Send different "action" depending on the action performed; i.e.,
+    //   'initialPassword', 'forgotPassword', 'changeEmail', 'changePassword'.
+    // $userinfo = array_intersect_key($userinfo, [
+    //   'id' => 1,
+    //   'optins' => 1,
+    // ]);
+
     $response = Server::updateUser($userinfo);
     if ($response['statuscode'] !== 200) {
+      if (WP_DEBUG) {
+        echo "<pre>\n"; var_dump(json_encode($userinfo, JSON_PRETTY_PRINT), json_encode($response, JSON_PRETTY_PRINT)); echo "</pre>";
+      }
       wc_add_notice(implode('<br>', $response['userMessages']), 'error');
     }
   }

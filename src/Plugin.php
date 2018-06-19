@@ -199,6 +199,8 @@ class Plugin {
   }
 
   /**
+   * Updates local user meta data with UserInfo provided by SSO.
+   *
    * @implements updated_{$meta_type}_meta
    */
   public static function updated_user_meta($meta_id, $user_id, $meta_key, $user_claims) {

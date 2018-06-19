@@ -91,6 +91,8 @@ class Plugin {
 
     // Adds opt-in checkboxes to user account edit form.
     add_action('woocommerce_edit_account_form', __NAMESPACE__ . '\WooCommerce::woocommerce_edit_account_form');
+    // Updates user info in SSO upon editing account details.
+    add_action('woocommerce_save_account_details', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details');
   }
 
   /**
@@ -197,6 +199,8 @@ class Plugin {
   }
 
   /**
+   * Updates local user meta data with UserInfo provided by SSO.
+   *
    * @implements updated_{$meta_type}_meta
    */
   public static function updated_user_meta($meta_id, $user_id, $meta_key, $user_claims) {

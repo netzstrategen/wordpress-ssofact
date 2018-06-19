@@ -103,4 +103,69 @@ class WooCommerce {
     }
   }
 
+  /**
+   * @implements woocommerce_save_account_details
+   */
+  public static function woocommerce_save_account_details($user_id) {
+    $userinfo = [];
+    $userinfo['id'] = $user_id;
+    $userinfo['firstname'] = $_POST['account_first_name'];
+    $userinfo['lastname'] = $_POST['account_last_name'];
+    $userinfo['email'] = $_POST['account_email'];
+
+    if ($_POST['password_1'] && $_POST['password_1'] === $_POST['password_2']) {
+      $userinfo['password'] = $_POST['password_1'];
+    }
+
+    $userinfo['list_noch-fragen'] = $_POST['list_noch-fragen'] ?? 0;
+    $userinfo['list_premium'] = $_POST['list_premium'] ?? 0;
+    $userinfo['list_freizeit'] = $_POST['list_freizeit'] ?? 0;
+    $userinfo['confirm_agb'] = $_POST['confirm_agb'] ?? 0;
+
+    $response = Server::updateUser($userinfo);
+    if ($response['statuscode'] !== 200) {
+      wc_add_notice(implode('<br>', $response['userMessages']), 'error');
+    }
+  }
+
+  /*
+   * Displays opt-in checkboxes in user account edit form.
+   *
+   * @implements woocommerce_edit_account_form
+   */
+  public static function woocommerce_edit_account_form() {
+    echo '<fieldset class="account-edit-optin-checks">';
+
+    $opt_ins = [
+      'list_noch-fragen' => [
+        'label' => 'Newsletter Noch Fragen',
+        'priority' => 100,
+      ],
+      'list_premium' => [
+        'label' => 'Newsletter Premium',
+        'priority' => 110,
+      ],
+      'list_freizeit' => [
+        'label' => 'Newsletter Freizeit',
+        'priority' => 120,
+      ],
+      'confirm_agb' => [
+        'label' => 'AGB-Bestätigung',
+        'priority' => 130,
+      ],
+    ];
+
+    foreach ($opt_ins as $opt_in_id => $opt_in_args) {
+      $args = [
+        'type' => 'checkbox',
+        'label' => $opt_in_args['label'],
+        'required' => FALSE,
+        'id' => $opt_in_id,
+        'priority' => $opt_in_args['priority'],
+      ];
+
+      woocommerce_form_field($opt_in_id, $args);
+    }
+    echo '</fieldset>';
+  }
 }

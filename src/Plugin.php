@@ -88,6 +88,9 @@ class Plugin {
 
     // Validates and updates user info in SSO upon editing address.
     add_action('woocommerce_after_save_address_validation', __NAMESPACE__ . '\WooCommerce::woocommerce_after_save_address_validation', 10, 3);
+
+    // Adds opt-in checkboxes to user account edit form.
+    add_action('woocommerce_edit_account_form', __NAMESPACE__ . '\WooCommerce::woocommerce_edit_account_form');
   }
 
   /**

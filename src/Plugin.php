@@ -243,46 +243,53 @@ class Plugin {
   }
 
   /**
-   * Builds userinfo for use in updateUser, registerUser, and registerUserAndPurchase.
+   * Builds userinfo for updateUser, registerUser, and registerUserAndPurchase.
    *
    * @param int $user_id
    *   The user ID for which the generate the user info for. Defaults to the
    *   currently logged-in user.
    */
   public static function buildUserInfo($user_id = 0) {
+    $address_type = 'billing';
+    $address_source = $_POST;
+
     if ($user_id < 1) {
       $user_id = get_current_user_ID();
     }
-    if (!$user_id) {
-      throw new \InvalidArgumentException('Unable to build user info: Empty user ID.', 1);
+    if ($user_id) {
+      $last_known_userinfo = get_user_meta($user_id, 'ssofact_userinfo', TRUE);
+      if (empty($last_known_userinfo['id'])) {
+        throw new \LogicException('Unable to build user info: Missing SSO ID.', 1);
+      }
+      $userinfo = [
+        'id' => $last_known_userinfo['id'],
+        'email' => $last_known_userinfo['email'],
+      ];
     }
-    $last_known_userinfo = get_user_meta($user_id, 'ssofact_userinfo', TRUE);
-    if (empty($last_known_userinfo['id'])) {
-      throw new \LogicException('Unable to build user info: Missing SSO ID.', 1);
+    else {
+      $userinfo = [
+        'email' => $address_source[$address_type . '_email'],
+      ];
     }
-    $address_type = 'billing';
-    $address_source = $_POST;
+
     $phone = explode('-', $address_source[$address_type . '_phone'], 2);
     $optin_source = $_POST;
     $terms_accepted = !empty($_POST['terms']);
 
-    $userinfo = [
-      'id' => $last_known_userinfo['id'],
-      'email' => !empty($last_known_userinfo['email']) ? $last_known_userinfo['email'] : $address_source[$address_type . '_email'],
+    $userinfo += [
       'salutation' => $address_source[$address_type . '_salutation'],
+      // 'title' => $address_source[$address_type . '_title'],
       'firstname' => $address_source[$address_type . '_first_name'],
       'lastname' => $address_source[$address_type . '_last_name'],
-      // 'title' => $address_source[$address_type . '_title'],
       'street' => $address_source[$address_type . '_address_1'],
       'housenr' => $address_source[$address_type . '_house_number'],
       'zipcode' => $address_source[$address_type . '_postcode'],
       'city' => $address_source[$address_type . '_city'],
+      // @todo Implement proper mapping for country.
       'country' => 'DE', // $address_source[$address_type . '_country'],
       // 'birthday' => ,
       'phone_prefix' => $phone[0] ?? '',
       'phone' => $phone[1] ?? '',
-      // 'mobile_prefix' => ,
-      // 'mobile' => ,
       'optins' => [
         'list_noch-fragen' => (int) !empty($optin_source['list_noch-fragen']),
         'list_premium' => (int) !empty($optin_source['list_premium']),

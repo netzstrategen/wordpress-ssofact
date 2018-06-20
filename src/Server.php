@@ -9,30 +9,17 @@ namespace Netzstrategen\Ssofact;
 
 class Server {
 
-  /**
-   * @var string
-   */
   const ENDPOINT_IS_EMAIL_REGISTERED = '/REST/services/authenticate/user/IsEmailRegistered';
 
-  /**
-   * @var string
-   */
   const ENDPOINT_SUBSCRIPTION_NUMBER = '/REST/services/authenticate/user/checkAboNo';
 
-  /**
-   * @var string
-   */
   const ENDPOINT_USER_UPDATE = '/REST/services/authenticate/user/updateUser';
 
-  /**
-  * @var string
-  */
   const ENDPOINT_USER_CREATE_WITH_PURCHASE = '/REST/services/authorize/purchase/registerUserAndPurchase';
 
-  /**
-   * @var string
-   */
   const ENDPOINT_PURCHASE_CREATE = '/REST/services/authorize/purchase/registerPurchase';
+
+  private static $debugLog = [];
 
   /**
    * Checks if the email is already registered.
@@ -42,22 +29,7 @@ class Server {
    * @return null|array
    */
   public static function isEmailRegistered($email) {
-    $api_url = 'https://' . SSOFACT_SERVER_DOMAIN . static::ENDPOINT_IS_EMAIL_REGISTERED;
-    $response = wp_remote_post($api_url, [
-      'body' => [
-        'email' => $email,
-      ],
-      'headers' => [
-        'Accept' => 'application/json',
-        'rfbe-key' => SSOFACT_RFBE_KEY,
-        'rfbe-secret' => SSOFACT_RFBE_SECRET,
-      ],
-    ]);
-    if ($response instanceof \WP_Error) {
-      static::triggerCommunicationError();
-      return;
-    }
-    $response = json_decode($response['body'], JSON_OBJECT_AS_ARRAY);
+    $response = Server::request('POST', static::ENDPOINT_IS_EMAIL_REGISTERED, ['email' => $email]);
     // @todo Fix bogus nested list in server response.
     if (isset($response[0])) {
       $response = $response[0];
@@ -66,35 +38,18 @@ class Server {
   }
 
   /**
-   * Checks if the subscription ID number matches the user full name and zipcode.
-   *
-   * @param int subscriptionId
-   * @param string firstName
-   * @param string lastName
-   * @param int zipCode
+   * Returns whether the subscription ID matches the name and zipcode.
    *
    * @return null!array
    */
-  public static function checkSubscriptionNumber($subscriptionId, $firstName, $lastName, $zipCode) {
-    $api_url = 'https://' . SSOFACT_SERVER_DOMAIN . static::ENDPOINT_SUBSCRIPTION_NUMBER;
-    $response = wp_remote_post($api_url, [
-      'body' => [
-        "abono" => $subscriptionId,
-        "firstname" => $firstName,
-        "lastname" => $lastName,
-        "zipcode" => $zipCode,
-      ],
-      'headers' => [
-        'Accept' => 'application/json',
-        'rfbe-key' => SSOFACT_RFBE_KEY,
-        'rfbe-secret' => SSOFACT_RFBE_SECRET,
-      ],
+  public static function checkSubscriptionNumber($subscription_id, $first_name, $last_name, $zip_code) {
+    $response = Server::request('POST', static::ENDPOINT_SUBSCRIPTION_NUMBER, [
+      'abono' => $subscription_id,
+      'firstname' => $first_name,
+      'lastname' => $last_name,
+      'zipcode' => $zip_code,
     ]);
-    if ($response instanceof \WP_Error) {
-      static::triggerCommunicationError();
-      return;
-    }
-    return json_decode($response['body'], JSON_OBJECT_AS_ARRAY);
+    return $response;
   }
 
   /**
@@ -109,20 +64,8 @@ class Server {
     if (!isset($userinfo['id'])) {
       throw new \InvalidArgumentException('Missing user ID to update.');
     }
-    $api_url = 'https://' . SSOFACT_SERVER_DOMAIN . static::ENDPOINT_USER_UPDATE;
-    $response = wp_remote_post($api_url, [
-      'body' => json_encode($userinfo),
-      'headers' => [
-        'Accept' => 'application/json',
-        'rfbe-key' => SSOFACT_RFBE_KEY,
-        'rfbe-secret' => SSOFACT_RFBE_SECRET,
-      ],
-    ]);
-    if ($response instanceof \WP_Error) {
-      static::triggerCommunicationError();
-      return;
-    }
-    return json_decode($response['body'], JSON_OBJECT_AS_ARRAY);
+    $response = Server::request('POST', static::ENDPOINT_USER_UPDATE, $userinfo);
+    return $response;
   }
 
   /**
@@ -137,20 +80,8 @@ class Server {
     if (isset($purchase['id'])) {
       throw new \InvalidArgumentException('Cannot register user: pre-existing user ID.');
     }
-    $api_url = 'https://' . SSOFACT_SERVER_DOMAIN . static::ENDPOINT_USER_CREATE_WITH_PURCHASE;
-    $response = wp_remote_post($api_url, [
-      'body' => json_encode($purchase),
-      'headers' => [
-        'Accept' => 'application/json',
-        'rfbe-key' => SSOFACT_RFBE_KEY,
-        'rfbe-secret' => SSOFACT_RFBE_SECRET,
-      ],
-    ]);
-    if ($response instanceof \WP_Error) {
-      static::triggerCommunicationError();
-      return;
-    }
-    return json_decode($response['body'], JSON_OBJECT_AS_ARRAY);
+    $response = Server::request('POST', static::ENDPOINT_USER_CREATE_WITH_PURCHASE, $purchase);
+    return $response;
   }
 
   /**
@@ -165,20 +96,48 @@ class Server {
     if (!isset($purchase['id'])) {
       throw new \InvalidArgumentException('Missing user ID for purchase.');
     }
-    $api_url = 'https://' . SSOFACT_SERVER_DOMAIN . static::ENDPOINT_PURCHASE_CREATE;
-    $response = wp_remote_post($api_url, [
-      'body' => json_encode($purchase),
+    $response = Server::request('POST', static::ENDPOINT_PURCHASE_CREATE, $purchase);
+    return $response;
+  }
+
+  /**
+   * Performs a request against ssoFACT server REST API.
+   *
+   * @param string $method
+   *   The HTTP method to use; either 'POST' or 'GET'.
+   * @param string $endpoint
+   *   The endpoint (path) to request; one of the class constants.
+   * @param mixed $data
+   *   The data to send.
+   *
+   * @return null|array
+   *   The decoded response or NULL in case of a communication error.
+   */
+  public static function request($method, $endpoint, $data) {
+    $api_url = 'https://' . SSOFACT_SERVER_DOMAIN . $endpoint;
+    $request = [
+      'method' => $method,
+      'url' => $api_url,
       'headers' => [
         'Accept' => 'application/json',
+        'Content-Type' => 'application/json',
         'rfbe-key' => SSOFACT_RFBE_KEY,
         'rfbe-secret' => SSOFACT_RFBE_SECRET,
       ],
-    ]);
+      'body' => json_encode($data),
+    ];
+    $response = wp_remote_request($api_url, $request);
     if ($response instanceof \WP_Error) {
       static::triggerCommunicationError();
       return;
     }
-    return json_decode($response['body'], JSON_OBJECT_AS_ARRAY);
+    $response = json_decode($response['body'], JSON_OBJECT_AS_ARRAY);
+
+    static::$debugLog[] = [
+      'request' => ['body' => json_encode($data, JSON_PRETTY_PRINT)] + $request,
+      'response' => json_encode($response, JSON_PRETTY_PRINT),
+    ];
+    return $response;
   }
 
   /**
@@ -191,6 +150,25 @@ class Server {
       'reload' => TRUE,
     ]);
     trigger_error($response->get_error_message(), E_USER_ERROR);
+  }
+
+  /**
+   * Adds WooCommerce notice with debug information if WP_DEBUG is enabled.
+   */
+  public static function addDebugMessage() {
+    if (WP_DEBUG) {
+      $debug_request = '';
+      foreach (static::$debugLog as $request) {
+        $debug_request .= $request['request']['method'] . ' ' . $request['request']['url'] . "\n";
+        foreach ($request['request']['headers'] as $key => $value) {
+          $debug_request .= "$key: $value\n";
+        }
+        $debug_request .= $request['request']['body'] . "\n";
+        $debug_request .= $request['response'];
+      }
+      static::$debugLog = [];
+      return wc_add_notice("<pre>\n$debug_request\n</pre>", 'notice');
+    }
   }
 
 }

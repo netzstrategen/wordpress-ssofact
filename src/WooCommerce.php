@@ -49,9 +49,8 @@ class WooCommerce {
     if (!empty($_POST['billing_email']) && !is_user_logged_in()) {
       $response = Server::isEmailRegistered($_POST['billing_email']);
       // @todo Remove error 607: "Given email is unknown" (false error)
-      if ($response['statuscode'] !== 200 && $response['statuscode'] !== 607) {
-        $message = implode('<br>', $response['userMessages']);
-        static::addDebugMessage($_POST['billing_email'], $response);
+      if (!isset($response['statuscode']) || ($response['statuscode'] !== 200 && $response['statuscode'] !== 607)) {
+        $message = isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.');
       }
     }
     // Checks if the subscription ID matches.
@@ -62,15 +61,14 @@ class WooCommerce {
         $_POST['billing_last_name'],
         $_POST['billing_postcode']
       );
-      // 614: abono combination not ok
-      if ($response['statuscode'] === 614) {
-        $message = implode('<br>', $response['userMessages']);
+      if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
+        $message = isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.');
       }
     }
     if (!empty($message)) {
       wp_send_json([
         'result' => 'failure',
-        'messages' => wc_add_notice($message, 'error'),
+        'messages' => wc_add_notice($message, 'error') . Server::addDebugMessage(),
         'reload' => TRUE,
       ]);
     }
@@ -84,13 +82,15 @@ class WooCommerce {
       $purchase = Plugin::buildPurchaseInfo();
       $response = Server::registerUserAndPurchase($purchase);
     }
-    if ($response['statuscode'] !== 200) {
+    if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
+      Server::addDebugMessage();
       wp_send_json([
         'result' => 'failure',
-        'messages' => wc_add_notice(implode('<br>', $response['userMessages']), 'error') . static::addDebugMessage($purchase, $response),
+        'messages' => wc_add_notice(isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.'), 'error') . Server::addDebugMessage(),
         'reload' => TRUE,
       ]);
     }
+    Server::addDebugMessage();
   }
 
   /**
@@ -160,9 +160,9 @@ class WooCommerce {
     //   'initialPassword', 'forgotPassword', 'changeEmail', 'changePassword'.
 
     $response = Server::updateUser($userinfo);
-    if ($response['statuscode'] !== 200) {
-      wc_add_notice(implode('<br>', $response['userMessages']), 'error');
-      static::addDebugMessage($userinfo, $response);
+    if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
+      wc_add_notice(isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.'), 'error');
+      Server::addDebugMessage();
     }
   }
 
@@ -186,9 +186,9 @@ class WooCommerce {
     $userinfo['confirm_agb'] = $_POST['confirm_agb'] ?? 0;
 
     $response = Server::updateUser($userinfo);
-    if ($response['statuscode'] !== 200) {
-      wc_add_notice(implode('<br>', $response['userMessages']), 'error');
-      static::addDebugMessage($userinfo, $response);
+    if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
+      wc_add_notice(isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.'), 'error');
+      Server::addDebugMessage();
     }
   }
 
@@ -231,22 +231,6 @@ class WooCommerce {
       woocommerce_form_field($opt_in_id, $args);
     }
     echo '</fieldset>';
-  }
-
-  /**
-   * Adds WooCommerce notice with debug information if WP_DEBUG is enabled.
-   *
-   * @param mixed $request_data
-   * @param mixed $response_data
-   */
-  public static function addDebugMessage($request_data, $response_data) {
-    if (WP_DEBUG) {
-      return wc_add_notice("<pre>\n"
-        . json_encode($request_data, JSON_PRETTY_PRINT) . "\n"
-        . json_encode($response_data, JSON_PRETTY_PRINT)
-        . "\n</pre>"
-      , 'notice');
-    }
   }
 
 }

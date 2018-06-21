@@ -31,6 +31,11 @@ class Plugin {
   /**
    * @var string
    */
+  const USER_META_USERINFO = 'openid-connect-generic-last-user-claim';
+
+  /**
+   * @var string
+   */
   const ENDPOINT_AUTHORIZE = '/REST/oauth/authorize';
   const ENDPOINT_TOKEN = '/REST/oauth/access_token';
   const ENDPOINT_USERINFO = '/REST/oauth/user';
@@ -204,13 +209,9 @@ class Plugin {
    * @implements updated_{$meta_type}_meta
    */
   public static function updated_user_meta($meta_id, $user_id, $meta_key, $user_claims) {
-    if ($meta_key !== 'openid-connect-generic-last-user-claim') {
+    if ($meta_key !== Plugin::USER_META_USERINFO) {
       return;
     }
-    // Save last known userinfo for editing.
-    // @see Server::updateUser()
-    update_user_meta($user_id, 'ssofact_userinfo', $user_claims);
-
     update_user_meta($user_id, 'first_name', $user_claims['firstname']);
     update_user_meta($user_id, 'last_name', $user_claims['lastname']);
 
@@ -257,9 +258,9 @@ class Plugin {
       $user_id = get_current_user_ID();
     }
     if ($user_id) {
-      $last_known_userinfo = get_user_meta($user_id, 'ssofact_userinfo', TRUE);
+      $last_known_userinfo = get_user_meta($user_id, Plugin::USER_META_USERINFO, TRUE);
       if (empty($last_known_userinfo['id'])) {
-        throw new \LogicException('Unable to build user info: Missing SSO ID.', 1);
+        throw new \LogicException('Unable to build user info: Missing SSO ID.');
       }
       $userinfo = [
         'id' => $last_known_userinfo['id'],

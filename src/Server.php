@@ -166,6 +166,7 @@ class Server {
         $debug_request .= $request['request']['body'] . "\n";
         $debug_request .= $request['response'];
       }
+      static::$debugLog = [];
       return wc_add_notice("<pre>\n$debug_request\n</pre>", 'notice');
     }
   }

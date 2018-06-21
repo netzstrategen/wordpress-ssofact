@@ -97,7 +97,7 @@ class WooCommerce {
    * @implements woocommerce_after_save_address_validation
    */
   public static function woocommerce_after_save_address_validation($user_id, $address_type, $address) {
-    $last_known_userinfo = get_user_meta($user_id, 'ssofact_userinfo', TRUE);
+    $last_known_userinfo = get_user_meta($user_id, Plugin::USER_META_USERINFO, TRUE);
 
     $userinfo = $last_known_userinfo;
     if (empty($userinfo['id'])) {

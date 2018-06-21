@@ -98,7 +98,9 @@ class WooCommerce {
     $last_known_userinfo = get_user_meta($user_id, 'ssofact_userinfo', TRUE);
 
     $userinfo = $last_known_userinfo;
-    // $userinfo['id'] = (string) $userinfo['id'];
+    if (empty($userinfo['id'])) {
+      throw new \LogicException('Unable to update account: Missing SSO ID in last known UserInfo.');
+    }
     $userinfo['email'] = $_POST[$address_type . '_email'];
     $userinfo['salutation'] = $_POST[$address_type . '_salutation'];
     // $userinfo['title'] = $_POST[$address_type . '_title'];
@@ -109,48 +111,51 @@ class WooCommerce {
     $userinfo['housenr'] = $_POST[$address_type . '_house_number'];
     $userinfo['zipcode'] = $_POST[$address_type . '_postcode'];
     $userinfo['city'] = $_POST[$address_type . '_city'];
+    // @todo Coordinate list of country codes.
     // $userinfo['country'] = $_POST[$address_type . '_country']; // Deutschland vs. DE
     $phone = explode('-', $_POST[$address_type . '_phone'], 2);
     $userinfo['phone_prefix'] = $phone[0] ?? '';
     $userinfo['phone'] = $phone[1] ?? '';
-    // $userinfo['optins'] = $_POST[''];
-
-    // @todo Which user profile data will be accepted by SSO in updateUser?
-    // unset($userinfo['moddate']);
-    // unset($userinfo['lastchgdate']);
-    // unset($userinfo['last_login']);
-    //
-    // unset($userinfo['email']);
-    // unset($userinfo['customer_id']);
-    // unset($userinfo['subscribernr']);
-    // unset($userinfo['fcms_id']);
-    // unset($userinfo['facebook_id']);
-    // unset($userinfo['confirmed']);
-    // unset($userinfo['deactivated']);
-    // unset($userinfo['roles']);
-    // unset($userinfo['article_test']);
-    //
-    // unset($userinfo['title']);
+    // @todo Web user account only supports a single phone number (due to data
+    //   privacy and because landline numbers are a thing of the past). Migrate
+    //   these to phone upon login/import.
     // unset($userinfo['mobile_prefix']);
     // unset($userinfo['mobile']);
-    // unset($userinfo['phone_prefix']);
-    // unset($userinfo['phone']);
-    // $userinfo['country'] = 'DE';
-    // unset($userinfo['country']);
-    // unset($userinfo['optins']);
 
-    // @todo Existing postal address data cannot be updated until v2; needs to
-    //   be sent via email instead.
-    // @todo Nice-to-have for UX: Save edited values in local user profile along
-    //   with a last_edited timestamp and only replace the local values when
-    //   last_updated timestamp from SSO is newer.
+    $userinfo = array_diff_key($userinfo, [
+      // Properties that cannot be changed by the client.
+      'moddate' => 0,
+      'lastchgdate' => 0,
+      'last_login' => 0,
+      'confirmed' => 0,
+      'deactivated' => 0,
+      'fcms_id' => 0,
+      'facebook_id' => 0,
+      // Properties that need special treatment and procedures.
+      'email' => 0,
+      'customer_id' => 0,
+      'subscribernr' => 0,
+      // Properties that are edited elsewhere.
+      'roles' => 0,
+      'article_test' => 0,
+    ]);
+
+    // Opt-ins that cannot be changed by the client.
+    $userinfo['optins'] = array_diff_key($userinfo['optins'], [
+      'email_doi' => 0,
+      'changemail' => 0,
+    ]);
+
+    // @todo Address can no longer be updated via updateUser API if there is
+    //   both (1) a subscription ID and (2) a (street) address. Once both exist,
+    //   the address is forwarded to alfa VM and set in stone, and may only be
+    //   changed by the customer service team; an email needs to be sent instead.
+    // @todo UX: Save last_edited timestamp and stop updating the locally stored
+    //   user profile with UserInfo from SSO unless its last_updated timestamp
+    //   is newer.
     // @todo Coordinate how to handle the shipping address or which one to send.
     // @todo Send different "action" depending on the action performed; i.e.,
     //   'initialPassword', 'forgotPassword', 'changeEmail', 'changePassword'.
-    // $userinfo = array_intersect_key($userinfo, [
-    //   'id' => 1,
-    //   'optins' => 1,
-    // ]);
 
     $response = Server::updateUser($userinfo);
     if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {

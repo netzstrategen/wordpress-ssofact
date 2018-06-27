@@ -83,12 +83,14 @@ class WooCommerce {
       $response = Server::registerUserAndPurchase($purchase);
     }
     if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
+      Server::addDebugMessage();
       wp_send_json([
         'result' => 'failure',
         'messages' => wc_add_notice(isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.'), 'error') . Server::addDebugMessage(),
         'reload' => TRUE,
       ]);
     }
+    Server::addDebugMessage();
   }
 
   /**

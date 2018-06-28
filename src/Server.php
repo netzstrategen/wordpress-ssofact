@@ -30,10 +30,6 @@ class Server {
    */
   public static function isEmailRegistered($email) {
     $response = Server::request('POST', static::ENDPOINT_IS_EMAIL_REGISTERED, ['email' => $email]);
-    // @todo Fix bogus nested list in server response.
-    if (isset($response[0])) {
-      $response = $response[0];
-    }
     return $response;
   }
 

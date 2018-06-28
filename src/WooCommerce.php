@@ -44,12 +44,13 @@ class WooCommerce {
    * @implements woocommerce_checkout_process
    */
   public static function woocommerce_checkout_process() {
-    // Checks if the email address is already registered.
+    // Verifies that the given email address is NOT registered yet.
+    // Note: The API endpoint checks the opposite; a positive result is an error.
     // @todo Handle email change for logged-in users.
     if (!empty($_POST['billing_email']) && !is_user_logged_in()) {
       $response = Server::isEmailRegistered($_POST['billing_email']);
-      // @todo Remove error 607: "Given email is unknown" (false error)
-      if (!isset($response['statuscode']) || ($response['statuscode'] !== 200 && $response['statuscode'] !== 607)) {
+      // Error 607: "Given email is unknown" is the only allowed positive case.
+      if (!isset($response['statuscode']) || $response['statuscode'] !== 607) {
         $message = isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.');
       }
     }

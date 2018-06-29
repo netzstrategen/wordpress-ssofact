@@ -82,6 +82,14 @@ class Plugin {
       return;
     }
 
+    // Removes username field from checkout form (email is used as username).
+    add_filter('option_woocommerce_registration_generate_username', function () { return 'yes'; });
+    add_filter('option_default_woocommerce_registration_generate_username', function () { return 'yes'; });
+
+    // Removes password field from registration form.
+    add_filter('option_woocommerce_registration_generate_password', function () { return 'yes'; });
+    add_filter('option_default_woocommerce_registration_generate_password', function () { return 'yes'; });
+
     // Replaces the front-end login form of WooCommerce to submit to the SSO
     // server instead of WordPress. The administrative login on /wp-login.php is
     // not changed and still authenticates against the local WordPress site only.

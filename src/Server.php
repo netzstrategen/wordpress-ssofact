@@ -11,7 +11,7 @@ class Server {
 
   const ENDPOINT_IS_EMAIL_REGISTERED = '/REST/services/authenticate/user/IsEmailRegistered';
 
-  const ENDPOINT_SUBSCRIPTION_NUMBER = '/REST/services/authenticate/user/checkAboNo';
+  const ENDPOINT_SUBSCRIBER_ID = '/REST/services/authenticate/user/checkAboNo';
 
   const ENDPOINT_USER_UPDATE = '/REST/services/authenticate/user/updateUser';
 
@@ -34,13 +34,13 @@ class Server {
   }
 
   /**
-   * Returns whether the subscription ID matches the name and zipcode.
+   * Returns whether the subscriber ID matches the name and zipcode.
    *
    * @return null!array
    */
-  public static function checkSubscriptionNumber($subscription_id, $first_name, $last_name, $zip_code) {
-    $response = Server::request('POST', static::ENDPOINT_SUBSCRIPTION_NUMBER, [
-      'abono' => $subscription_id,
+  public static function checkSubscriberId($subscriber_id, $first_name, $last_name, $zip_code) {
+    $response = Server::request('POST', static::ENDPOINT_SUBSCRIBER_ID, [
+      'abono' => $subscriber_id,
       'firstname' => $first_name,
       'lastname' => $last_name,
       'zipcode' => $zip_code,

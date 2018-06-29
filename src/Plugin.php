@@ -237,7 +237,7 @@ class Plugin {
     update_user_meta($user_id, 'billing_phone', $user_claims['phone_prefix'] . '-' . $user_claims['phone']);
     update_user_meta($user_id, 'billing_email', $user_claims['email']);
 
-    update_user_meta($user_id, 'subscription_id', $user_claims['subscribernr']);
+    update_user_meta($user_id, 'subscriber_id', $user_claims['subscriber_id'] ?? $user_claims['subscribernr']);
     // update_user_meta($user_id, '', $user_claims['fcms_id']);
     // update_user_meta($user_id, '', $user_claims['facebook_id']);
 

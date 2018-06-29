@@ -52,26 +52,28 @@ class WooCommerce {
       // Error 607: "Given email is unknown" is the only allowed positive case.
       if (!isset($response['statuscode']) || $response['statuscode'] !== 607) {
         $message = isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.');
+        wc_add_notice($message, 'error');
+        Server::addDebugMessage();
       }
     }
     // Check whether the given subscriber ID matches the registered address.
-    if (!empty($_POST['subscriber_id'])) {
+    if (!empty($_POST['billing_subscriber_id'])) {
       $response = Server::checkSubscriberId(
-        $_POST['subscriber_id'],
+        $_POST['billing_subscriber_id'],
         $_POST['billing_first_name'],
         $_POST['billing_last_name'],
         $_POST['billing_postcode']
       );
       if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
         $message = isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.');
+        wc_add_notice($message, 'error');
+        Server::addDebugMessage();
       }
     }
-    if (!empty($message)) {
-      wp_send_json([
-        'result' => 'failure',
-        'messages' => wc_add_notice($message, 'error') . Server::addDebugMessage(),
-        'reload' => TRUE,
-      ]);
+
+    // Do not attempt to register purchase in case of a validation error.
+    if (wc_notice_count('error') || empty($_POST['woocommerce_checkout_place_order'])) {
+      return;
     }
     // @todo Move from checkout validation into submission?
     //   @see woocommerce_checkout_order_processed
@@ -84,14 +86,13 @@ class WooCommerce {
       $response = Server::registerUserAndPurchase($purchase);
     }
     if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
+      $message = isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.');
+      wc_add_notice($message, 'error');
       Server::addDebugMessage();
-      wp_send_json([
-        'result' => 'failure',
-        'messages' => wc_add_notice(isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.'), 'error') . Server::addDebugMessage(),
-        'reload' => TRUE,
-      ]);
     }
-    Server::addDebugMessage();
+    else {
+      Server::addDebugMessage();
+    }
   }
 
   /**

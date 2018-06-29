@@ -140,11 +140,7 @@ class Server {
    * Triggers WooCommerce error message if SSO server does not respond.
    */
   public static function triggerCommunicationError() {
-    wp_send_json([
-      'result' => 'failure',
-      'messages' => wc_add_notice(__('An error occurred while processing your data. Please try again in a few minutes.', Plugin::L10N), 'error'),
-      'reload' => TRUE,
-    ]);
+    wc_add_notice(__('An error occurred while processing your data. Please try again in a few minutes.', Plugin::L10N), 'error');
     trigger_error($response->get_error_message(), E_USER_ERROR);
   }
 

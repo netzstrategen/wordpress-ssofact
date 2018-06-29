@@ -330,24 +330,26 @@ class Plugin {
     $edition = $sku_parts[1] ?? '';
 
     $purchase['permission'] = [
-      'type' => 'Product',
       'accessType' => $accessType,
-      'object' => 'Zeitung',
+      // 'type' => 'Product',
+      // 'object' => 'Zeitung',
       'edition' => $edition,
-      // @todo Is timestamp expected to be now or midnight?
-      'fromDay' => strtotime('today 00:00'),
+      // @todo Custom delivery start date for print subscriptions.
+      'fromDay' => date_i18n('Ymd'),
       // @todo Does the shop specify this freely on the client-side?
-      // 'toDay' => 1524822637,
+      // 'toDay' => date_i18n('Ymd', strtotime('plus 30 days')),
       'acquisitionEMail' => $purchase['optins']['acquisitionEmail'] ? 'j' : 'n',
       'acquisitionMail' => $purchase['optins']['acquisitionMail'] ? 'j' : 'n',
       'acquisitionPhone' => $purchase['optins']['acquisitionPhone'] ? 'j' : 'n',
       'paymentMethod' => '',
       'paymentPattern' => '',
-      'accessCount' => 1,
-      'promotionId' => '',
-      'agentNumber' => '',
-      'deviceType' => '', // Gerätetyp zB. iPhone9,3
+      // 'accessCount' => 1,
+      // 'promotionId' => '',
+      // 'agentNumber' => '',
+      // 'deviceType' => '', // Gerätetyp zB. iPhone9,3
     ];
+    // Ensure that all values for the alfa purchase are strings.
+    $purchase['permission'] = array_map('strval', $purchase['permission']);
     return $purchase;
   }
 

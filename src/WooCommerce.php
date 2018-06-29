@@ -54,10 +54,10 @@ class WooCommerce {
         $message = isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.');
       }
     }
-    // Checks if the subscription ID matches.
-    if (!empty($_POST['subscription_id'])) {
-      $response = Server::checkSubscriptionNumber(
-        $_POST['subscription_id'],
+    // Check whether the given subscriber ID matches the registered address.
+    if (!empty($_POST['subscriber_id'])) {
+      $response = Server::checkSubscriberId(
+        $_POST['subscriber_id'],
         $_POST['billing_first_name'],
         $_POST['billing_last_name'],
         $_POST['billing_postcode']
@@ -136,6 +136,8 @@ class WooCommerce {
       'facebook_id' => 0,
       // Properties that need special treatment and procedures.
       'email' => 0,
+      'subscriber_id' => 0,
+       // @todo Remove when gone.
       'customer_id' => 0,
       'subscribernr' => 0,
       // Properties that are edited elsewhere.
@@ -150,7 +152,7 @@ class WooCommerce {
     ]);
 
     // @todo Address can no longer be updated via updateUser API if there is
-    //   both (1) a subscription ID and (2) a (street) address. Once both exist,
+    //   both (1) a subscriber ID and (2) a (street) address. Once both exist,
     //   the address is forwarded to alfa VM and set in stone, and may only be
     //   changed by the customer service team; an email needs to be sent instead.
     // @todo UX: Save last_edited timestamp and stop updating the locally stored

@@ -11,6 +11,8 @@ class Server {
 
   const ENDPOINT_IS_EMAIL_REGISTERED = '/REST/services/authenticate/user/IsEmailRegistered';
 
+  const ENDPOINT_LOGIN_VALIDATE = '/REST/services/authenticate/user/checkUserCredentials';
+
   const ENDPOINT_SUBSCRIBER_ID = '/REST/services/authenticate/user/checkAboNo';
 
   const ENDPOINT_USER_UPDATE = '/REST/services/authenticate/user/updateUser';
@@ -22,14 +24,33 @@ class Server {
   private static $debugLog = [];
 
   /**
-   * Checks if the email is already registered.
+   * Checks whether the given email address is already registered.
    *
-   * @param string email
+   * @param string $email
+   *   The email address to check.
    *
    * @return null|array
    */
   public static function isEmailRegistered($email) {
     $response = Server::request('POST', static::ENDPOINT_IS_EMAIL_REGISTERED, ['email' => $email]);
+    return $response;
+  }
+
+  /**
+   * Checks whether the given user login credentials are correct.
+   *
+   * @param string $login
+   *   The email address of the user account to check.
+   * @param string $password
+   *   The current password of the user account to check.
+   *
+   * @return null|array
+   */
+  public static function validateLogin($login, $password) {
+    $response = Server::request('POST', static::ENDPOINT_LOGIN_VALIDATE, [
+      'login' => $login,
+      'pass' => $password,
+    ]);
     return $response;
   }
 

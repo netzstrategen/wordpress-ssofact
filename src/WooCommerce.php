@@ -168,32 +168,38 @@ class WooCommerce {
       wc_add_notice(isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.'), 'error');
       Server::addDebugMessage();
     }
+    Server::addDebugMessage();
+  }
+
+  /**
+   * @implements woocommerce_save_account_details_errors
+   */
+  public static function woocommerce_save_account_details_errors(\WP_Error $errors, $user) {
+    $current_user = wp_get_current_user();
+    if (!empty($_POST['account_email']) && $_POST['account_email'] !== $current_user->user_email) {
+      $response = Server::isEmailRegistered($_POST['account_email']);
+      // Error 607: "Given email is unknown" is the only allowed positive case.
+      if (!isset($response['statuscode']) || $response['statuscode'] !== 607) {
+        $message = isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.');
+        wc_add_notice($message, 'error');
+        Server::addDebugMessage();
+      }
+    }
   }
 
   /**
    * @implements woocommerce_save_account_details
    */
   public static function woocommerce_save_account_details($user_id) {
-    $userinfo = [];
-    $userinfo['id'] = $user_id;
-    $userinfo['firstname'] = $_POST['account_first_name'];
-    $userinfo['lastname'] = $_POST['account_last_name'];
+    $userinfo = Plugin::buildUserInfo($user_id, 'account');
     $userinfo['email'] = $_POST['account_email'];
-
-    if ($_POST['password_1'] && $_POST['password_1'] === $_POST['password_2']) {
-      $userinfo['password'] = $_POST['password_1'];
-    }
-
-    $userinfo['list_noch-fragen'] = $_POST['list_noch-fragen'] ?? 0;
-    $userinfo['list_premium'] = $_POST['list_premium'] ?? 0;
-    $userinfo['list_freizeit'] = $_POST['list_freizeit'] ?? 0;
-    $userinfo['confirm_agb'] = $_POST['confirm_agb'] ?? 0;
 
     $response = Server::updateUser($userinfo);
     if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
       wc_add_notice(isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.'), 'error');
       Server::addDebugMessage();
     }
+    Server::addDebugMessage();
   }
 
   /*

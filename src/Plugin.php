@@ -104,6 +104,11 @@ class Plugin {
 
     // Adds opt-in checkboxes to user account edit form.
     add_action('woocommerce_edit_account_form', __NAMESPACE__ . '\WooCommerce::woocommerce_edit_account_form');
+
+    // Validate current password against SSO.
+    add_action('check_password', __CLASS__ . '::check_password', 20, 4);
+    // Validate changed email address against SSO.
+    add_action('woocommerce_save_account_details_errors', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details_errors', 20, 2);
     // Updates user info in SSO upon editing account details.
     add_action('woocommerce_save_account_details', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details');
   }
@@ -212,6 +217,24 @@ class Plugin {
   }
 
   /**
+   * @implements check_password
+   */
+  public static function check_password($result, $password, $hash, $user_id) {
+    // Allow local user accounts to authenticate. This check should never
+    // succeed for accounts authenticated via the SSO server, as their passwords
+    // should not exist/match locally.
+    if ($result === TRUE) {
+      return $result;
+    }
+    $current_user = get_user_by('id', $user_id);
+    $response = Server::validateLogin($current_user->user_email, $password);
+    if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
+      return FALSE;
+    }
+    return TRUE;
+  }
+
+  /**
    * Updates local user meta data with UserInfo provided by SSO.
    *
    * @implements updated_{$meta_type}_meta
@@ -257,9 +280,11 @@ class Plugin {
    * @param int $user_id
    *   The user ID for which the generate the user info for. Defaults to the
    *   currently logged-in user.
+   * @param string $key_prefix
+   *   (optional) The prefix to use for looking up fields in the $_POST array;
+   *   e.g., 'billing', 'shipping', or 'account'.
    */
-  public static function buildUserInfo($user_id = 0) {
-    $address_type = 'billing';
+  public static function buildUserInfo($user_id = 0, $key_prefix = 'billing') {
     $address_source = $_POST;
 
     if ($user_id < 1) {
@@ -277,28 +302,33 @@ class Plugin {
     }
     else {
       $userinfo = [
-        'email' => $address_source[$address_type . '_email'],
+        'email' => $address_source[$key_prefix . '_email'],
       ];
     }
 
-    $phone = explode('-', $address_source[$address_type . '_phone'], 2);
+    // Handle billing/shipping address forms.
+    if (isset($address_source[$key_prefix . '_address_1'])) {
+      $phone = explode('-', $address_source[$key_prefix . '_phone'], 2);
+      $userinfo += [
+        'salutation' => $address_source[$key_prefix . '_salutation'],
+        // 'title' => $address_source[$key_prefix . '_title'],
+        'firstname' => $address_source[$key_prefix . '_first_name'],
+        'lastname' => $address_source[$key_prefix . '_last_name'],
+        'street' => $address_source[$key_prefix . '_address_1'],
+        'housenr' => $address_source[$key_prefix . '_house_number'],
+        'zipcode' => $address_source[$key_prefix . '_postcode'],
+        'city' => $address_source[$key_prefix . '_city'],
+        // @todo Implement proper mapping for country.
+        'country' => 'DE', // $address_source[$key_prefix . '_country'],
+        // 'birthday' => ,
+        'phone_prefix' => $phone[0] ?? '',
+        'phone' => $phone[1] ?? '',
+      ];
+    }
+
     $optin_source = $_POST;
     $terms_accepted = !empty($_POST['terms']);
-
     $userinfo += [
-      'salutation' => $address_source[$address_type . '_salutation'],
-      // 'title' => $address_source[$address_type . '_title'],
-      'firstname' => $address_source[$address_type . '_first_name'],
-      'lastname' => $address_source[$address_type . '_last_name'],
-      'street' => $address_source[$address_type . '_address_1'],
-      'housenr' => $address_source[$address_type . '_house_number'],
-      'zipcode' => $address_source[$address_type . '_postcode'],
-      'city' => $address_source[$address_type . '_city'],
-      // @todo Implement proper mapping for country.
-      'country' => 'DE', // $address_source[$address_type . '_country'],
-      // 'birthday' => ,
-      'phone_prefix' => $phone[0] ?? '',
-      'phone' => $phone[1] ?? '',
       'optins' => [
         'list_noch-fragen' => (int) !empty($optin_source['list_noch-fragen']),
         'list_premium' => (int) !empty($optin_source['list_premium']),

@@ -72,7 +72,7 @@ class WooCommerce {
     }
 
     // Do not attempt to register purchase in case of a validation error.
-    if (wc_notice_count('error') || empty($_POST['woocommerce_checkout_place_order'])) {
+    if (wc_notice_count('error') || empty($_POST['woocommerce_checkout_place_order']) || empty($_POST['terms'])) {
       return;
     }
     // @todo Move from checkout validation into submission?

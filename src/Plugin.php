@@ -78,10 +78,6 @@ class Plugin {
     // Update user profile meta data upon login.
     add_action('updated_user_meta', __CLASS__ . '::updated_user_meta', 10, 4);
 
-    if (is_admin()) {
-      return;
-    }
-
     // Removes username field from checkout form (email is used as username).
     add_filter('option_woocommerce_registration_generate_username', function () { return 'yes'; });
     add_filter('option_default_woocommerce_registration_generate_username', function () { return 'yes'; });
@@ -90,11 +86,17 @@ class Plugin {
     add_filter('option_woocommerce_registration_generate_password', function () { return 'yes'; });
     add_filter('option_default_woocommerce_registration_generate_password', function () { return 'yes'; });
 
-    // Replaces the front-end login form of WooCommerce to submit to the SSO
-    // server instead of WordPress. The administrative login on /wp-login.php is
-    // not changed and still authenticates against the local WordPress site only.
-    add_action('woocommerce_before_customer_login_form', __NAMESPACE__ . '\WooCommerce::woocommerce_before_customer_login_form');
-    add_action('woocommerce_after_customer_login_form', __NAMESPACE__ . '\WooCommerce::woocommerce_after_customer_login_form');
+    // Defines default address fields for checkout and user account forms.
+    // Sorts woocommerce default address fields array by priority.
+    add_filter('woocommerce_default_address_fields', __NAMESPACE__ . '\WooCommerce::woocommerce_default_address_fields');
+    add_filter('woocommerce_customer_meta_fields', __NAMESPACE__ . '\WooCommerce::woocommerce_customer_meta_fields');
+    add_filter('woocommerce_default_address_fields', __NAMESPACE__ . '\WooCommerce::sortFieldsByPriority', 100);
+    add_filter('woocommerce_checkout_fields', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_fields');
+    // Appends the house number to the billing/shipping address in thankyou page.
+    add_filter('woocommerce_get_order_address', __NAMESPACE__ . '\WooCommerce::woocommerce_get_order_address', 10, 3);
+
+    // Adds opt-in checkboxes to user account edit form.
+    add_action('woocommerce_edit_account_form', __NAMESPACE__ . '\WooCommerce::woocommerce_edit_account_form');
 
     // Validates checkout fields against SSO.
     add_action('woocommerce_checkout_process', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_process', 20);
@@ -102,15 +104,23 @@ class Plugin {
     // Validates and updates user info in SSO upon editing address.
     add_action('woocommerce_after_save_address_validation', __NAMESPACE__ . '\WooCommerce::woocommerce_after_save_address_validation', 10, 3);
 
-    // Adds opt-in checkboxes to user account edit form.
-    add_action('woocommerce_edit_account_form', __NAMESPACE__ . '\WooCommerce::woocommerce_edit_account_form');
-
-    // Validate current password against SSO.
-    add_action('check_password', __CLASS__ . '::check_password', 20, 4);
     // Validate changed email address against SSO.
     add_action('woocommerce_save_account_details_errors', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details_errors', 20, 2);
     // Updates user info in SSO upon editing account details.
     add_action('woocommerce_save_account_details', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details');
+
+    if (is_admin()) {
+      return;
+    }
+
+    // Replaces the front-end login form of WooCommerce to submit to the SSO
+    // server instead of WordPress. The administrative login on /wp-login.php is
+    // not changed and still authenticates against the local WordPress site only.
+    add_action('woocommerce_before_customer_login_form', __NAMESPACE__ . '\WooCommerce::woocommerce_before_customer_login_form');
+    add_action('woocommerce_after_customer_login_form', __NAMESPACE__ . '\WooCommerce::woocommerce_after_customer_login_form');
+
+    // Validate current password against SSO.
+    add_action('check_password', __CLASS__ . '::check_password', 20, 4);
   }
 
   /**

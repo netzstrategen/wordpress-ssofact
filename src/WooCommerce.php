@@ -39,6 +39,135 @@ class WooCommerce {
   }
 
   /**
+   * Defines default address fields for checkout and user account forms.
+   *
+   * @implements woocommerce_default_address_fields
+   */
+  public static function woocommerce_default_address_fields($fields) {
+    $fields['subscriber_id'] = [
+      'label' => __('Existing subscription number', Plugin::L10N),
+      'required' => FALSE,
+      'priority' => 10,
+    ];
+    if (isset($fields['email'])) {
+      $fields['email']['priority'] = 15;
+    }
+    $fields['salutation'] = [
+      'type' => 'select',
+      'label' => __('Salutation', Plugin::L10N),
+      'options' => [
+        '' => '',
+        'Herr' => __('Mr.', Plugin::L10N),
+        'Frau' => __('Ms.', Plugin::L10N),
+      ],
+      'required' => TRUE,
+      'priority' => 20,
+    ];
+    $fields['first_name']['priority'] = 30;
+    $fields['last_name']['priority'] = 40;
+    $fields['company']['priority'] = 50;
+    $fields['postcode']['priority'] = 60;
+    $fields['city']['priority'] = 70;
+    $fields['state']['priority'] = 75;
+    // @todo What overrides this to "Adresszeile 1" in administrative user profile?
+    $fields['address_1']['label'] = __('Street address', 'woocommerce');
+    $fields['address_1']['priority'] = 80;
+    $fields['house_number'] = [
+      'type' => 'text',
+      'label' => __('House num.', Plugin::L10N),
+      'required' => TRUE,
+      'priority' => 85,
+    ];
+    unset($fields['address_1']['placeholder']);
+    unset($fields['address_2']);
+    $fields['country']['priority'] = 90;
+    if (isset($fields['phone_prefix'])) {
+      $fields['phone_prefix']['priority'] = 100;
+    }
+    if (isset($fields['phone'])) {
+      $fields['phone']['priority'] = 105;
+    }
+
+    return $fields;
+  }
+
+  /**
+   * Mirrors address field customizations to administrative user profile fields.
+   *
+   * @implements woocommerce_customer_meta_fields
+   */
+  public static function woocommerce_customer_meta_fields(array $fields) {
+    // Fields in the admin user profile are seemingly output in the order they
+    // are defined, so we have to recreate the fields in the desired order.
+    // @todo Add optional parameter $prefix to
+    //   WooCommerce::woocommerce_default_address_fields() to avoid at least
+    //   this prefixing/unprefixing.
+    foreach ($fields['billing']['fields'] as $key => $field) {
+      unset($fields['billing']['fields'][$key]);
+      $fields['billing']['fields'][str_replace('billing_', '', $key)] = $field;
+    }
+
+    $fields['billing']['fields'] = WooCommerce::woocommerce_default_address_fields($fields['billing']['fields']);
+    $fields['billing']['fields'] = WooCommerce::sortFieldsByPriority($fields['billing']['fields']);
+
+    foreach ($fields['billing']['fields'] as $key => $field) {
+      unset($fields['billing']['fields'][$key]);
+      $field += [
+        'description' => '',
+      ];
+      $fields['billing']['fields']['billing_' . $key] = $field;
+    }
+    return $fields;
+  }
+
+  /**
+   * Sorts woocommerce default address fields array by priority.
+   */
+  public static function sortFieldsByPriority($fields) {
+    $fields = static::sortFieldsByKey($fields, 'priority');
+    return $fields;
+  }
+
+  /**
+   * Sorts an associative array by a given key.
+   */
+  public static function sortFieldsByKey($array, $key) {
+    uasort($array, function ($a, $b) use ($key) {
+      if (!isset($a[$key])) {
+        $a[$key] = 0;
+      }
+      if (!isset($b[$key])) {
+        $b[$key] = 0;
+      }
+      if ($a[$key] === $b[$key]) {
+        return 0;
+      }
+      return ($a[$key] < $b[$key]) ? -1 : 1;
+    });
+    return $array;
+  }
+
+  /**
+   * Removes unneeded fields from checkout shipping form.
+   *
+   * @implements woocommerce_checkout_fields
+   */
+  public static function woocommerce_checkout_fields($fields) {
+    unset($fields['shipping']['shipping_subscriber_id']);
+    return $fields;
+  }
+
+  /**
+   * Appends the house number to the billing/shipping address in thankyou page.
+   *
+   * @implements woocommerce_get_order_address
+   */
+  public static function woocommerce_get_order_address($data, $type, $order) {
+    $data['address_1'] .= ' ' . get_post_meta($order->get_id(), $type . '_house_number', TRUE);
+    return $data;
+  }
+
+  /**
    * Validates checkout fields against SSO.
    *
    * @implements woocommerce_checkout_process

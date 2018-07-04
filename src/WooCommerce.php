@@ -77,12 +77,35 @@ class WooCommerce {
     }
     // @todo Move from checkout validation into submission?
     //   @see woocommerce_checkout_order_processed
+    $purchase = Plugin::buildPurchaseInfo();
+    // If a registered user has a subscriber ID already, then alfa GP/VM will
+    // reject any kind of change to the address. The submitted address will only
+    // be contained in the order confirmation email and manually processed by
+    // the customer service team. Even if the user only specified the ID in the
+    // checkout form, it has already been validated to be correct by now.
+    if (!empty($_POST['billing_subscriber_id']) || (is_user_logged_in() && get_user_meta(get_current_user_ID(), 'subscriber_id', TRUE))) {
+      $purchase = array_diff_key($purchase, [
+        'salutation' => 0,
+        'title' => 0,
+        'firstname' => 0,
+        'lastname' => 0,
+        'street' => 0,
+        'housenr' => 0,
+        'zipcode' => 0,
+        'city' => 0,
+        'country' => 0,
+        'birthday' => 0,
+        'phone_prefix' => 0,
+        'phone' => 0,
+      ]);
+    }
     if (is_user_logged_in()) {
-      $purchase = Plugin::buildPurchaseInfo();
+      // Changing the email address is a special process requiring to confirm
+      // the new address, which should not be supported during checkout.
+      unset($purchase['email']);
       $response = Server::registerPurchase($purchase);
     }
     else {
-      $purchase = Plugin::buildPurchaseInfo();
       $response = Server::registerUserAndPurchase($purchase);
     }
     if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {

@@ -67,6 +67,8 @@ class WooCommerce {
     $fields['postcode']['priority'] = 60;
     $fields['city']['priority'] = 70;
     $fields['state']['priority'] = 75;
+    // @todo What overrides this to "Adresszeile 1" in administrative user profile?
+    $fields['address_1']['label'] = __('Street address', 'woocommerce');
     $fields['address_1']['priority'] = 80;
     $fields['house_number'] = [
       'type' => 'text',

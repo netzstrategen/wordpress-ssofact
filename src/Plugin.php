@@ -389,7 +389,7 @@ class Plugin {
       // 'deviceType' => '', // Gerätetyp zB. iPhone9,3
     ];
     // Ensure that all values for the alfa purchase are strings.
-    array_walk($purchase['permission'], 'strval');
+    $purchase['permission'] = array_map('strval', $purchase['permission']);
     return $purchase;
   }
 

@@ -208,7 +208,7 @@ class WooCommerce {
     // be contained in the order confirmation email and manually processed by
     // the customer service team. Even if the user only specified the ID in the
     // checkout form, it has already been validated to be correct by now.
-    if (!empty($_POST['billing_subscriber_id']) || (is_user_logged_in() && get_user_meta(get_current_user_ID(), 'subscriber_id', TRUE))) {
+    if (!empty($_POST['billing_subscriber_id']) || (is_user_logged_in() && get_user_meta(get_current_user_ID(), 'subscriber_id', TRUE))) {
       $purchase = array_diff_key($purchase, [
         'salutation' => 0,
         'title' => 0,

@@ -49,7 +49,9 @@ class WooCommerce {
       'required' => FALSE,
       'priority' => 10,
     ];
-    $fields['email']['priority'] = 15;
+    if (isset($fields['email'])) {
+      $fields['email']['priority'] = 15;
+    }
     $fields['salutation'] = [
       'type' => 'select',
       'label' => __('Salutation', Plugin::L10N),
@@ -82,7 +84,9 @@ class WooCommerce {
     if (isset($fields['phone_prefix'])) {
       $fields['phone_prefix']['priority'] = 100;
     }
-    $fields['phone']['priority'] = 105;
+    if (isset($fields['phone'])) {
+      $fields['phone']['priority'] = 105;
+    }
 
     return $fields;
   }

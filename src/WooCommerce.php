@@ -153,6 +153,11 @@ class WooCommerce {
    * @implements woocommerce_checkout_fields
    */
   public static function woocommerce_checkout_fields($fields) {
+    // Changing the email address is a special process requiring to confirm
+    // the new address, which should not be supported during checkout.
+    if (is_user_logged_in()) {
+      unset($fields['billing']['billing_email']);
+    }
     unset($fields['shipping']['shipping_subscriber_id']);
     return $fields;
   }

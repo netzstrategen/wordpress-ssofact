@@ -10,6 +10,22 @@ namespace Netzstrategen\Ssofact;
 class WooCommerce {
 
   /**
+   * @implements woocommerce_email_actions
+   */
+  public static function woocommerce_email_actions($actions) {
+    $actions[] = 'woocommerce_customer_save_address';
+    return $actions;
+  }
+
+  /**
+   * @implements woocommerce_email_classes
+   */
+  public static function woocommerce_email_classes($classes) {
+    $classes['WooCommerceEmailAddressChanged'] = new WooCommerceEmailAddressChanged();
+    return $classes;
+  }
+
+  /**
    * @implements woocommerce_before_customer_login_form
    */
   public static function woocommerce_before_customer_login_form() {
@@ -170,6 +186,28 @@ class WooCommerce {
   public static function woocommerce_get_order_address($data, $type, $order) {
     $data['address_1'] .= ' ' . get_post_meta($order->get_id(), $type . '_house_number', TRUE);
     return $data;
+  }
+
+  /**
+   * @implements woocommerce_localisation_address_formats
+   */
+  public static function woocommerce_localisation_address_formats($formats) {
+    foreach ($formats as $country => $value) {
+      $formats[$country] = strtr($formats[$country], [
+        '{name}' => '{salutation}{name}',
+        '{address_1}' => '{address_1}{house_number}',
+      ]);
+    }
+    return $formats;
+  }
+
+  /**
+   * @implements woocommerce_formatted_address_replacements
+   */
+  public static function woocommerce_formatted_address_replacements($replacements, $fields) {
+    $replacements['{salutation}'] = !empty($fields['salutation']) ? $fields['salutation'] . ' ' : '';
+    $replacements['{house_number}'] = !empty($fields['house_number']) ? ' ' . $fields['house_number'] : '';
+    return $replacements;
   }
 
   /**

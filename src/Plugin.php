@@ -61,6 +61,10 @@ class Plugin {
     // other authentication methods did not result in an active user session.
     // (only possible if SSO server and client share a common domain)
     add_filter('determine_current_user', __CLASS__ . '::determine_current_user', 100);
+
+    // Register new email notification upon customer billing/shipping address change.
+    add_filter('woocommerce_email_actions', __NAMESPACE__ . '\WooCommerce::woocommerce_email_actions');
+    add_filter('woocommerce_email_classes', __NAMESPACE__ . '\WooCommerce::woocommerce_email_classes');
   }
 
   /**
@@ -92,8 +96,12 @@ class Plugin {
     add_filter('woocommerce_customer_meta_fields', __NAMESPACE__ . '\WooCommerce::woocommerce_customer_meta_fields');
     add_filter('woocommerce_default_address_fields', __NAMESPACE__ . '\WooCommerce::sortFieldsByPriority', 100);
     add_filter('woocommerce_checkout_fields', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_fields');
-    // Appends the house number to the billing/shipping address in thankyou page.
+    // Validates and updates user info in SSO upon editing address.
+    add_action('woocommerce_after_save_address_validation', __NAMESPACE__ . '\WooCommerce::woocommerce_after_save_address_validation', 10, 3);
+    // Adds salutation and house number to address output.
     add_filter('woocommerce_get_order_address', __NAMESPACE__ . '\WooCommerce::woocommerce_get_order_address', 10, 3);
+    add_filter('woocommerce_localisation_address_formats', __NAMESPACE__ . '\WooCommerce::woocommerce_localisation_address_formats');
+    add_filter('woocommerce_formatted_address_replacements', __NAMESPACE__ . '\WooCommerce::woocommerce_formatted_address_replacements', 10, 2);
 
     // Removes core profile fields from account edit form.
     // Adds opt-in checkboxes to user account edit form.
@@ -104,8 +112,6 @@ class Plugin {
     // Validates checkout fields against SSO.
     add_action('woocommerce_checkout_process', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_process', 20);
 
-    // Validates and updates user info in SSO upon editing address.
-    add_action('woocommerce_after_save_address_validation', __NAMESPACE__ . '\WooCommerce::woocommerce_after_save_address_validation', 10, 3);
 
     // Validate changed email address against SSO.
     add_action('woocommerce_save_account_details_errors', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details_errors', 20, 2);

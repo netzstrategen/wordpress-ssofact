@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: ssofact\n"
-"POT-Creation-Date: 2018-07-05 00:40+0200\n"
+"POT-Creation-Date: 2018-07-05 22:37+0200\n"
 "PO-Revision-Date: 2015-06-18 14:18+0100\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -23,27 +23,80 @@ msgstr ""
 msgid "An error occurred while processing your data. Please try again in a few minutes."
 msgstr ""
 
-#: src/WooCommerce.php:48
+#: src/WooCommerce.php:64
 msgid "Existing subscription number"
 msgstr ""
 
-#: src/WooCommerce.php:55
+#: src/WooCommerce.php:73
 msgid "Salutation"
 msgstr ""
 
-#: src/WooCommerce.php:58
+#: src/WooCommerce.php:76
 msgid "Mr."
 msgstr ""
 
-#: src/WooCommerce.php:59
+#: src/WooCommerce.php:77
 msgid "Ms."
 msgstr ""
 
-#: src/WooCommerce.php:73
+#: src/WooCommerce.php:89
+msgid "Street address"
+msgstr ""
+
+#: src/WooCommerce.php:93
 msgid "House num."
 msgstr ""
 
-#: src/WooCommerce.php:177 src/WooCommerce.php:191 src/WooCommerce.php:235
-#: src/WooCommerce.php:314 src/WooCommerce.php:329 src/WooCommerce.php:345
+#: src/WooCommerce.php:103
+msgid "Phone prefix"
+msgstr ""
+
+#: src/WooCommerce.php:248 src/WooCommerce.php:262 src/WooCommerce.php:306
+#: src/WooCommerce.php:387 src/WooCommerce.php:402 src/WooCommerce.php:419
 msgid "Error while saving the changes."
+msgstr ""
+
+#: src/WooCommerceEmailAddressChanged.php:12
+#: src/WooCommerceEmailAddressChanged.php:39
+msgid "Address changed"
+msgstr ""
+
+#: src/WooCommerceEmailAddressChanged.php:13
+msgid "Address change emails are sent to the chosen recipient(s) when a customer updates their billing or shipping address."
+msgstr ""
+
+#: src/WooCommerceEmailAddressChanged.php:35
+msgid "[{site_title}] Address changed: {customer}"
+msgstr ""
+
+#: src/WooCommerceEmailAddressChanged.php:61
+#, php-format
+msgid "Phone: %s"
+msgstr ""
+
+#: src/WooCommerceEmailAddressChanged.php:67
+msgid "Shipping address"
+msgstr ""
+
+#: src/WooCommerceEmailAddressChanged.php:67
+msgid "Billing address"
+msgstr ""
+
+#: src/WooCommerceEmailAddressChanged.php:109
+msgid "Recipient(s)"
+msgstr ""
+
+#: src/WooCommerceEmailAddressChanged.php:112
+#, php-format
+msgid "Enter recipients (comma separated) for this email. Defaults to %s."
+msgstr ""
+
+#: templates/emails/admin-address-changed.php:11
+#: templates/emails/plain/admin-address-changed.php:7
+msgid "The following {address_type} has been edited on {site_url}:"
+msgstr ""
+
+#: templates/emails/admin-address-changed.php:15
+#: templates/emails/plain/admin-address-changed.php:12
+msgid "Customer: {customer}"
 msgstr ""

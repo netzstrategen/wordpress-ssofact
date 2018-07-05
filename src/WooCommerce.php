@@ -359,12 +359,16 @@ class WooCommerce {
     Server::addDebugMessage();
   }
 
-  /*
-   * Displays opt-in checkboxes in user account edit form.
+  /**
+   * Removes core profile fields and adds opt-ins on account edit form.
    *
    * @implements woocommerce_edit_account_form
    */
   public static function woocommerce_edit_account_form() {
+    $form = ob_get_clean();
+    $form = preg_replace('@^\s*<p.+?(?:account_first_name|account_last_name|account_display_name).+?</p>@sm', '', $form);
+    echo $form;
+
     echo '<fieldset class="account-edit-optin-checks">';
 
     $opt_ins = [
@@ -398,6 +402,17 @@ class WooCommerce {
       woocommerce_form_field($opt_in_id, $args);
     }
     echo '</fieldset>';
+  }
+
+  /**
+   * Disables validation for core profile fields in account edit form.
+   *
+   * @implements woocommerce_save_account_details_required_fields
+   */
+  public static function woocommerce_save_account_details_required_fields(array $fields) {
+    unset($fields['account_first_name'], $fields['account_last_name']);
+    unset($fields['account_display_name']);
+    return $fields;
   }
 
 }

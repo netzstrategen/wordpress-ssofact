@@ -95,8 +95,11 @@ class Plugin {
     // Appends the house number to the billing/shipping address in thankyou page.
     add_filter('woocommerce_get_order_address', __NAMESPACE__ . '\WooCommerce::woocommerce_get_order_address', 10, 3);
 
+    // Removes core profile fields from account edit form.
     // Adds opt-in checkboxes to user account edit form.
+    add_action('woocommerce_edit_account_form_start', 'ob_start', 0, 0);
     add_action('woocommerce_edit_account_form', __NAMESPACE__ . '\WooCommerce::woocommerce_edit_account_form');
+    add_filter('woocommerce_save_account_details_required_fields', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details_required_fields');
 
     // Validates checkout fields against SSO.
     add_action('woocommerce_checkout_process', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_process', 20);

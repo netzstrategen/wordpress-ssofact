@@ -96,9 +96,11 @@ class Plugin {
     add_filter('woocommerce_customer_meta_fields', __NAMESPACE__ . '\WooCommerce::woocommerce_customer_meta_fields');
     add_filter('woocommerce_default_address_fields', __NAMESPACE__ . '\WooCommerce::sortFieldsByPriority', 100);
     add_filter('woocommerce_checkout_fields', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_fields');
+    add_filter('woocommerce_billing_fields', __NAMESPACE__ . '\WooCommerce::woocommerce_billing_fields');
+    add_filter('woocommerce_shipping_fields', __NAMESPACE__ . '\WooCommerce::woocommerce_shipping_fields');
     // Validates and updates user info in SSO upon editing address.
     add_action('woocommerce_after_save_address_validation', __NAMESPACE__ . '\WooCommerce::woocommerce_after_save_address_validation', 10, 3);
-    // Adds salutation and house number to address output.
+    // Adds salutation, house number, phone_prefix to address output.
     add_filter('woocommerce_get_order_address', __NAMESPACE__ . '\WooCommerce::woocommerce_get_order_address', 10, 3);
     add_filter('woocommerce_localisation_address_formats', __NAMESPACE__ . '\WooCommerce::woocommerce_localisation_address_formats');
     add_filter('woocommerce_formatted_address_replacements', __NAMESPACE__ . '\WooCommerce::woocommerce_formatted_address_replacements', 10, 2);
@@ -276,7 +278,8 @@ class Plugin {
     update_user_meta($user_id, 'billing_city', $user_claims['city']);
     update_user_meta($user_id, 'billing_country', $user_claims['country']);
     // update_user_meta($user_id, 'billing_state', $user_claims['']);
-    update_user_meta($user_id, 'billing_phone', $user_claims['phone_prefix'] . '-' . $user_claims['phone']);
+    update_user_meta($user_id, 'billing_phone_prefix', $user_claims['phone_prefix']);
+    update_user_meta($user_id, 'billing_phone', $user_claims['phone']);
     update_user_meta($user_id, 'billing_email', $user_claims['email']);
 
     update_user_meta($user_id, 'subscriber_id', $user_claims['subscriber_id'] ?? $user_claims['subscribernr']);
@@ -327,7 +330,6 @@ class Plugin {
 
     // Handle billing/shipping address forms.
     if (isset($address_source[$key_prefix . '_address_1'])) {
-      $phone = explode('-', $address_source[$key_prefix . '_phone'], 2);
       $userinfo += [
         'salutation' => $address_source[$key_prefix . '_salutation'],
         // 'title' => $address_source[$key_prefix . '_title'],
@@ -340,9 +342,13 @@ class Plugin {
         // @todo Implement proper mapping for country.
         'country' => 'DE', // $address_source[$key_prefix . '_country'],
         // 'birthday' => ,
-        'phone_prefix' => $phone[0] ?? '',
-        'phone' => $phone[1] ?? '',
       ];
+      if (isset($address_source[$key_prefix . '_phone'])) {
+        $userinfo += [
+          'phone_prefix' => $address_source[$key_prefix . '_phone_prefix'],
+          'phone' => $address_source[$key_prefix . '_phone'],
+        ];
+      }
     }
 
     $optin_source = $_POST;

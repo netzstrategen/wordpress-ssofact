@@ -239,6 +239,8 @@ class WooCommerce {
    * @implements woocommerce_checkout_process
    */
   public static function woocommerce_checkout_process() {
+    global $woocommerce;
+
     // Verifies that the given email address is NOT registered yet.
     // Note: The API endpoint checks the opposite; a positive result is an error.
     // @todo Handle email change for logged-in users.
@@ -270,9 +272,15 @@ class WooCommerce {
     if (wc_notice_count('error') || empty($_POST['woocommerce_checkout_place_order']) || empty($_POST['terms'])) {
       return;
     }
+
     // @todo Move from checkout validation into submission?
     //   @see woocommerce_checkout_order_processed
-    $purchase = Plugin::buildPurchaseInfo();
+    $cart = $woocommerce->cart->get_cart();
+    foreach ($cart as $item) {
+      $sku = $item['data']->get_sku();
+    }
+    $purchase = Plugin::buildPurchaseInfo($sku);
+
     // If a registered user has a subscriber ID already, then alfa GP/VM will
     // reject any kind of change to the address. The submitted address will only
     // be contained in the order confirmation email and manually processed by

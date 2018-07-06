@@ -370,16 +370,15 @@ class Plugin {
   /**
    * Builds purchase payload for registerPurchase and registerUserAndPurchase.
    *
+   * @param string $sku
+   *   The SKU to purchase.
    * @param int $user_id
    *   The user ID for which the generate the user info for. Defaults to the
    *   currently logged-in user.
-   * @param string $sku
-   *   The SKU to purchase.
    */
-  public static function buildPurchaseInfo($user_id = 0, $sku = '') {
+  public static function buildPurchaseInfo($sku, $user_id = 0) {
     $purchase = static::buildUserInfo($user_id);
 
-    $sku = 'premiumAboNEU';
     $sku_parts = preg_split('@[:-]@', $sku);
     $accessType = $sku_parts[0];
     $edition = $sku_parts[1] ?? '';
@@ -403,6 +402,9 @@ class Plugin {
       // 'agentNumber' => '',
       // 'deviceType' => '', // Gerätetyp zB. iPhone9,3
     ];
+    if ($edition === '') {
+      unset($purchase['permission']['edition']);
+    }
     // Ensure that all values for the alfa purchase are strings.
     $purchase['permission'] = array_map('strval', $purchase['permission']);
     return $purchase;

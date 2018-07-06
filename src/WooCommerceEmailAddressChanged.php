@@ -52,6 +52,7 @@ class WooCommerceEmailAddressChanged extends \WC_Email {
 		$address = $address_type === 'shipping' ? $this->customer->get_shipping() : $this->customer->get_billing();
 		$address['salutation'] = get_user_meta($user_id, 'billing_salutation', TRUE);
 		$address['house_number'] = get_user_meta($user_id, 'billing_house_number', TRUE);
+		$address['phone_prefix'] = get_user_meta($user_id, 'billing_phone_prefix', TRUE);
 		$address['subscriber_id'] = get_user_meta($user_id, 'subscriber_id', TRUE);
 
 		$address_formatted = WC()->countries->get_formatted_address($address);

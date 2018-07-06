@@ -97,9 +97,13 @@ class WooCommerce {
     unset($fields['address_1']['placeholder']);
     unset($fields['address_2']);
     $fields['country']['priority'] = 90;
-    if (isset($fields['phone_prefix'])) {
-      $fields['phone_prefix']['priority'] = 100;
-    }
+
+    $fields['phone_prefix'] = [
+      'type' => 'text',
+      'label' => __('Phone prefix', Plugin::L10N),
+      'required' => TRUE,
+      'priority' => 100,
+    ];
     if (isset($fields['phone'])) {
       $fields['phone']['priority'] = 105;
     }
@@ -169,12 +173,29 @@ class WooCommerce {
    * @implements woocommerce_checkout_fields
    */
   public static function woocommerce_checkout_fields($fields) {
+    $fields['billing'] = WooCommerce::woocommerce_billing_fields($fields['billing']);
+    $fields['shipping'] = WooCommerce::woocommerce_shipping_fields($fields['shipping']);
+    return $fields;
+  }
+
+  /**
+   * @implements woocommerce_billing_fields
+   */
+  public static function woocommerce_billing_fields($fields) {
     // Changing the email address is a special process requiring to confirm
     // the new address, which should not be supported during checkout.
     if (is_user_logged_in()) {
-      unset($fields['billing']['billing_email']);
+      unset($fields['billing_email']);
     }
-    unset($fields['shipping']['shipping_subscriber_id']);
+    return $fields;
+  }
+
+  /**
+   * @implements woocommerce_shipping_fields
+   */
+  public static function woocommerce_shipping_fields($fields) {
+    unset($fields['shipping_subscriber_id']);
+    unset($fields['shipping_phone_prefix']);
     return $fields;
   }
 
@@ -196,6 +217,7 @@ class WooCommerce {
       $formats[$country] = strtr($formats[$country], [
         '{name}' => '{salutation}{name}',
         '{address_1}' => '{address_1}{house_number}',
+        '{phone}' => '{phone_prefix}{phone}',
       ]);
     }
     return $formats;
@@ -207,6 +229,7 @@ class WooCommerce {
   public static function woocommerce_formatted_address_replacements($replacements, $fields) {
     $replacements['{salutation}'] = !empty($fields['salutation']) ? $fields['salutation'] . ' ' : '';
     $replacements['{house_number}'] = !empty($fields['house_number']) ? ' ' . $fields['house_number'] : '';
+    $replacements['{phone_prefix}'] = !empty($fields['phone_prefix']) ? $fields['phone_prefix'] . '-' : '';
     return $replacements;
   }
 
@@ -312,9 +335,10 @@ class WooCommerce {
     $userinfo['city'] = $_POST[$address_type . '_city'];
     // @todo Coordinate list of country codes.
     // $userinfo['country'] = $_POST[$address_type . '_country']; // Deutschland vs. DE
-    $phone = explode('-', $_POST[$address_type . '_phone'], 2);
-    $userinfo['phone_prefix'] = $phone[0] ?? '';
-    $userinfo['phone'] = $phone[1] ?? '';
+    if (isset($_POST[$address_type . '_phone'])) {
+      $userinfo['phone_prefix'] = $_POST[$address_type . '_phone_prefix'];
+      $userinfo['phone'] = $_POST[$address_type . '_phone'];
+    }
     // @todo Web user account only supports a single phone number (due to data
     //   privacy and because landline numbers are a thing of the past). Migrate
     //   these to phone upon login/import.

@@ -195,6 +195,7 @@ class WooCommerce {
    */
   public static function woocommerce_shipping_fields($fields) {
     unset($fields['shipping_subscriber_id']);
+    unset($fields['shipping_phone_prefix']);
     return $fields;
   }
 

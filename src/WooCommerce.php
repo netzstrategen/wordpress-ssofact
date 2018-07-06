@@ -9,6 +9,21 @@ namespace Netzstrategen\Ssofact;
 
 class WooCommerce {
 
+  const OPTINS = [
+    'list_noch-fragen' => [
+      'label' => 'Newsletter Noch Fragen',
+      'priority' => 100,
+    ],
+    'list_premium' => [
+      'label' => 'Newsletter Premium',
+      'priority' => 110,
+    ],
+    'list_freizeit' => [
+      'label' => 'Newsletter Freizeit',
+      'priority' => 120,
+    ],
+  ];
+
   /**
    * Whether the checkout was initiated by an anonymous user.
    *
@@ -560,26 +575,7 @@ class WooCommerce {
 
     echo '<fieldset class="account-edit-optin-checks">';
 
-    $opt_ins = [
-      'list_noch-fragen' => [
-        'label' => 'Newsletter Noch Fragen',
-        'priority' => 100,
-      ],
-      'list_premium' => [
-        'label' => 'Newsletter Premium',
-        'priority' => 110,
-      ],
-      'list_freizeit' => [
-        'label' => 'Newsletter Freizeit',
-        'priority' => 120,
-      ],
-      'confirm_agb' => [
-        'label' => 'AGB-Bestätigung',
-        'priority' => 130,
-      ],
-    ];
-
-    foreach ($opt_ins as $opt_in_id => $opt_in_args) {
+    foreach (static::OPTINS as $opt_in_id => $opt_in_args) {
       $args = [
         'type' => 'checkbox',
         'label' => $opt_in_args['label'],
@@ -664,6 +660,30 @@ class WooCommerce {
    */
   public static function viewSubscription() {
     Alfa::mapPurchases(Alfa::getPurchases());
+  }
+
+  /**
+   * Displays subscriber ID in new order notification email.
+   *
+   * @woocommerce_email_order_meta
+   */
+  public static function woocommerce_email_order_meta($order) {
+    $user_id = $order->get_user_id();
+    if ($subscriber_id = get_user_meta($user_id, 'subscriber_id', TRUE)) {
+      echo '<p><strong>' . __('Subscription ID:', PLUGIN::L10N) . '</strong> ' . $subscriber_id . '</p>';
+    }
+    if (!isset($_POST['optins'])) {
+      return;
+    }
+    $optins_list = '';
+    foreach (static::OPTINS as $opt_in_id => $opt_in_args) {
+      if (!isset($_POST['optins'][$opt_in_id])) {
+        continue;
+      }
+      $optins_list .= '<span class="optin-label"><strong>' . $opt_in_args['label'] . ':</strong></span> ';
+      $optins_list .= '<span class="optin-value">' . ($_POST['optins'][$opt_in_id] ? __('Yes', 'woocommerce') : __('No', 'woocommerce')) . '</span><br />';
+    }
+    echo '<p>' . $optins_list . '</p>';
   }
 
 }

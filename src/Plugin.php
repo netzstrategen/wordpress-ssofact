@@ -164,6 +164,9 @@ class Plugin {
     // Submits the order to the SSO/alfa.
     add_action('woocommerce_checkout_order_processed', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_order_processed', 20, 3);
 
+    // Displays subscriber ID in new order notification email.
+    add_filter('woocommerce_email_order_meta', __NAMESPACE__ . '\WooCommerce::woocommerce_email_order_meta');
+
     // Validate changed email address against SSO.
     add_action('woocommerce_save_account_details_errors', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details_errors', 20, 2);
     // Updates user info in SSO upon editing account details.
@@ -446,7 +449,7 @@ class Plugin {
     }
     // update_user_meta($user_id, 'roles', $user_claims['']);
 
-    // update_user_meta($user_id, 'optins', $user_claims['optins']);
+    update_user_meta($user_id, 'optins', $user_claims['optins']);
 
     // User profile data may only be updated if the UserInfo from the SSO is
     // newer than our local data.
@@ -583,18 +586,32 @@ class Plugin {
     }
 
     $optin_source = $_POST;
-    $terms_accepted = !empty($_POST['terms']);
+    $userinfo['optins'] = [];
+    if (isset($last_known_userinfo['optins'])) {
+      $userinfo['optins'] += $last_known_userinfo['optins'];
+    }
+    $terms_accepted = !empty($_POST['terms']) ? 1 : !empty($last_known_userinfo['optins']['confirm_agb']);
+    
     $userinfo += [
       'optins' => [
+        'confirm_agb' => (int) $terms_accepted,
+        'acquisitionEmail' => (int) !empty($optin_source['optin_email']),
+        'acquisitionMail' => (int) !empty($optin_source['optin_mail']),
+        'acquisitionPhone' =>(int) !empty($optin_source['optin_phone']),
         'list_noch-fragen' => (int) !empty($optin_source['list_noch-fragen']),
         'list_premium' => (int) !empty($optin_source['list_premium']),
         'list_freizeit' => (int) !empty($optin_source['list_freizeit']),
-        'confirm_agb' => (int) $terms_accepted,
-        'acquisitionEmail' => (int) !empty($optin_source['confirm_agb']),
-        'acquisitionMail' => (int) !empty($optin_source['confirm_mail']),
-        'acquisitionPhone' =>(int) !empty($optin_source['confirm_phone']),
       ],
     ];
+    $wgm_optins = [
+      'confirm_agb' => 0,
+    ];
+    $optins = array_keys(array_merge($wgm_optins, WooCommerce::OPTINS));
+    foreach ($optins as $key) {
+      if (isset($optin_source[$key])) {
+        $userinfo['optins'][$key] = !empty($optin_source[$key]);
+      }
+    }
     return $userinfo;
   }
 

@@ -57,11 +57,14 @@ class WooCommerceEmailAddressChanged extends \WC_Email {
 		$address['phone_prefix'] = get_user_meta($user_id, 'billing_phone_prefix', TRUE);
 		$address['subscriber_id'] = get_user_meta($user_id, 'subscriber_id', TRUE);
 
-		$address = WC()->countries->get_formatted_address($address);
-		$address .= "\n\n" . sprintf(__('Phone: %s', Plugin::L10N), $this->customer->get_billing_phone());
+		$address_formatted = WC()->countries->get_formatted_address($address);
+		$address_formatted .= "\n\n" . sprintf(__('Phone: %s', Plugin::L10N), $address['phone_prefix'] . '-' . $this->customer->get_billing_phone());
 
-		$this->placeholders['{address}'] = strtr($address, ["<br/>" => "<br>\n"]);
-		$this->placeholders['{address_type}'] = $address_type;
+		$this->placeholders['{address}'] = strtr($address_formatted, [
+			"\n" => "<br>\n",
+			"<br/>" => "<br>\n",
+		]);
+		$this->placeholders['{address_type}'] = $address_type === 'shipping' ? __('Shipping address', 'woocommerce') : __('Billing address', 'woocommerce');
 		$this->placeholders['{site_url}'] = site_url();
 
 		if ( $this->is_enabled() && $this->get_recipient() ) {

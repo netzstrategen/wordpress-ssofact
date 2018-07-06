@@ -53,8 +53,12 @@ msgstr ""
 msgid "House num."
 msgstr "Hausnr."
 
-#: src/WooCommerce.php:226 src/WooCommerce.php:240 src/WooCommerce.php:284
-#: src/WooCommerce.php:363 src/WooCommerce.php:378 src/WooCommerce.php:394
+#: src/WooCommerce.php:103
+msgid "Phone prefix"
+msgstr "Vorwahl"
+
+#: src/WooCommerce.php:248 src/WooCommerce.php:262 src/WooCommerce.php:306
+#: src/WooCommerce.php:387 src/WooCommerce.php:402 src/WooCommerce.php:419
 msgid "Error while saving the changes."
 msgstr ""
 
@@ -75,25 +79,32 @@ msgstr ""
 msgid "[{site_title}] Address changed: {customer}"
 msgstr "[{site_title}] Addressänderung: {customer}"
 
-#: src/WooCommerceEmailAddressChanged.php:60
+#: src/WooCommerceEmailAddressChanged.php:61
 #, php-format
 msgid "Phone: %s"
 msgstr "Telefon: %s"
 
-#: src/WooCommerceEmailAddressChanged.php:105
+#: src/WooCommerceEmailAddressChanged.php:67
+msgid "Shipping address"
+msgstr ""
+
+#: src/WooCommerceEmailAddressChanged.php:67
+msgid "Billing address"
+msgstr ""
+
+#: src/WooCommerceEmailAddressChanged.php:109
 msgid "Recipient(s)"
 msgstr ""
 
-#: src/WooCommerceEmailAddressChanged.php:108
+#: src/WooCommerceEmailAddressChanged.php:112
 #, php-format
 msgid "Enter recipients (comma separated) for this email. Defaults to %s."
 msgstr ""
 
 #: templates/emails/admin-address-changed.php:11
 #: templates/emails/plain/admin-address-changed.php:7
-msgid "The {address_type} address of {customer} has been edited on {site_url}:"
-msgstr ""
-"Die Adresse {address_type} von {customer} wurde bearbeitet auf {site_url}:"
+msgid "The following {address_type} has been edited on {site_url}:"
+msgstr "Die folgende {address_type} wurde bearbeitet auf {site_url}:"
 
 #: templates/emails/admin-address-changed.php:15
 #: templates/emails/plain/admin-address-changed.php:12

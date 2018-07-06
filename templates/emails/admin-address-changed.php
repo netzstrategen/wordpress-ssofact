@@ -8,12 +8,12 @@ namespace Netzstrategen\Ssofact;
 do_action( 'woocommerce_email_header', $email_heading, $email );
 ?>
 
-<p><?= __('The {address_type} address of {customer} has been edited on {site_url}:', Plugin::L10N) ?></p>
+<p><?= __('The following {address_type} has been edited on {site_url}:', Plugin::L10N) ?></p>
 
 <hr>
 
-<?= __('Customer: {customer}', Plugin::L10N) ?>
+<p><?= __('Customer: {customer}', Plugin::L10N) ?></p>
 
-{address}
+<p>{address}</p>
 
 <hr>

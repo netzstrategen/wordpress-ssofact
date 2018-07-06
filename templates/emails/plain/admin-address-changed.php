@@ -4,7 +4,7 @@ namespace Netzstrategen\Ssofact;
 ?>
 = <?= $email_heading ?> =
 
-<?= __('The {address_type} address of {customer} has been edited on {site_url}:', Plugin::L10N) ?>
+<?= __('The following {address_type} has been edited on {site_url}:', Plugin::L10N) ?>
 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

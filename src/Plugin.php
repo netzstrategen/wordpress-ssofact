@@ -156,6 +156,8 @@ class Plugin {
     // Validates checkout fields against SSO.
     add_action('woocommerce_checkout_process', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_process', 20);
 
+    // Displays subscriber ID in new order notification email.
+    add_filter('woocommerce_email_order_meta', __NAMESPACE__ . '\WooCommerce::woocommerce_email_order_meta');
 
     // Validate changed email address against SSO.
     add_action('woocommerce_save_account_details_errors', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details_errors', 20, 2);

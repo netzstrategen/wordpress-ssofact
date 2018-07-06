@@ -592,4 +592,15 @@ class WooCommerce {
     Alfa::mapPurchases(Alfa::getPurchases());
   }
 
+  /**
+   * Displays subscriber ID in new order notification email.
+   *
+   * @woocommerce_email_order_meta
+   */
+  public static function woocommerce_email_order_meta($order) {
+    if ($subscriber_id = get_user_meta($order->get_user_id(), 'subscriber_id', TRUE)) {
+      echo '<p><strong>' . __('Subscription ID:', PLUGIN::L10N) . '</strong> ' . $subscriber_id . '</p>';
+    }
+  }
+
 }

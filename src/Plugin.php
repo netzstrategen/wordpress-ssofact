@@ -157,6 +157,12 @@ class Plugin {
     add_action('woocommerce_edit_account_form', __NAMESPACE__ . '\WooCommerce::woocommerce_edit_account_form');
     add_filter('woocommerce_save_account_details_required_fields', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details_required_fields');
 
+    // Removes terms & conditions opt-in in checkout once confirmed.
+    add_filter('option_german_market_checkbox_1_tac_pd_rp_activation', __NAMESPACE__ . '\WooCommerce::option_german_market_checkbox_1_tac_pd_rp_activation');
+    add_filter('option_default_german_market_checkbox_1_tac_pd_rp_activation', __NAMESPACE__ . '\WooCommerce::option_german_market_checkbox_1_tac_pd_rp_activation');
+    // Add acquisition opt-in to checkout confirmation page.
+    add_action('woocommerce_de_add_review_order', __NAMESPACE__ . '\WooCommerce::woocommerce_de_add_review_order');
+
     // Validates checkout fields against SSO.
     // Run before WGM_Template::do_de_checkout_after_validation() [priority 1]
     add_action('woocommerce_after_checkout_validation', __NAMESPACE__ . '\WooCommerce::woocommerce_after_checkout_validation', 0, 2);
@@ -164,10 +170,15 @@ class Plugin {
     // Submits the order to the SSO/alfa.
     add_action('woocommerce_checkout_order_processed', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_order_processed', 20, 3);
 
+    // Displays subscriber ID in new order notification email.
+    add_filter('woocommerce_email_order_meta', __NAMESPACE__ . '\WooCommerce::woocommerce_email_order_meta');
+
     // Validate changed email address against SSO.
     add_action('woocommerce_save_account_details_errors', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details_errors', 20, 2);
     // Updates user info in SSO upon editing account details.
     add_action('woocommerce_save_account_details', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details');
+    // Do not redirect to dashboard after saving account details.
+    add_action('woocommerce_save_account_details', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details_redirect', 100);
 
     // Send redirect URL to forgot-password form on SSO.
     add_action('woocommerce_before_template_part', __NAMESPACE__ . '\WooCommerce::woocommerce_before_template_part');
@@ -446,7 +457,7 @@ class Plugin {
     }
     // update_user_meta($user_id, 'roles', $user_claims['']);
 
-    // update_user_meta($user_id, 'optins', $user_claims['optins']);
+    update_user_meta($user_id, 'optins', $user_claims['optins']);
 
     // User profile data may only be updated if the UserInfo from the SSO is
     // newer than our local data.
@@ -583,18 +594,23 @@ class Plugin {
     }
 
     $optin_source = $_POST;
-    $terms_accepted = !empty($_POST['terms']);
-    $userinfo += [
-      'optins' => [
-        'list_noch-fragen' => (int) !empty($optin_source['list_noch-fragen']),
-        'list_premium' => (int) !empty($optin_source['list_premium']),
-        'list_freizeit' => (int) !empty($optin_source['list_freizeit']),
-        'confirm_agb' => (int) $terms_accepted,
-        'acquisitionEmail' => (int) !empty($optin_source['confirm_agb']),
-        'acquisitionMail' => (int) !empty($optin_source['confirm_mail']),
-        'acquisitionPhone' =>(int) !empty($optin_source['confirm_phone']),
-      ],
+    if (!empty($_POST['terms'])) {
+      $optin_source['confirm_agb'] = 1;
+    }
+    $userinfo['optins'] = $last_known_userinfo['optins'] ?? [];
+
+    $wgm_optins = [
+      'confirm_agb' => [],
     ];
+    $optins = array_merge($wgm_optins, WooCommerce::OPTINS);
+    foreach ($optins as $key => $definition) {
+      if (isset($optin_source[$key])) {
+        $userinfo['optins'][$key] = (int) !empty($optin_source[$key]);
+      }
+    }
+    // Remove opt-ins that cannot be changed by the client.
+    unset($userinfo['optins']['email_doi'], $userinfo['optins']['changemail']);
+
     return $userinfo;
   }
 
@@ -632,9 +648,9 @@ class Plugin {
       // - 'h': half-yearly
       // - 'j': yearly
       'paymentPattern' => 'm',
-      'acquisitionEMail' => $purchase['optins']['acquisitionEmail'] ? 'j' : 'n',
-      'acquisitionMail' => $purchase['optins']['acquisitionMail'] ? 'j' : 'n',
-      'acquisitionPhone' => $purchase['optins']['acquisitionPhone'] ? 'j' : 'n',
+      'acquisitionEmail' => !empty($purchase['optins']['acquisitionEmail']) ? 'j' : 'n',
+      'acquisitionMail' => !empty($purchase['optins']['acquisitionMail']) ? 'j' : 'n',
+      'acquisitionPhone' => !empty($purchase['optins']['acquisitionPhone']) ? 'j' : 'n',
       // 'accessCount' => 1,
       // 'promotionId' => '',
       // 'agentNumber' => '',

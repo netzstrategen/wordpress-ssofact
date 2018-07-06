@@ -9,6 +9,27 @@ namespace Netzstrategen\Ssofact;
 
 class WooCommerce {
 
+  const OPTINS = [
+    'list_redaktion-stimmede-editorial-weekly' => [
+      'label' => 'Newsletter des Chefredakteurs',
+      'priority' => 100,
+    ],
+    'list_redaktion-stimmede-editorial-premium-daily' => [
+      'label' => 'Morgen-Briefing aus der Redaktion',
+      'priority' => 110,
+    ],
+    /*
+    'list_redaktion-stimmede-service-freizeit-custom' => [
+      'label' => 'Freizeit-Tipps fürs Wochenende',
+      'priority' => 120,
+    ],
+    */
+    'acquisitionEmail' => [
+      'label' => 'Ja, ich möchte auch zukünftig über aktuelle Angebote aus dem Verlags- und Dienstleistungsbereich der Mediengruppe Heilbronner Stimme per Telefon und/oder E-Mail informiert werden. Mein Einverständnis hierzu kann ich jederzeit widerrufen.',
+      'priority' => 120,
+    ],
+  ];
+
   /**
    * Whether the checkout was initiated by an anonymous user.
    *
@@ -275,6 +296,30 @@ class WooCommerce {
   }
 
   /**
+   * @implements option_NAME
+   */
+  public static function option_german_market_checkbox_1_tac_pd_rp_activation($value) {
+    $optins = get_user_meta(get_current_user_ID(), 'optins', TRUE);
+    if (!empty($optins['confirm_agb'])) {
+      $value = 'off';
+    }
+    return $value;
+  }
+
+  /**
+   * @implements woocommerce_de_add_review_order
+   */
+  public static function woocommerce_de_add_review_order() {
+    // The advertising opt-in should only be displayed when not opt-in yet.
+    $optins = get_user_meta(get_current_user_ID(), 'optins', TRUE);
+    if (empty($optins['acquisitionEmail'])) {
+      woocommerce_form_field('acquisitionEmail', WooCommerce::OPTINS['acquisitionEmail'] + [
+        'type' => 'checkbox',
+      ]);
+    }
+  }
+
+  /**
    * Appends the house number to the billing/shipping address in thankyou page.
    *
    * @implements woocommerce_get_order_address
@@ -371,7 +416,7 @@ class WooCommerce {
     global $woocommerce;
 
     // Do not attempt to register purchase in case of a validation error.
-    if (wc_notice_count('error') || empty($_POST['woocommerce_checkout_place_order']) || empty($_POST['terms'])) {
+    if (wc_notice_count('error') || empty($_POST['woocommerce_checkout_place_order'])) {
       return;
     }
 
@@ -439,12 +484,6 @@ class WooCommerce {
       // Properties that are edited elsewhere.
       'roles' => 0,
       'article_test' => 0,
-    ]);
-
-    // Opt-ins that cannot be changed by the client.
-    $userinfo['optins'] = array_diff_key($userinfo['optins'], [
-      'email_doi' => 0,
-      'changemail' => 0,
     ]);
 
     // @todo UX: Save last_edited timestamp and stop updating the locally stored
@@ -553,6 +592,24 @@ class WooCommerce {
       Plugin::invalidatePasswordResetToken();
     }
     Server::addDebugMessage();
+
+    // Save opt-ins manually, as new UserInfo is only retrieved with next login.
+    $optins = get_user_meta(get_current_user_ID(), 'optins', TRUE);
+    foreach (WooCommerce::OPTINS as $optin_name => $definition) {
+      if (isset($_POST[$optin_name])) {
+        $optins[$optin_name] = $_POST[$optin_name];
+      }
+    }
+    update_user_meta(get_current_user_ID(), 'optins', $optins);
+  }
+
+  /**
+   * @implements woocommerce_save_account_details
+   */
+  public static function woocommerce_save_account_details_redirect($user_id) {
+    // Stay on the account edit form page.
+    wp_safe_redirect(wc_get_account_endpoint_url('edit-account'));
+    exit;
   }
 
   /**
@@ -570,35 +627,16 @@ class WooCommerce {
 
     echo '<fieldset class="account-edit-optin-checks">';
 
-    $opt_ins = [
-      'list_noch-fragen' => [
-        'label' => 'Newsletter Noch Fragen',
-        'priority' => 100,
-      ],
-      'list_premium' => [
-        'label' => 'Newsletter Premium',
-        'priority' => 110,
-      ],
-      'list_freizeit' => [
-        'label' => 'Newsletter Freizeit',
-        'priority' => 120,
-      ],
-      'confirm_agb' => [
-        'label' => 'AGB-Bestätigung',
-        'priority' => 130,
-      ],
-    ];
-
-    foreach ($opt_ins as $opt_in_id => $opt_in_args) {
-      $args = [
+    $optins = get_user_meta(get_current_user_ID(), 'optins', TRUE);
+    foreach (static::OPTINS as $optin_name => $definition) {
+      // The acquisition opt-ins should only appear during checkout.
+      if (strpos($optin_name, 'acquisition') === 0) {
+        continue;
+      }
+      woocommerce_form_field($optin_name, $definition + [
         'type' => 'checkbox',
-        'label' => $opt_in_args['label'],
-        'required' => FALSE,
-        'id' => $opt_in_id,
-        'priority' => $opt_in_args['priority'],
-      ];
-
-      woocommerce_form_field($opt_in_id, $args);
+        'default' => $optins[$optin_name] ?? 0,
+      ]);
     }
     echo '</fieldset>';
   }
@@ -674,6 +712,30 @@ class WooCommerce {
    */
   public static function viewSubscription() {
     Alfa::mapPurchases(Alfa::getPurchases());
+  }
+
+  /**
+   * Displays subscriber ID in new order notification email.
+   *
+   * @woocommerce_email_order_meta
+   */
+  public static function woocommerce_email_order_meta($order) {
+    $user_id = $order->get_user_id();
+    if ($subscriber_id = get_user_meta($user_id, 'subscriber_id', TRUE)) {
+      echo '<p><strong>' . __('Subscription ID:', PLUGIN::L10N) . '</strong> ' . $subscriber_id . '</p>';
+    }
+    if (!isset($_POST['optins'])) {
+      return;
+    }
+    $optins_list = '';
+    foreach (static::OPTINS as $opt_in_id => $opt_in_args) {
+      if (!isset($_POST['optins'][$opt_in_id])) {
+        continue;
+      }
+      $optins_list .= '<span class="optin-label"><strong>' . $opt_in_args['label'] . ':</strong></span> ';
+      $optins_list .= '<span class="optin-value">' . ($_POST['optins'][$opt_in_id] ? __('Yes', 'woocommerce') : __('No', 'woocommerce')) . '</span><br />';
+    }
+    echo '<p>' . $optins_list . '</p>';
   }
 
 }

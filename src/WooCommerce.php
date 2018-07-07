@@ -9,6 +9,25 @@ namespace Netzstrategen\Ssofact;
 
 class WooCommerce {
 
+  const OPT_INS = [
+    'list_noch-fragen' => [
+      'label' => 'Newsletter Noch Fragen',
+      'priority' => 100,
+    ],
+    'list_premium' => [
+      'label' => 'Newsletter Premium',
+      'priority' => 110,
+    ],
+    'list_freizeit' => [
+      'label' => 'Newsletter Freizeit',
+      'priority' => 120,
+    ],
+    'confirm_agb' => [
+      'label' => 'AGB-Bestätigung',
+      'priority' => 130,
+    ],
+  ];
+
   /**
    * @implements woocommerce_email_actions
    */
@@ -496,26 +515,7 @@ class WooCommerce {
 
     echo '<fieldset class="account-edit-optin-checks">';
 
-    $opt_ins = [
-      'list_noch-fragen' => [
-        'label' => 'Newsletter Noch Fragen',
-        'priority' => 100,
-      ],
-      'list_premium' => [
-        'label' => 'Newsletter Premium',
-        'priority' => 110,
-      ],
-      'list_freizeit' => [
-        'label' => 'Newsletter Freizeit',
-        'priority' => 120,
-      ],
-      'confirm_agb' => [
-        'label' => 'AGB-Bestätigung',
-        'priority' => 130,
-      ],
-    ];
-
-    foreach ($opt_ins as $opt_in_id => $opt_in_args) {
+    foreach (static::OPT_INS as $opt_in_id => $opt_in_args) {
       $args = [
         'type' => 'checkbox',
         'label' => $opt_in_args['label'],
@@ -598,9 +598,20 @@ class WooCommerce {
    * @woocommerce_email_order_meta
    */
   public static function woocommerce_email_order_meta($order) {
-    if ($subscriber_id = get_user_meta($order->get_user_id(), 'subscriber_id', TRUE)) {
+    $user_id = $order->get_user_id();
+    if ($subscriber_id = get_user_meta($user_id, 'subscriber_id', TRUE)) {
       echo '<p><strong>' . __('Subscription ID:', PLUGIN::L10N) . '</strong> ' . $subscriber_id . '</p>';
     }
+    $userinfo = get_user_meta($user_id, Plugin::USER_META_USERINFO, TRUE);
+    if (empty($userinfo['id'])) {
+      throw new \LogicException('Unable to build user info: Missing SSO ID.');
+    }
+    $optins_list = '';
+    foreach (static::OPT_INS as $opt_in_id => $opt_in_args) {
+      $optins_list .= '<span class="optin-label"><strong>' . $opt_in_args['label'] . ':</strong></span> ';
+      $optins_list .= '<span class="optin-value">' . ($userinfo['optins'][$opt_in_id] ? __('Yes', 'woocommerce') : __('No', 'woocommerce')) . '</span><br />';
+    }
+    echo '<p>' . $optins_list . '</p>';
   }
 
 }

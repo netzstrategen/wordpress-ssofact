@@ -39,7 +39,7 @@ class WooCommerce {
     $output = ob_get_clean();
     $authorize_uri = Plugin::getAuthorizeUrl();
     $server_domain = 'stage-login.stimme.de';
-    $action = 'https://' . $server_domain . '/index.php?' . http_build_query([
+    $action = 'https://' . $server_domain . '/?' . http_build_query([
       'next' => $authorize_uri,
     ]);
     $output = strtr($output, [

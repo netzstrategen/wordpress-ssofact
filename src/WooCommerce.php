@@ -197,22 +197,7 @@ class WooCommerce {
     }
 
     // Require a company name if salutation has been set to company.
-    foreach (['billing', 'shipping'] as $address_type) {
-      if (!empty($_POST[$address_type . '_salutation'])) {
-        if ($_POST[$address_type . '_salutation'] === 'Firma') {
-          $fields[$address_type . '_company']['required'] = TRUE;
-          $fields[$address_type . '_company_contact']['required'] = TRUE;
-          $fields[$address_type . '_first_name']['required'] = FALSE;
-          $fields[$address_type . '_last_name']['required'] = FALSE;
-        }
-        else {
-          $fields[$address_type . '_company']['required'] = FALSE;
-          $fields[$address_type . '_company_contact']['required'] = FALSE;
-          $fields[$address_type . '_first_name']['required'] = TRUE;
-          $fields[$address_type . '_last_name']['required'] = TRUE;
-        }
-      }
-    }
+    $fields = WooCommerce::adjustCompanyFields($fields, 'billing');
     return $fields;
   }
 
@@ -222,6 +207,27 @@ class WooCommerce {
   public static function woocommerce_shipping_fields($fields) {
     unset($fields['shipping_subscriber_id']);
     unset($fields['shipping_phone_prefix']);
+
+    // Require a company name if salutation has been set to company.
+    $fields = WooCommerce::adjustCompanyFields($fields, 'shipping');
+    return $fields;
+  }
+
+  public static function adjustCompanyFields(array $fields, $address_type) {
+    if (!empty($_POST[$address_type . '_salutation'])) {
+      if ($_POST[$address_type . '_salutation'] === 'Firma') {
+        $fields[$address_type . '_company']['required'] = TRUE;
+        $fields[$address_type . '_company_contact']['required'] = TRUE;
+        $fields[$address_type . '_first_name']['required'] = FALSE;
+        $fields[$address_type . '_last_name']['required'] = FALSE;
+      }
+      else {
+        $fields[$address_type . '_company']['required'] = FALSE;
+        $fields[$address_type . '_company_contact']['required'] = FALSE;
+        $fields[$address_type . '_first_name']['required'] = TRUE;
+        $fields[$address_type . '_last_name']['required'] = TRUE;
+      }
+    }
     return $fields;
   }
 
@@ -320,6 +326,7 @@ class WooCommerce {
     if (!empty($_POST['billing_subscriber_id']) || (is_user_logged_in() && get_user_meta(get_current_user_ID(), 'subscriber_id', TRUE))) {
       $purchase = array_diff_key($purchase, [
         'salutation' => 0,
+        'company' => 0,
         'title' => 0,
         'firstname' => 0,
         'lastname' => 0,

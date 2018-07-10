@@ -190,10 +190,16 @@ class WooCommerce {
    * @implements woocommerce_billing_fields
    */
   public static function woocommerce_billing_fields($fields) {
-    // Changing the email address is a special process requiring to confirm
-    // the new address, which should not be supported during checkout.
     if (is_user_logged_in()) {
+      // Changing the email address is a special process requiring to confirm
+      // the new address, which should not be supported during checkout.
       unset($fields['billing_email']);
+
+      // An existing subscriber ID cannot be changed.
+      if (get_user_meta(get_current_user_ID(), 'billing_subscriber_id', TRUE)) {
+        $fields['billing_subscriber_id']['required'] = TRUE;
+        $fields['billing_subscriber_id']['custom_attributes']['readonly'] = 'readonly';
+      }
     }
 
     // Require a company name if salutation has been set to company.
@@ -315,28 +321,6 @@ class WooCommerce {
     $address_type = !empty($_POST['ship_to_different_address']) ? 'shipping' : 'billing';
     $purchase = Plugin::buildPurchaseInfo($sku, $address_type);
 
-    // If a registered user has a subscriber ID already, then alfa GP/VM will
-    // reject any kind of change to the address. The submitted address will only
-    // be contained in the order confirmation email and manually processed by
-    // the customer service team. Even if the user only specified the ID in the
-    // checkout form, it has already been validated to be correct by now.
-    if (!empty($_POST['billing_subscriber_id']) || (is_user_logged_in() && get_user_meta(get_current_user_ID(), 'subscriber_id', TRUE))) {
-      $purchase = array_diff_key($purchase, [
-        'salutation' => 0,
-        'company' => 0,
-        'title' => 0,
-        'firstname' => 0,
-        'lastname' => 0,
-        'street' => 0,
-        'housenr' => 0,
-        'zipcode' => 0,
-        'city' => 0,
-        'country' => 0,
-        'birthday' => 0,
-        'phone_prefix' => 0,
-        'phone' => 0,
-      ]);
-    }
     if (is_user_logged_in()) {
       // Changing the email address is a special process requiring to confirm
       // the new address, which should not be supported during checkout.
@@ -360,33 +344,10 @@ class WooCommerce {
    * @implements woocommerce_after_save_address_validation
    */
   public static function woocommerce_after_save_address_validation($user_id, $address_type, $address) {
-    $last_known_userinfo = get_user_meta($user_id, Plugin::USER_META_USERINFO, TRUE);
-
-    $userinfo = $last_known_userinfo;
-    if (empty($userinfo['id'])) {
-      throw new \LogicException('Unable to update account: Missing SSO ID in last known UserInfo.');
+    if (wc_notice_count('error')) {
+      return;
     }
-    $userinfo['email'] = $_POST[$address_type . '_email'];
-    $userinfo['salutation'] = $_POST[$address_type . '_salutation'];
-    // $userinfo['title'] = $_POST[$address_type . '_title'];
-    $userinfo['firstname'] = $_POST[$address_type . '_first_name'];
-    $userinfo['lastname'] = $_POST[$address_type . '_last_name'];
-    // $userinfo['company'] = $_POST[$address_type . '_company'];
-    $userinfo['street'] = $_POST[$address_type . '_address_1'];
-    $userinfo['housenr'] = $_POST[$address_type . '_house_number'];
-    $userinfo['zipcode'] = $_POST[$address_type . '_postcode'];
-    $userinfo['city'] = $_POST[$address_type . '_city'];
-    // @todo Coordinate list of country codes.
-    // $userinfo['country'] = $_POST[$address_type . '_country']; // Deutschland vs. DE
-    if (isset($_POST[$address_type . '_phone'])) {
-      $userinfo['phone_prefix'] = $_POST[$address_type . '_phone_prefix'];
-      $userinfo['phone'] = $_POST[$address_type . '_phone'];
-    }
-    // @todo Web user account only supports a single phone number (due to data
-    //   privacy and because landline numbers are a thing of the past). Migrate
-    //   these to phone upon login/import.
-    // unset($userinfo['mobile_prefix']);
-    // unset($userinfo['mobile']);
+    $userinfo = Plugin::buildUserInfo($address_type, $user_id);
 
     $userinfo = array_diff_key($userinfo, [
       // Properties that cannot be changed by the client.
@@ -414,14 +375,9 @@ class WooCommerce {
       'changemail' => 0,
     ]);
 
-    // @todo Address can no longer be updated via updateUser API if there is
-    //   both (1) a subscriber ID and (2) a (street) address. Once both exist,
-    //   the address is forwarded to alfa VM and set in stone, and may only be
-    //   changed by the customer service team; an email needs to be sent instead.
     // @todo UX: Save last_edited timestamp and stop updating the locally stored
     //   user profile with UserInfo from SSO unless its last_updated timestamp
     //   is newer.
-    // @todo Coordinate how to handle the shipping address or which one to send.
     // @todo Send different "action" depending on the action performed; i.e.,
     //   'initialPassword', 'forgotPassword', 'changeEmail', 'changePassword'.
 

@@ -46,14 +46,14 @@ class WooCommerceEmailAddressChanged extends \WC_Email {
 		$account = get_user_by('id', $user_id);
 		$this->account = $account;
 		$this->customer = new \WC_Customer($user_id);
-		$this->placeholders['{customer}'] = get_user_meta($user_id, 'subscriber_id', TRUE) ?: $this->customer->get_email();
+		$this->placeholders['{customer}'] = get_user_meta($user_id, 'billing_subscriber_id', TRUE) ?: $this->customer->get_email();
 
 		// @see WC_Order::get_formatted_billing_address()
 		$address = $address_type === 'shipping' ? $this->customer->get_shipping() : $this->customer->get_billing();
 		$address['salutation'] = get_user_meta($user_id, 'billing_salutation', TRUE);
 		$address['house_number'] = get_user_meta($user_id, 'billing_house_number', TRUE);
 		$address['phone_prefix'] = get_user_meta($user_id, 'billing_phone_prefix', TRUE);
-		$address['subscriber_id'] = get_user_meta($user_id, 'subscriber_id', TRUE);
+		$address['subscriber_id'] = get_user_meta($user_id, 'billing_subscriber_id', TRUE);
 
 		$address_formatted = WC()->countries->get_formatted_address($address);
 		$address_formatted .= "\n\n" . sprintf(__('Phone: %s', Plugin::L10N), $address['phone_prefix'] . '-' . $this->customer->get_billing_phone());

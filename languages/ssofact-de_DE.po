@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: ssofact\n"
-"POT-Creation-Date: 2018-07-05 22:37+0200\n"
-"PO-Revision-Date: 2018-07-05 22:40+0200\n"
+"POT-Creation-Date: 2018-07-10 11:36+0200\n"
+"PO-Revision-Date: 2018-07-10 11:36+0200\n"
 "Last-Translator: Daniel Kudwien <daniel@netzstrategen.com>\n"
 "Language-Team: \n"
 "Language: de_DE\n"
@@ -10,12 +10,13 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 2.0.1\n"
+"X-Generator: Poedit 2.0.8\n"
 "X-Poedit-Basepath: ..\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 "X-Poedit-KeywordsList: __;_e;__ngettext:1,2;_n:1,2;__ngettext_noop:1,2;"
 "_n_noop:1,2;_c,_nc:4c,1,2;_x:1,2c;_nx:4c,1,2;_nx_noop:4c,1,2;_ex:1,2c;"
-"esc_attr__;esc_attr_e;esc_attr_x:1,2c;esc_html__;esc_html_e;esc_html_x:1,2c\n"
+"esc_attr__;esc_attr_e;esc_attr_x:1,2c;esc_html__;esc_html_e;"
+"esc_html_x:1,2c\n"
 "X-Poedit-SearchPath-0: .\n"
 "X-Poedit-SearchPathExcluded-0: .sass-cache\n"
 "X-Poedit-SearchPathExcluded-1: bower_components\n"
@@ -38,27 +39,35 @@ msgid "Salutation"
 msgstr "Anrede"
 
 #: src/WooCommerce.php:76
+msgid "Company"
+msgstr ""
+
+#: src/WooCommerce.php:77
 msgid "Mr."
 msgstr "Herr"
 
-#: src/WooCommerce.php:77
+#: src/WooCommerce.php:78
 msgid "Ms."
 msgstr "Frau"
 
-#: src/WooCommerce.php:89
+#: src/WooCommerce.php:90
+msgid "Contact person"
+msgstr "Ansprechpartner"
+
+#: src/WooCommerce.php:95
 msgid "Street address"
 msgstr ""
 
-#: src/WooCommerce.php:93
+#: src/WooCommerce.php:99
 msgid "House num."
 msgstr "Hausnr."
 
-#: src/WooCommerce.php:103
+#: src/WooCommerce.php:109
 msgid "Phone prefix"
 msgstr "Vorwahl"
 
-#: src/WooCommerce.php:248 src/WooCommerce.php:262 src/WooCommerce.php:306
-#: src/WooCommerce.php:387 src/WooCommerce.php:402 src/WooCommerce.php:419
+#: src/WooCommerce.php:257 src/WooCommerce.php:271 src/WooCommerce.php:321
+#: src/WooCommerce.php:401 src/WooCommerce.php:416 src/WooCommerce.php:433
 msgid "Error while saving the changes."
 msgstr ""
 

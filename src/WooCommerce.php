@@ -73,15 +73,23 @@ class WooCommerce {
       'label' => __('Salutation', Plugin::L10N),
       'options' => [
         '' => '',
+        'Firma' => __('Company', 'woocommerce'),
         'Herr' => __('Mr.', Plugin::L10N),
         'Frau' => __('Ms.', Plugin::L10N),
       ],
       'required' => TRUE,
       'priority' => 20,
     ];
-    $fields['first_name']['priority'] = 30;
-    $fields['last_name']['priority'] = 40;
-    $fields['company']['priority'] = 50;
+    // alfa VM does not have a dedicated address field for a company name; if
+    // "Firma" is selected as salutation then the first name will be ignored and
+    // the last name should contain the name of a contact person in the company.
+    $fields['company']['required'] = TRUE;
+    $fields['company']['priority'] = 30;
+    $fields['company_contact'] = $fields['last_name'];
+    $fields['company_contact']['label'] = __('Contact person', Plugin::L10N);
+    $fields['company_contact']['priority'] = 35;
+    $fields['first_name']['priority'] = 40;
+    $fields['last_name']['priority'] = 50;
     $fields['postcode']['priority'] = 60;
     $fields['city']['priority'] = 70;
     $fields['state']['priority'] = 75;
@@ -187,6 +195,9 @@ class WooCommerce {
     if (is_user_logged_in()) {
       unset($fields['billing_email']);
     }
+
+    // Require a company name if salutation has been set to company.
+    $fields = WooCommerce::adjustCompanyFields($fields, 'billing');
     return $fields;
   }
 
@@ -196,6 +207,25 @@ class WooCommerce {
   public static function woocommerce_shipping_fields($fields) {
     unset($fields['shipping_subscriber_id']);
     unset($fields['shipping_phone_prefix']);
+
+    // Require a company name if salutation has been set to company.
+    $fields = WooCommerce::adjustCompanyFields($fields, 'shipping');
+    return $fields;
+  }
+
+  public static function adjustCompanyFields(array $fields, $address_type) {
+    if (!empty($_POST[$address_type . '_salutation']) && $_POST[$address_type . '_salutation'] === 'Firma') {
+      $fields[$address_type . '_company']['required'] = TRUE;
+      $fields[$address_type . '_company_contact']['required'] = TRUE;
+      $fields[$address_type . '_first_name']['required'] = FALSE;
+      $fields[$address_type . '_last_name']['required'] = FALSE;
+    }
+    else {
+      $fields[$address_type . '_company']['required'] = FALSE;
+      $fields[$address_type . '_company_contact']['required'] = FALSE;
+      $fields[$address_type . '_first_name']['required'] = TRUE;
+      $fields[$address_type . '_last_name']['required'] = TRUE;
+    }
     return $fields;
   }
 
@@ -257,9 +287,9 @@ class WooCommerce {
     if (!empty($_POST['billing_subscriber_id'])) {
       $response = Server::checkSubscriberId(
         $_POST['billing_subscriber_id'],
-        $_POST['billing_first_name'],
-        $_POST['billing_last_name'],
-        $_POST['billing_postcode']
+        $_POST['billing_first_name'] ?? '',
+        $_POST['billing_last_name'] ?? $_POST['billing_company_contact'] ?? '',
+        $_POST['billing_postcode'] ?? ''
       );
       if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
         $message = isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.');
@@ -289,6 +319,7 @@ class WooCommerce {
     if (!empty($_POST['billing_subscriber_id']) || (is_user_logged_in() && get_user_meta(get_current_user_ID(), 'subscriber_id', TRUE))) {
       $purchase = array_diff_key($purchase, [
         'salutation' => 0,
+        'company' => 0,
         'title' => 0,
         'firstname' => 0,
         'lastname' => 0,

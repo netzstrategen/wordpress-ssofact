@@ -132,6 +132,8 @@ class Plugin {
 
     // Validate current password against SSO.
     add_action('check_password', __CLASS__ . '::check_password', 20, 4);
+
+    add_action('wp_enqueue_scripts', __CLASS__ . '::wp_enqueue_scripts');
   }
 
   /**
@@ -330,11 +332,22 @@ class Plugin {
 
     // Handle billing/shipping address forms.
     if (isset($address_source[$key_prefix . '_address_1'])) {
+      if ($address_source[$key_prefix . '_salutation'] === 'Firma') {
+        $userinfo += [
+          'salutation' => $address_source[$key_prefix . '_salutation'],
+          'company' => $address_source[$key_prefix . '_company'],
+          'lastname' => $address_source[$key_prefix . '_company_contact'],
+        ];
+      }
+      else {
+        $userinfo += [
+          'salutation' => $address_source[$key_prefix . '_salutation'],
+          'firstname' => $address_source[$key_prefix . '_first_name'],
+          'lastname' => $address_source[$key_prefix . '_last_name'],
+        ];
+      }
       $userinfo += [
-        'salutation' => $address_source[$key_prefix . '_salutation'],
         // 'title' => $address_source[$key_prefix . '_title'],
-        'firstname' => $address_source[$key_prefix . '_first_name'],
-        'lastname' => $address_source[$key_prefix . '_last_name'],
         'street' => $address_source[$key_prefix . '_address_1'],
         'housenr' => $address_source[$key_prefix . '_house_number'],
         'zipcode' => $address_source[$key_prefix . '_postcode'],
@@ -408,6 +421,14 @@ class Plugin {
     // Ensure that all values for the alfa purchase are strings.
     $purchase['permission'] = array_map('strval', $purchase['permission']);
     return $purchase;
+  }
+
+  /**
+   * Loads front-end assets.
+   */
+  public static function wp_enqueue_scripts() {
+    wp_enqueue_style('ssofact/woocommerce', Plugin::getBaseUrl() . '/assets/styles/woocommerce.css');
+    wp_enqueue_script('ssofact/woocommerce', Plugin::getBaseUrl() . '/assets/scripts/woocommerce.js', ['jquery']);
   }
 
   /**

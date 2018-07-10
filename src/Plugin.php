@@ -465,6 +465,40 @@ class Plugin {
   }
 
   /**
+   * Encrypts a given password using a (reversible) OpenSSL cipher.
+   *
+   * @param string $plain_value
+   *   The plain value to encrypt.
+   *
+   * @return string
+   *   The encrypted value.
+   */
+  public static function encrypt($plain_value) {
+    $cipher = 'aes-256-cbc';
+    $encryption_key = base64_decode(SSOFACT_ENCRYPTION_KEY);
+    $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length($cipher));
+    $encrypted = openssl_encrypt($plain_value, $cipher, $encryption_key, 0, $iv);
+    return base64_encode($encrypted . '::' . $iv);
+  }
+
+  /**
+   * Decrypts a given encrypted password using a (reversible) OpenSSL cipher.
+   *
+   * @param string $encrypted_iv_encoded
+   *   The encrypted value with iv, base64-encoded, to decrypt.
+   *
+   * @return string
+   *   The decrypted value.
+   */
+  public static function decrypt($encrypted_iv_encoded) {
+    list($encrypted_value, $iv) = explode('::', base64_decode($encrypted_iv_encoded));
+    $cipher = 'aes-256-cbc';
+    $encryption_key = base64_decode(SSOFACT_ENCRYPTION_KEY);
+    $plain_value = openssl_decrypt($encrypted_value, $cipher, $encryption_key, 0, $iv);
+    return $plain_value;
+  }
+
+  /**
    * Loads front-end assets.
    */
   public static function wp_enqueue_scripts() {

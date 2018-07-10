@@ -405,11 +405,19 @@ class Plugin {
       'fromDay' => date_i18n('Ymd'),
       // @todo Does the shop specify this freely on the client-side?
       // 'toDay' => date_i18n('Ymd', strtotime('plus 30 days')),
+      // Payment method options:
+      // - german_market_purchase_on_account => 'r' (invoice)
+      // - german_market_sepa_direct_debit => 'a' (direct debit)
+      'paymentMethod' => isset($_POST['payment_method']) && $_POST['payment_method'] === 'german_market_sepa_direct_debit' ? 'a' : 'r',
+      // Payment schedule options:
+      // - 'm': monthly
+      // - 'v': quarterly
+      // - 'h': half-yearly
+      // - 'j': yearly
+      'paymentPattern' => 'm',
       'acquisitionEMail' => $purchase['optins']['acquisitionEmail'] ? 'j' : 'n',
       'acquisitionMail' => $purchase['optins']['acquisitionMail'] ? 'j' : 'n',
       'acquisitionPhone' => $purchase['optins']['acquisitionPhone'] ? 'j' : 'n',
-      'paymentMethod' => '',
-      'paymentPattern' => '',
       // 'accessCount' => 1,
       // 'promotionId' => '',
       // 'agentNumber' => '',

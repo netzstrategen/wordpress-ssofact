@@ -62,6 +62,9 @@ class Plugin {
     // (only possible if SSO server and client share a common domain)
     add_filter('determine_current_user', __CLASS__ . '::determine_current_user', 100);
 
+    // Update user profile meta data upon login.
+    add_action('updated_user_meta', __CLASS__ . '::updated_user_meta', 10, 4);
+
     // Register new email notification upon customer billing/shipping address change.
     add_filter('woocommerce_email_actions', __NAMESPACE__ . '\WooCommerce::woocommerce_email_actions');
     add_filter('woocommerce_email_classes', __NAMESPACE__ . '\WooCommerce::woocommerce_email_classes');
@@ -78,9 +81,6 @@ class Plugin {
 
     // Run after daggerhart-openid-connect-generic (99).
     add_filter('logout_redirect', __CLASS__ . '::logout_redirect', 100);
-
-    // Update user profile meta data upon login.
-    add_action('updated_user_meta', __CLASS__ . '::updated_user_meta', 10, 4);
 
     // Removes username field from checkout form (email is used as username).
     add_filter('option_woocommerce_registration_generate_username', function () { return 'yes'; });

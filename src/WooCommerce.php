@@ -190,10 +190,17 @@ class WooCommerce {
    * @implements woocommerce_billing_fields
    */
   public static function woocommerce_billing_fields($fields) {
-    // Changing the email address is a special process requiring to confirm
-    // the new address, which should not be supported during checkout.
     if (is_user_logged_in()) {
+      // Changing the email address is a special process requiring to confirm
+      // the new address, which should not be supported during checkout.
       unset($fields['billing_email']);
+
+      // An existing subscriber ID cannot be changed.
+      if (get_user_meta(get_current_user_ID(), 'billing_subscriber_id', TRUE)) {
+        $fields['billing_subscriber_id']['required'] = TRUE;
+        $fields['billing_subscriber_id']['custom_attributes']['readonly'] = TRUE;
+        $fields['billing_subscriber_id']['custom_attributes']['disabled'] = TRUE;
+      }
     }
 
     // Require a company name if salutation has been set to company.
@@ -323,7 +330,7 @@ class WooCommerce {
     // be contained in the order confirmation email and manually processed by
     // the customer service team. Even if the user only specified the ID in the
     // checkout form, it has already been validated to be correct by now.
-    if (!empty($_POST['billing_subscriber_id']) || (is_user_logged_in() && get_user_meta(get_current_user_ID(), 'subscriber_id', TRUE))) {
+    if (!empty($_POST['billing_subscriber_id']) || (is_user_logged_in() && get_user_meta(get_current_user_ID(), 'billing_subscriber_id', TRUE))) {
       $purchase = array_diff_key($purchase, [
         'salutation' => 0,
         'company' => 0,

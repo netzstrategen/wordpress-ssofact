@@ -55,6 +55,7 @@ class Plugin {
     add_filter('option_openid_connect_generic_settings', __CLASS__ . '::option_openid_connect_generic_settings');
     add_filter('option_default_openid_connect_generic_settings', __CLASS__ . '::option_openid_connect_generic_settings');
 
+    // Add /shop prefix to openid-connect-generic client callback permalink.
     add_filter('site_url', __CLASS__ . '::site_url', 10, 3);
 
     // Automatically log in anonymous users having an SSO session cookie if all
@@ -282,9 +283,10 @@ class Plugin {
     // update_user_meta($user_id, 'billing_state', $user_claims['']);
     update_user_meta($user_id, 'billing_phone_prefix', $user_claims['phone_prefix']);
     update_user_meta($user_id, 'billing_phone', $user_claims['phone']);
+    // billing_email is only kept in sync but not displayed or used.
     update_user_meta($user_id, 'billing_email', $user_claims['email']);
 
-    update_user_meta($user_id, 'subscriber_id', $user_claims['subscriber_id'] ?? $user_claims['subscribernr']);
+    update_user_meta($user_id, 'billing_subscriber_id', $user_claims['subscriber_id'] ?? $user_claims['subscribernr']);
     // update_user_meta($user_id, '', $user_claims['fcms_id']);
     // update_user_meta($user_id, '', $user_claims['facebook_id']);
 

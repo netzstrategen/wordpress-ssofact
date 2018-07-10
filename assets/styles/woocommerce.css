@@ -1,0 +1,6 @@
+#billing_first_name_field .optional,
+#shipping_first_name_field .optional,
+#billing_company_field .optional,
+#shipping_company_field .optional {
+  display: none;
+}

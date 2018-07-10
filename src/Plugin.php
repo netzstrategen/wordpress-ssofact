@@ -301,14 +301,14 @@ class Plugin {
   /**
    * Builds userinfo for updateUser, registerUser, and registerUserAndPurchase.
    *
+   * @param string $key_prefix
+   *   (optional) The prefix to use for looking up fields in the $_POST array;
+   *   e.g., 'billing', 'shipping', or 'account'. Defaults to 'billing'.
    * @param int $user_id
    *   The user ID for which the generate the user info for. Defaults to the
    *   currently logged-in user.
-   * @param string $key_prefix
-   *   (optional) The prefix to use for looking up fields in the $_POST array;
-   *   e.g., 'billing', 'shipping', or 'account'.
    */
-  public static function buildUserInfo($user_id = 0, $key_prefix = 'billing') {
+  public static function buildUserInfo($key_prefix = 'billing', $user_id = 0) {
     $address_source = $_POST;
 
     if ($user_id < 1) {
@@ -326,7 +326,7 @@ class Plugin {
     }
     else {
       $userinfo = [
-        'email' => $address_source[$key_prefix . '_email'],
+        'email' => $address_source['billing_email'],
       ];
     }
 
@@ -356,12 +356,12 @@ class Plugin {
         'country' => 'DE', // $address_source[$key_prefix . '_country'],
         // 'birthday' => ,
       ];
-      if (isset($address_source[$key_prefix . '_phone'])) {
-        $userinfo += [
-          'phone_prefix' => $address_source[$key_prefix . '_phone_prefix'],
-          'phone' => $address_source[$key_prefix . '_phone'],
-        ];
-      }
+    }
+    if (isset($address_source['billing_phone'])) {
+      $userinfo += [
+        'phone_prefix' => $address_source['billing_phone_prefix'],
+        'phone' => $address_source['billing_phone'],
+      ];
     }
 
     $optin_source = $_POST;
@@ -385,12 +385,15 @@ class Plugin {
    *
    * @param string $sku
    *   The SKU to purchase.
+   * @param string $key_prefix
+   *   (optional) The prefix to use for looking up fields in the $_POST array;
+   *   e.g., 'billing', 'shipping', or 'account'.
    * @param int $user_id
    *   The user ID for which the generate the user info for. Defaults to the
    *   currently logged-in user.
    */
-  public static function buildPurchaseInfo($sku, $user_id = 0) {
-    $purchase = static::buildUserInfo($user_id);
+  public static function buildPurchaseInfo($sku, $key_prefix = 'billing', $user_id = 0) {
+    $purchase = static::buildUserInfo($key_prefix, $user_id);
 
     $sku_parts = preg_split('@[:-]@', $sku);
     $accessType = $sku_parts[0];

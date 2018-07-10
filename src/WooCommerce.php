@@ -312,7 +312,8 @@ class WooCommerce {
     if (empty($sku)) {
       throw new \LogicException("Unable to process order: Missing SKU (accessType) in selected product.");
     }
-    $purchase = Plugin::buildPurchaseInfo($sku);
+    $address_type = !empty($_POST['ship_to_different_address']) ? 'shipping' : 'billing';
+    $purchase = Plugin::buildPurchaseInfo($sku, $address_type);
 
     // If a registered user has a subscriber ID already, then alfa GP/VM will
     // reject any kind of change to the address. The submitted address will only
@@ -452,7 +453,7 @@ class WooCommerce {
    * @implements woocommerce_save_account_details
    */
   public static function woocommerce_save_account_details($user_id) {
-    $userinfo = Plugin::buildUserInfo($user_id, 'account');
+    $userinfo = Plugin::buildUserInfo('account', $user_id);
     $userinfo['email'] = $_POST['account_email'];
 
     $response = Server::updateUser($userinfo);

@@ -412,6 +412,12 @@ class WooCommerce {
     $userinfo = Plugin::buildUserInfo('account', $user_id);
     $userinfo['email'] = $_POST['account_email'];
 
+    if (!empty($_POST['password_1']) && !empty($_POST['password_current']) && $_POST['password_1'] !== $_POST['password_current']) {
+      $userinfo['pass'] = Plugin::encrypt($_POST['password_1']);
+      $userinfo['pass_verify'] = Plugin::encrypt($_POST['password_current']);
+      $userinfo['action'] = 'changePassword';
+    }
+
     $response = Server::updateUser($userinfo);
     if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
       wc_add_notice(isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.'), 'error');

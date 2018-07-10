@@ -145,11 +145,12 @@ class Server {
     ];
     $response = wp_remote_request($api_url, $request);
     if ($response instanceof \WP_Error) {
-      static::triggerCommunicationError($response);
-      return;
+      static::triggerCommunicationError($request, $response);
+      $response = (array) $response;
     }
-    $response = json_decode($response['body'], JSON_OBJECT_AS_ARRAY);
-
+    else {
+      $response = json_decode($response['body'], JSON_OBJECT_AS_ARRAY);
+    }
     static::$debugLog[] = [
       'request' => ['body' => json_encode($data, JSON_PRETTY_PRINT)] + $request,
       'response' => json_encode($response, JSON_PRETTY_PRINT),
@@ -160,7 +161,7 @@ class Server {
   /**
    * Triggers WooCommerce error message if SSO server does not respond.
    */
-  public static function triggerCommunicationError($response) {
+  public static function triggerCommunicationError($request, $response) {
     wc_add_notice(__('An error occurred while processing your data. Please try again in a few minutes.', Plugin::L10N), 'error');
   }
 

@@ -309,6 +309,9 @@ class WooCommerce {
     foreach ($cart as $item) {
       $sku = $item['data']->get_sku();
     }
+    if (empty($sku)) {
+      throw new \LogicException("Unable to process order: Missing SKU (accessType) in selected product.");
+    }
     $purchase = Plugin::buildPurchaseInfo($sku);
 
     // If a registered user has a subscriber ID already, then alfa GP/VM will

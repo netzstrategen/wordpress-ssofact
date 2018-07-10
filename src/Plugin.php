@@ -354,7 +354,7 @@ class Plugin {
         'housenr' => $address_source[$key_prefix . '_house_number'],
         'zipcode' => $address_source[$key_prefix . '_postcode'],
         'city' => $address_source[$key_prefix . '_city'],
-        // @todo Implement proper mapping for country.
+        // @todo Implement proper mapping for country. (D <=> DE)
         'country' => 'DE', // $address_source[$key_prefix . '_country'],
         // 'birthday' => ,
       ];
@@ -364,6 +364,34 @@ class Plugin {
         'phone_prefix' => $address_source['billing_phone_prefix'],
         'phone' => $address_source['billing_phone'],
       ];
+      // @todo Web user account only supports a single phone number (due to data
+      //   privacy and because landline numbers are a thing of the past). Migrate
+      //   these to phone upon login/import.
+      // unset($userinfo['mobile_prefix']);
+      // unset($userinfo['mobile']);
+    }
+
+    // If a registered user has a subscriber ID already, then alfa GP/VM will
+    // reject any kind of change to the address. The submitted address will only
+    // be contained in the order confirmation email and manually processed by
+    // the customer service team. Even if the user only specified the ID in the
+    // checkout form, it has already been validated to be correct by now.
+    if (!empty($address_source['billing_subscriber_id']) || ($user_id > 0 && get_user_meta($user_id, 'billing_subscriber_id', TRUE))) {
+      $userinfo = array_diff_key($userinfo, [
+        'salutation' => 0,
+        'company' => 0,
+        'title' => 0,
+        'firstname' => 0,
+        'lastname' => 0,
+        'street' => 0,
+        'housenr' => 0,
+        'zipcode' => 0,
+        'city' => 0,
+        'country' => 0,
+        'birthday' => 0,
+        'phone_prefix' => 0,
+        'phone' => 0,
+      ]);
     }
 
     $optin_source = $_POST;

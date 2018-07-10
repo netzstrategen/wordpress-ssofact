@@ -198,8 +198,7 @@ class WooCommerce {
       // An existing subscriber ID cannot be changed.
       if (get_user_meta(get_current_user_ID(), 'billing_subscriber_id', TRUE)) {
         $fields['billing_subscriber_id']['required'] = TRUE;
-        $fields['billing_subscriber_id']['custom_attributes']['readonly'] = TRUE;
-        $fields['billing_subscriber_id']['custom_attributes']['disabled'] = TRUE;
+        $fields['billing_subscriber_id']['custom_attributes']['readonly'] = 'readonly';
       }
     }
 

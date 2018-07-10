@@ -145,7 +145,7 @@ class Server {
     ];
     $response = wp_remote_request($api_url, $request);
     if ($response instanceof \WP_Error) {
-      static::triggerCommunicationError();
+      static::triggerCommunicationError($response);
       return;
     }
     $response = json_decode($response['body'], JSON_OBJECT_AS_ARRAY);
@@ -160,9 +160,8 @@ class Server {
   /**
    * Triggers WooCommerce error message if SSO server does not respond.
    */
-  public static function triggerCommunicationError() {
+  public static function triggerCommunicationError($response) {
     wc_add_notice(__('An error occurred while processing your data. Please try again in a few minutes.', Plugin::L10N), 'error');
-    trigger_error($response->get_error_message(), E_USER_ERROR);
   }
 
   /**
@@ -172,15 +171,21 @@ class Server {
     if (WP_DEBUG) {
       $debug_request = '';
       foreach (static::$debugLog as $request) {
+        $debug_request .= '<details>';
+        $debug_request .= '<summary>';
         $debug_request .= $request['request']['method'] . ' ' . $request['request']['url'] . "\n";
+        $debug_request .= '</summary>';
+        $debug_request .= "<pre>\n";
         foreach ($request['request']['headers'] as $key => $value) {
           $debug_request .= "$key: $value\n";
         }
         $debug_request .= $request['request']['body'] . "\n";
         $debug_request .= $request['response'];
+        $debug_request .= "\n</pre>";
+        $debug_request .= '</details>';
       }
       static::$debugLog = [];
-      return wc_add_notice("<pre>\n$debug_request\n</pre>", 'notice');
+      return wc_add_notice($debug_request, 'notice');
     }
   }
 

@@ -121,6 +121,10 @@ class Plugin {
     // Updates user info in SSO upon editing account details.
     add_action('woocommerce_save_account_details', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details');
 
+    // Send redirect URL to forgot-password form on SSO.
+    add_action('woocommerce_before_template_part', __NAMESPACE__ . '\WooCommerce::woocommerce_before_template_part');
+    add_action('woocommerce_lostpassword_form', __NAMESPACE__ . '\WooCommerce::woocommerce_lostpassword_form');
+
     if (is_admin()) {
       return;
     }

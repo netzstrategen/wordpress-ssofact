@@ -38,8 +38,7 @@ class WooCommerce {
   public static function woocommerce_after_customer_login_form() {
     $output = ob_get_clean();
     $authorize_uri = Plugin::getAuthorizeUrl();
-    $server_domain = 'stage-login.stimme.de';
-    $action = 'https://' . $server_domain . '/?' . http_build_query([
+    $action = 'https://' . SSOFACT_SERVER_DOMAIN . '/?' . http_build_query([
       'next' => $authorize_uri,
     ]);
     $output = strtr($output, [
@@ -328,6 +327,7 @@ class WooCommerce {
       $response = Server::registerPurchase($purchase);
     }
     else {
+      $purchase['confirmationUrl'] = wc_customer_edit_account_url();
       $response = Server::registerUserAndPurchase($purchase);
     }
     if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
@@ -480,6 +480,36 @@ class WooCommerce {
     unset($fields['account_first_name'], $fields['account_last_name']);
     unset($fields['account_display_name']);
     return $fields;
+  }
+
+  /**
+   * @implements woocommerce_before_template_part
+   */
+  public static function woocommerce_before_template_part($template_name) {
+    if ($template_name === 'myaccount/form-lost-password.php') {
+      ob_start();
+    }
+  }
+
+  /**
+   * Posts forgot password (request) form to SSO with additional redirect URL.
+   *
+   * @implements woocommerce_lostpassword_form
+   */
+  public static function woocommerce_lostpassword_form() {
+    $output = ob_get_clean();
+    $authorize_uri = Plugin::getAuthorizeUrl();
+    $action = 'https://' . SSOFACT_SERVER_DOMAIN . '/passwort-vergessen.html';
+    $output = strtr($output, [
+      '<form method="post"' => '<form method="post" action="' . $action . '"',
+      'name="user_login"' => 'name="email"',
+    ]);
+    echo $output;
+
+    $redirect_url = site_url('shop/user/account');
+    ?>
+  <input type="hidden" name="redirect_url" value="<?= $redirect_url ?>">
+    <?php
   }
 
 }

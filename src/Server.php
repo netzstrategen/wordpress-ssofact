@@ -142,6 +142,7 @@ class Server {
         'rfbe-secret' => SSOFACT_RFBE_SECRET,
       ],
       'body' => json_encode($data),
+      'timeout' => 30,
     ];
     $response = wp_remote_request($api_url, $request);
     if ($response instanceof \WP_Error) {

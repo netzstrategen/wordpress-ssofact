@@ -169,7 +169,10 @@ class Plugin {
       $value['displayname_format'] = '{firstname} {lastname}';
       $value['identify_with_username'] = 0;
       $value['link_existing_users'] = 1;
-      $value['redirect_user_back'] = 1;
+      // @todo openid-connect-generic sets cookie containing redirect URL on
+      //   AJAX requests of WooCommerce, which the user did not actually access.
+      // @see OpenID_Connect_Generic_Login_Form::handle_redirect_cookie()
+      $value['redirect_user_back'] = (int) (!wp_doing_ajax() && !isset($_GET['wc-ajax']));
       $value['redirect_on_logout'] = 1;
     }
     return $value;

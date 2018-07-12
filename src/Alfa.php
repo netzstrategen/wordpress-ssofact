@@ -59,7 +59,7 @@ class Alfa {
   public static function getPurchases() {
     // $alfa_purchases = file_get_contents(ABSPATH . 'purchases.json');
     // $alfa_purchases = json_decode($alfa_purchases, TRUE);
-    $alfa_purchases = get_user_meta(get_current_user_ID(), 'alfa_purchases', TRUE);
+    $alfa_purchases = get_user_meta(get_current_user_ID(), 'alfa_purchases', TRUE) ?: ['purchases' => []];
     $purchases = [];
     $today = date('Ymd');
     foreach ($alfa_purchases['purchases'] as $key => $purchase) {

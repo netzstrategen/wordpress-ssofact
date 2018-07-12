@@ -486,7 +486,7 @@ class WooCommerce {
    * @implements woocommerce_before_template_part
    */
   public static function woocommerce_before_template_part($template_name) {
-    if ($template_name === 'myaccount/form-lost-password.php') {
+    if ($template_name === 'myaccount/form-lost-password.php' || $template_name === 'myaccount/my-subscriptions.php') {
       ob_start();
     }
   }
@@ -513,10 +513,14 @@ class WooCommerce {
   }
 
   /**
-   * @implements woocommerce_account_view-subscription_endpoint
+   * @implements woocommerce_after_template_part
    */
-  public static function viewSubscription() {
-    Alfa::mapPurchases(Alfa::getPurchases());
+  public static function woocommerce_after_template_part($template_name) {
+    if ($template_name === 'myaccount/my-subscriptions.php') {
+      $output = ob_get_clean();
+      echo Alfa::mapPurchases(Alfa::getPurchases());
+      echo $output;
+    }
   }
 
 }

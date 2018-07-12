@@ -124,6 +124,8 @@ class Plugin {
     // Send redirect URL to forgot-password form on SSO.
     add_action('woocommerce_before_template_part', __NAMESPACE__ . '\WooCommerce::woocommerce_before_template_part');
     add_action('woocommerce_lostpassword_form', __NAMESPACE__ . '\WooCommerce::woocommerce_lostpassword_form');
+    // Output current alfa purchases on subscriptions page of user account. (WIP)
+    add_action('woocommerce_after_template_part', __NAMESPACE__ . '\WooCommerce::woocommerce_after_template_part');
 
     if (is_admin()) {
       return;
@@ -137,9 +139,6 @@ class Plugin {
 
     // Validate current password against SSO.
     add_action('check_password', __CLASS__ . '::check_password', 20, 4);
-
-    // Output current alfa purchases on subscriptions page of user account. (WIP)
-    add_action('woocommerce_account_view-subscription_endpoint', __NAMESPACE__ . '\WooCommerce::viewSubscription', 9);
 
     add_action('wp_enqueue_scripts', __CLASS__ . '::wp_enqueue_scripts');
   }

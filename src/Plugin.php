@@ -138,6 +138,9 @@ class Plugin {
     // Validate current password against SSO.
     add_action('check_password', __CLASS__ . '::check_password', 20, 4);
 
+    // Output current alfa purchases on subscriptions page of user account. (WIP)
+    add_action('woocommerce_account_view-subscription_endpoint', __NAMESPACE__ . '\WooCommerce::viewSubscription', 9);
+
     add_action('wp_enqueue_scripts', __CLASS__ . '::wp_enqueue_scripts');
   }
 
@@ -294,6 +297,7 @@ class Plugin {
     update_user_meta($user_id, 'billing_email', $user_claims['email']);
 
     update_user_meta($user_id, 'billing_subscriber_id', $user_claims['subscriber_id'] ?? $user_claims['subscribernr']);
+    update_user_meta($user_id, 'alfa_purchases', $user_claims['alfa_purchases']);
     // update_user_meta($user_id, '', $user_claims['fcms_id']);
     // update_user_meta($user_id, '', $user_claims['facebook_id']);
 

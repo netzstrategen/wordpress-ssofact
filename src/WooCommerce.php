@@ -512,4 +512,11 @@ class WooCommerce {
     <?php
   }
 
+  /**
+   * @implements woocommerce_account_view-subscription_endpoint
+   */
+  public static function viewSubscription() {
+    Alfa::mapPurchases(Alfa::getPurchases());
+  }
+
 }

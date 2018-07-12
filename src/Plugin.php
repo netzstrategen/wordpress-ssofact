@@ -55,6 +55,10 @@ class Plugin {
     add_filter('option_openid_connect_generic_settings', __CLASS__ . '::option_openid_connect_generic_settings');
     add_filter('option_default_openid_connect_generic_settings', __CLASS__ . '::option_openid_connect_generic_settings');
 
+    // Increase timeout for requests to SSO server.
+    // Run after the client wrapper added its settings (10).
+    add_filter('openid-connect-generic-alter-request', __CLASS__ . '::alterOpenIdConnectRequest', 11, 2);
+
     // Add /shop prefix to openid-connect-generic client callback permalink.
     add_filter('site_url', __CLASS__ . '::site_url', 10, 3);
 
@@ -169,6 +173,14 @@ class Plugin {
       $value['redirect_on_logout'] = 1;
     }
     return $value;
+  }
+
+  /**
+   * @implements openid-connect-generic-alter-request
+   */
+  public static function alterOpenIdConnectRequest(array $request, $op) {
+    $request['timeout'] = 30;
+    return $request;
   }
 
   /**

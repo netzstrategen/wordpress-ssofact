@@ -67,6 +67,9 @@ class Plugin {
     // (only possible if SSO server and client share a common domain)
     add_filter('determine_current_user', __CLASS__ . '::determine_current_user', 100);
 
+    // Redirects user after OpenID Connect login.
+    add_filter('openid-connect-generic-redirect-user-back', __CLASS__ . '::redirectAfterOpenIdConnectLogin', 10, 2);
+
     // Update user profile meta data upon login.
     add_action('updated_user_meta', __CLASS__ . '::updated_user_meta', 10, 4);
 
@@ -201,10 +204,7 @@ class Plugin {
       $value['displayname_format'] = '{firstname} {lastname}';
       $value['identify_with_username'] = 0;
       $value['link_existing_users'] = 1;
-      // @todo openid-connect-generic sets cookie containing redirect URL on
-      //   AJAX requests of WooCommerce, which the user did not actually access.
-      // @see OpenID_Connect_Generic_Login_Form::handle_redirect_cookie()
-      $value['redirect_user_back'] = (int) (!wp_doing_ajax() && !isset($_GET['wc-ajax']));
+      $value['redirect_user_back'] = 1;
       $value['redirect_on_logout'] = 1;
     }
     return $value;
@@ -257,6 +257,16 @@ class Plugin {
       }
     }
     return $user_id;
+  }
+
+  /**
+   * @implements openid-connect-generic-redirect-user-back
+   */
+  public static function redirectAfterOpenIdConnectLogin($redirect_url, $user) {
+    if ($_GET['target']) {
+      $redirect_url = site_url($_GET['target']);
+    }
+    return $redirect_url;
   }
 
   /**

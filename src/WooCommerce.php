@@ -36,6 +36,13 @@ class WooCommerce {
   }
 
   /**
+   * @implements woocommerce_created_customer
+   */
+  public static function woocommerce_created_customer($instance) {
+    add_filter('send_auth_cookies', '__return_false');
+  }
+
+  /**
    * @implements woocommerce_before_customer_login_form
    */
   public static function woocommerce_before_customer_login_form() {

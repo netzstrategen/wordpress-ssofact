@@ -72,6 +72,7 @@ class Plugin {
 
     // Disable automatic login of newly registered user after checkout.
     add_filter('woocommerce_registration_auth_new_customer', '__return_false');
+    add_action('woocommerce_created_customer', __NAMESPACE__ . '\WooCommerce::woocommerce_created_customer');
   }
 
   /**

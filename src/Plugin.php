@@ -73,27 +73,49 @@ class Plugin {
     // Register new email notification upon customer billing/shipping address change.
     add_filter('woocommerce_email_actions', __NAMESPACE__ . '\WooCommerce::woocommerce_email_actions');
     add_filter('woocommerce_email_classes', __NAMESPACE__ . '\WooCommerce::woocommerce_email_classes');
+
+    // Disable automatic login of newly registered user after checkout.
+    add_filter('woocommerce_registration_auth_new_customer', '__return_false');
+    add_action('woocommerce_created_customer', __NAMESPACE__ . '\WooCommerce::woocommerce_created_customer');
+  }
+
+  /**
+   * @implements init
+   */
+  public static function preInit() {
+    static::redirectLogin();
   }
 
   /**
    * @implements init
    */
   public static function init() {
-    static::redirectLogin();
-
     // @todo Use default URL instead as is it's covered by custom rewriterules already.
     add_rewrite_rule('^shop/openid-connect/ssofact/?', 'index.php?openid-connect-authorize=1', 'top');
 
     // Run after daggerhart-openid-connect-generic (99).
     add_filter('logout_redirect', __CLASS__ . '::logout_redirect', 100);
 
-    // Removes username field from checkout form (email is used as username).
+    // Remove username and password fields from checkout form (email is username).
+    // @see WooCommerce::woocommerce_checkout_fields()
     add_filter('option_woocommerce_registration_generate_username', function () { return 'yes'; });
-    add_filter('option_default_woocommerce_registration_generate_username', function () { return 'yes'; });
-
-    // Removes password field from registration form.
     add_filter('option_woocommerce_registration_generate_password', function () { return 'yes'; });
+    add_filter('option_default_woocommerce_registration_generate_username', function () { return 'yes'; });
     add_filter('option_default_woocommerce_registration_generate_password', function () { return 'yes'; });
+
+    // Disable core account change emails.
+    add_filter('option_registrationnotification', function () { return 'no'; });
+    add_filter('option_default_registrationnotification', function () { return 'no'; });
+    add_filter('send_password_change_email', '__return_false');
+    add_filter('send_email_change_email', '__return_false');
+    add_filter('send_site_admin_email_change_email', '__return_false');
+    add_filter('send_network_admin_email_change_email', '__return_false');
+    add_filter('wpmu_signup_blog_notification', '__return_false');
+    add_filter('wpmu_signup_user_notification', '__return_false');
+    add_filter('wpmu_welcome_notification', '__return_false');
+    add_filter('wpmu_welcome_user_notification', '__return_false');
+    // Disable WooCommerce customer/account emails.
+    add_action('woocommerce_email', __NAMESPACE__ . '\WooCommerce::woocommerce_email');
 
     // Defines default address fields for checkout and user account forms.
     // Sorts woocommerce default address fields array by priority.
@@ -143,6 +165,11 @@ class Plugin {
 
     // Validate current password against SSO.
     add_action('check_password', __CLASS__ . '::check_password', 20, 4);
+    // If user is already logged in and attempts to reset their password, the
+    // current password is always correct.
+    if (!empty($_POST['action']) && $_POST['action'] === 'save_account_details' && get_current_user_ID() && Plugin::getPasswordResetToken()) {
+      $_POST['password_current'] = 'forgot-password-current-is-always-correct';
+    }
 
     // Output current alfa purchases on subscriptions page of user account. (WIP)
     add_action('woocommerce_account_view-subscription_endpoint', __NAMESPACE__ . '\WooCommerce::viewSubscription', 9);
@@ -274,12 +301,17 @@ class Plugin {
     if ($result === TRUE) {
       return $result;
     }
+    // If user is already logged in and attemts to reset their password, the
+    // current password is always correct.
+    if (get_current_user_ID() && Plugin::getPasswordResetToken()) {
+      return TRUE;
+    }
     $current_user = get_user_by('id', $user_id);
     $response = Server::validateLogin($current_user->user_email, $password);
-    if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
-      return FALSE;
+    if (isset($response['statuscode']) && $response['statuscode'] === 200) {
+      return TRUE;
     }
-    return TRUE;
+    return FALSE;
   }
 
   /**
@@ -487,6 +519,20 @@ class Plugin {
     // Ensure that all values for the alfa purchase are strings.
     $purchase['permission'] = array_map('strval', $purchase['permission']);
     return $purchase;
+  }
+
+  /**
+   * Returns the password reset token from userinfo, if any.
+   *
+   * @return string
+   *   The password reset token, if any.
+   */
+  public static function getPasswordResetToken() {
+    $user_id = get_current_user_ID();
+    $last_known_userinfo = get_user_meta($user_id, Plugin::USER_META_USERINFO, TRUE);
+    if (isset($last_known_userinfo['code'])) {
+      return $last_known_userinfo['code'];
+    }
   }
 
   /**

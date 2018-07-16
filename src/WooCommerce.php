@@ -26,6 +26,23 @@ class WooCommerce {
   }
 
   /**
+   * @implements woocommerce_email
+   */
+  public static function woocommerce_email($instance) {
+    remove_action('woocommerce_low_stock_notification', [$instance, 'low_stock']);
+    remove_action('woocommerce_no_stock_notification', [$instance, 'no_stock']);
+    remove_action('woocommerce_product_on_backorder_notification', [$instance, 'backorder']);
+    remove_action('woocommerce_created_customer_notification', [$instance, 'customer_new_account'], 10, 3);
+  }
+
+  /**
+   * @implements woocommerce_created_customer
+   */
+  public static function woocommerce_created_customer($instance) {
+    add_filter('send_auth_cookies', '__return_false');
+  }
+
+  /**
    * @implements woocommerce_before_customer_login_form
    */
   public static function woocommerce_before_customer_login_form() {
@@ -182,6 +199,10 @@ class WooCommerce {
   public static function woocommerce_checkout_fields($fields) {
     $fields['billing'] = WooCommerce::woocommerce_billing_fields($fields['billing']);
     $fields['shipping'] = WooCommerce::woocommerce_shipping_fields($fields['shipping']);
+
+    // Remove username and password fields from checkout form (email is username).
+    unset($fields['account']['account_username']);
+    unset($fields['account']['account_password']);
     return $fields;
   }
 
@@ -394,7 +415,7 @@ class WooCommerce {
    */
   public static function woocommerce_save_account_details_errors(\WP_Error $errors, $user) {
     $current_user = wp_get_current_user();
-    if (!empty($_POST['account_email']) && $_POST['account_email'] !== $current_user->user_email) {
+    if (!empty($_POST['account_email']) && $_POST['account_email'] !== $current_user->user_email && !Plugin::getPasswordResetToken()) {
       $response = Server::isEmailRegistered($_POST['account_email']);
       // Error 607: "Given email is unknown" is the only allowed positive case.
       if (!isset($response['statuscode']) || $response['statuscode'] !== 607) {
@@ -410,9 +431,16 @@ class WooCommerce {
    */
   public static function woocommerce_save_account_details($user_id) {
     $userinfo = Plugin::buildUserInfo('account', $user_id);
-    $userinfo['email'] = $_POST['account_email'];
+    if (!empty($_POST['account_email'])) {
+      $userinfo['email'] = $_POST['account_email'];
+    }
 
-    if (!empty($_POST['password_1']) && !empty($_POST['password_current']) && $_POST['password_1'] !== $_POST['password_current']) {
+    if ($token = Plugin::getPasswordResetToken()) {
+      $userinfo['pass'] = Plugin::encrypt($_POST['password_1']);
+      $userinfo['code'] = $token;
+      $userinfo['action'] = 'forgotPassword';
+    }
+    elseif (!empty($_POST['password_1']) && !empty($_POST['password_current']) && $_POST['password_1'] !== $_POST['password_current']) {
       $userinfo['pass'] = Plugin::encrypt($_POST['password_1']);
       $userinfo['pass_verify'] = Plugin::encrypt($_POST['password_current']);
       $userinfo['action'] = 'changePassword';
@@ -434,6 +462,9 @@ class WooCommerce {
   public static function woocommerce_edit_account_form() {
     $form = ob_get_clean();
     $form = preg_replace('@^\s*<p.+?(?:account_first_name|account_last_name|account_display_name).+?</p>@sm', '', $form);
+    if (Plugin::getPasswordResetToken()) {
+      $form = preg_replace('@^\s*<p.+?(?:password_current).+?</p>@sm', '', $form);
+    }
     echo $form;
 
     echo '<fieldset class="account-edit-optin-checks">';
@@ -479,6 +510,10 @@ class WooCommerce {
   public static function woocommerce_save_account_details_required_fields(array $fields) {
     unset($fields['account_first_name'], $fields['account_last_name']);
     unset($fields['account_display_name']);
+    if (Plugin::getPasswordResetToken()) {
+      unset($fields['account_email']);
+      unset($fields['password_current']);
+    }
     return $fields;
   }
 

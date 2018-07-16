@@ -514,8 +514,12 @@ class WooCommerce {
         'priority' => 130,
       ],
     ];
+    $userinfo = Plugin::buildUserInfo('account', get_current_user_ID());
 
     foreach ($opt_ins as $opt_in_id => $opt_in_args) {
+      if ($userinfo['optins'][$opt_in_id]) {
+        continue;
+      }
       $args = [
         'type' => 'checkbox',
         'label' => $opt_in_args['label'],

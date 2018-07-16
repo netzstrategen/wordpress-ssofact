@@ -154,7 +154,7 @@ class Server {
     }
     static::$debugLog[] = [
       'request' => ['body' => json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)] + $request,
-      'response' => json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
+      'response' => json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
     ];
     return $response;
   }

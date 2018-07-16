@@ -141,7 +141,7 @@ class Server {
         'rfbe-key' => SSOFACT_RFBE_KEY,
         'rfbe-secret' => SSOFACT_RFBE_SECRET,
       ],
-      'body' => json_encode($data),
+      'body' => json_encode($data, JSON_UNESCAPED_UNICODE),
       'timeout' => 30,
     ];
     $response = wp_remote_request($api_url, $request);
@@ -153,8 +153,8 @@ class Server {
       $response = json_decode($response['body'], JSON_OBJECT_AS_ARRAY);
     }
     static::$debugLog[] = [
-      'request' => ['body' => json_encode($data, JSON_PRETTY_PRINT)] + $request,
-      'response' => json_encode($response, JSON_PRETTY_PRINT),
+      'request' => ['body' => json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)] + $request,
+      'response' => json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
     ];
     return $response;
   }

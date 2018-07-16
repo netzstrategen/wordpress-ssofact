@@ -69,6 +69,9 @@ class Plugin {
     // Register new email notification upon customer billing/shipping address change.
     add_filter('woocommerce_email_actions', __NAMESPACE__ . '\WooCommerce::woocommerce_email_actions');
     add_filter('woocommerce_email_classes', __NAMESPACE__ . '\WooCommerce::woocommerce_email_classes');
+
+    // Disable automatic login of newly registered user after checkout.
+    add_filter('woocommerce_registration_auth_new_customer', '__return_false');
   }
 
   /**
@@ -94,9 +97,6 @@ class Plugin {
     add_filter('option_woocommerce_registration_generate_password', function () { return 'yes'; });
     add_filter('option_default_woocommerce_registration_generate_username', function () { return 'yes'; });
     add_filter('option_default_woocommerce_registration_generate_password', function () { return 'yes'; });
-    // Disable WooCommerce's automatic login of newly registered user after
-    // checkout.
-    add_filter('woocommerce_registration_auth_new_customer', '__return_false');
 
     // Disable core account change emails.
     add_filter('option_registrationnotification', function () { return 'no'; });

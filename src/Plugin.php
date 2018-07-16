@@ -98,6 +98,17 @@ class Plugin {
     // checkout.
     add_filter('woocommerce_registration_auth_new_customer', '__return_false');
 
+    // Disable core account change emails.
+    add_filter('option_registrationnotification', function () { return 'no'; });
+    add_filter('option_default_registrationnotification', function () { return 'no'; });
+    add_filter('send_password_change_email', '__return_false');
+    add_filter('send_email_change_email', '__return_false');
+    add_filter('send_site_admin_email_change_email', '__return_false');
+    add_filter('send_network_admin_email_change_email', '__return_false');
+    add_filter('wpmu_signup_blog_notification', '__return_false');
+    add_filter('wpmu_signup_user_notification', '__return_false');
+    add_filter('wpmu_welcome_notification', '__return_false');
+    add_filter('wpmu_welcome_user_notification', '__return_false');
     // Disable WooCommerce customer/account emails.
     add_action('woocommerce_email', __NAMESPACE__ . '\WooCommerce::woocommerce_email');
 

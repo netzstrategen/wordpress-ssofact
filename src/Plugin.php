@@ -199,7 +199,7 @@ class Plugin {
       // @todo openid-connect-generic sets cookie containing redirect URL on
       //   AJAX requests of WooCommerce, which the user did not actually access.
       // @see OpenID_Connect_Generic_Login_Form::handle_redirect_cookie()
-      $value['redirect_user_back'] = (int) (!wp_doing_ajax() && !isset($_GET['wc-ajax']));
+      $value['redirect_user_back'] = (int) (!wp_doing_ajax() && !isset($_GET['wc-ajax']) && !strpos($_SERVER['REQUEST_URI'], 'openid-connect'));
       $value['redirect_on_logout'] = 1;
     }
     return $value;

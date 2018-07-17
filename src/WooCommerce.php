@@ -602,14 +602,16 @@ class WooCommerce {
     if ($subscriber_id = get_user_meta($user_id, 'subscriber_id', TRUE)) {
       echo '<p><strong>' . __('Subscription ID:', PLUGIN::L10N) . '</strong> ' . $subscriber_id . '</p>';
     }
-    $userinfo = get_user_meta($user_id, Plugin::USER_META_USERINFO, TRUE);
-    if (empty($userinfo['id'])) {
-      throw new \LogicException('Unable to build user info: Missing SSO ID.');
+    if (!isset($_POST['optins'])) {
+      return;
     }
     $optins_list = '';
     foreach (static::OPT_INS as $opt_in_id => $opt_in_args) {
+      if (!isset($_POST['optins'][$opt_in_id])) {
+        continue;
+      }
       $optins_list .= '<span class="optin-label"><strong>' . $opt_in_args['label'] . ':</strong></span> ';
-      $optins_list .= '<span class="optin-value">' . ($userinfo['optins'][$opt_in_id] ? __('Yes', 'woocommerce') : __('No', 'woocommerce')) . '</span><br />';
+      $optins_list .= '<span class="optin-value">' . ($_POST['optins'][$opt_in_id] ? __('Yes', 'woocommerce') : __('No', 'woocommerce')) . '</span><br />';
     }
     echo '<p>' . $optins_list . '</p>';
   }

@@ -106,6 +106,10 @@ class Plugin {
     add_filter('option_default_woocommerce_registration_generate_username', function () { return 'yes'; });
     add_filter('option_default_woocommerce_registration_generate_password', function () { return 'yes'; });
 
+    // Reduce minimum password strength to match approximately the current
+    // (relaxed) definition for front-end users (Minimum 6 chars, at least 1 digit).
+    add_filter('woocommerce_min_password_strength', function () { return 3; });
+
     // Disable core account change emails.
     add_filter('option_registrationnotification', function () { return 'no'; });
     add_filter('option_default_registrationnotification', function () { return 'no'; });

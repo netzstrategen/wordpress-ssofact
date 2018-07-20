@@ -546,6 +546,16 @@ class Plugin {
   }
 
   /**
+   * Invalidates (removes) the password reset token from userinfo.
+   */
+  public static function invalidatePasswordResetToken() {
+    $user_id = get_current_user_ID();
+    $last_known_userinfo = get_user_meta($user_id, Plugin::USER_META_USERINFO, TRUE);
+    unset($last_known_userinfo['code']);
+    update_user_meta($user_id, Plugin::USER_META_USERINFO, $last_known_userinfo);
+  }
+
+  /**
    * Encrypts a given password using a (reversible) OpenSSL cipher.
    *
    * @param string $plain_value

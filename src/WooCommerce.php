@@ -416,12 +416,30 @@ class WooCommerce {
   public static function woocommerce_save_account_details_errors(\WP_Error $errors, $user) {
     $current_user = wp_get_current_user();
     if (!empty($_POST['account_email']) && $_POST['account_email'] !== $current_user->user_email && !Plugin::getPasswordResetToken()) {
-      $response = Server::isEmailRegistered($_POST['account_email']);
-      // Error 607: "Given email is unknown" is the only allowed positive case.
-      if (!isset($response['statuscode']) || $response['statuscode'] !== 607) {
-        $message = isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.');
-        wc_add_notice($message, 'error');
-        Server::addDebugMessage();
+      if (empty($_POST['password_current'])) {
+        wc_add_notice(__('Please enter your current password.', 'woocommerce'), 'error');
+      }
+      else {
+        // Email and password cannot be changed at once currently.
+        if (empty($_POST['password_1'])) {
+          $all_notices = WC()->session->get('wc_notices', []);
+          $index = array_search(__('Please fill out all password fields.', 'woocommerce'), $all_notices['error']);
+          unset($all_notices['error'][$index]);
+          WC()->session->set('wc_notices', $all_notices);
+        }
+
+        if (!wp_check_password($_POST['password_current'], $current_user->user_pass, $current_user->ID)) {
+          wc_add_notice(__('Your current password is incorrect.', 'woocommerce'), 'error');
+        }
+        else {
+          $response = Server::isEmailRegistered($_POST['account_email']);
+          // Error 607: "Given email is unknown" is the only allowed positive case.
+          if (!isset($response['statuscode']) || $response['statuscode'] !== 607) {
+            $message = isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.');
+            wc_add_notice($message, 'error');
+            Server::addDebugMessage();
+          }
+        }
       }
     }
   }
@@ -431,9 +449,9 @@ class WooCommerce {
    */
   public static function woocommerce_save_account_details($user_id) {
     $userinfo = Plugin::buildUserInfo('account', $user_id);
-    if (!empty($_POST['account_email'])) {
-      $userinfo['email'] = $_POST['account_email'];
-    }
+
+    $current_email = $userinfo['email'];
+    unset($userinfo['email']);
 
     if ($token = Plugin::getPasswordResetToken()) {
       $userinfo['pass'] = Plugin::encrypt($_POST['password_1']);
@@ -445,11 +463,20 @@ class WooCommerce {
       $userinfo['pass_verify'] = Plugin::encrypt($_POST['password_current']);
       $userinfo['action'] = 'changePassword';
     }
+    elseif (!empty($_POST['account_email']) && $_POST['account_email'] !== $userinfo['email']) {
+      $userinfo['temp_email'] = $_POST['account_email'];
+      $userinfo['pass_verify'] = Plugin::encrypt($_POST['password_current']);
+      $userinfo['action'] = 'changeEmail';
+    }
 
     $response = Server::updateUser($userinfo);
     if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
       wc_add_notice(isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.'), 'error');
       Server::addDebugMessage();
+    }
+    else {
+      // Invalidate the one-time token immediately on successful update.
+      Plugin::invalidatePasswordResetToken();
     }
     Server::addDebugMessage();
   }

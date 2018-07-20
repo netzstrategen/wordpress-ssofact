@@ -431,9 +431,9 @@ class WooCommerce {
    */
   public static function woocommerce_save_account_details($user_id) {
     $userinfo = Plugin::buildUserInfo('account', $user_id);
-    if (!empty($_POST['account_email'])) {
-      $userinfo['email'] = $_POST['account_email'];
-    }
+
+    $current_email = $userinfo['email'];
+    unset($userinfo['email']);
 
     if ($token = Plugin::getPasswordResetToken()) {
       $userinfo['pass'] = Plugin::encrypt($_POST['password_1']);
@@ -445,11 +445,20 @@ class WooCommerce {
       $userinfo['pass_verify'] = Plugin::encrypt($_POST['password_current']);
       $userinfo['action'] = 'changePassword';
     }
+    elseif (!empty($_POST['account_email']) && $_POST['account_email'] !== $userinfo['email']) {
+      $userinfo['email'] = $_POST['account_email'];
+      $userinfo['pass_verify'] = Plugin::encrypt($_POST['password_current']);
+      $userinfo['action'] = 'changeEmail';
+    }
 
     $response = Server::updateUser($userinfo);
     if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
       wc_add_notice(isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.'), 'error');
       Server::addDebugMessage();
+    }
+    else {
+      // Invalidate the one-time token immediately on successful update.
+      Plugin::invalidatePasswordResetToken();
     }
     Server::addDebugMessage();
   }

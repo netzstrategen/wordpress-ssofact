@@ -530,6 +530,10 @@ class Plugin {
     if ($edition === '') {
       unset($purchase['permission']['edition']);
     }
+    // For regional variations of epapers, send the product (object).
+    elseif (stripos($edition, 'e') === 0) {
+      $purchase['permission']['object'] = 'EST';
+    }
     // Ensure that all values for the alfa purchase are strings.
     $purchase['permission'] = array_map('strval', $purchase['permission']);
     return $purchase;

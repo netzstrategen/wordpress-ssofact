@@ -86,6 +86,10 @@ class Plugin {
    * @implements init
    */
   public static function preInit() {
+    // Add query_var for inbound SSO server event callbacks.
+    // @see Plugin::rewrite_rules_array(), Plugin::parse_request()
+    add_rewrite_tag('%openid-connect-event%', '([^&]+)');
+
     static::redirectLogin();
   }
 
@@ -95,6 +99,10 @@ class Plugin {
   public static function init() {
     // @todo Use default URL instead as is it's covered by custom rewriterules already.
     add_rewrite_rule('^shop/openid-connect/ssofact/?', 'index.php?openid-connect-authorize=1', 'top');
+
+    // Add route for inbound SSO server event callbacks.
+    add_filter('rewrite_rules_array', __CLASS__ . '::rewrite_rules_array');
+    add_filter('parse_request', __CLASS__ . '::parse_request');
 
     // Run after daggerhart-openid-connect-generic (99).
     add_filter('logout_redirect', __CLASS__ . '::logout_redirect', 100);
@@ -292,6 +300,43 @@ class Plugin {
     ]);
     $authorize_uri = preg_replace('@&redirect_uri=[^&]+@', '$0' . $destination, $authorize_uri);
     return $authorize_uri;
+  }
+
+  /**
+   * @implements rewrite_rules_array
+   */
+  public static function rewrite_rules_array(array $rules) {
+    $rules = ['^shop/openid-connect/ssofact/(.+)/?' => 'index.php?openid-connect-event=$matches[1]'] + $rules;
+    return $rules;
+  }
+
+  /**
+   * Handles inbound SSO server event requests.
+   *
+   * @implements parse_request
+   */
+  public static function parse_request($query) {
+    if (isset($query->query_vars['openid-connect-event'])) {
+      if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        wp_die('Invalid HTTP method.', 400);
+      }
+      // @todo Validate origin/authencity of SSO server.
+
+      switch ($query->query_vars['openid-connect-event']) {
+        case 'logout':
+          $user = \OpenID_Connect_Generic::getClientWrapper()->get_user_by_identity($_POST['id']);
+          if (!$user) {
+            wp_die('User not found.', 404);
+          }
+          $manager = \WP_Session_Tokens::get_instance($user->ID);
+          $manager->destroy_all();
+          break;
+
+        default:
+          wp_die('Unsupported event name.', 400);
+      }
+      exit();
+    }
   }
 
   /**

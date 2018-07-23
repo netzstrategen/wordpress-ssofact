@@ -509,12 +509,21 @@ class WooCommerce {
         'label' => 'Newsletter Freizeit',
         'priority' => 120,
       ],
-      'confirm_agb' => [
+    ];
+    $userinfo = Plugin::buildUserInfo('account', get_current_user_ID());
+
+    // Sets general terms & conditions opt-in as a hidden field if already confirmed.
+    if (isset($userinfo['optins']['confirm_agb'])) {
+      echo '<p class="form-row hidden" id="confirm_agb_field">
+              <input type="hidden" class="input-hidden" name="confirm_agb" id="confirm_agb" value="' . $userinfo['optins']['confirm_agb'] . '" />
+            </p>';
+    }
+    else {
+      $opt_ins['confirm_agb'] = [
         'label' => 'AGB-Bestätigung',
         'priority' => 130,
-      ],
-    ];
-
+      ];
+    }
     foreach ($opt_ins as $opt_in_id => $opt_in_args) {
       $args = [
         'type' => 'checkbox',

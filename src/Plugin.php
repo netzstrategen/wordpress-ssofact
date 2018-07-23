@@ -71,7 +71,7 @@ class Plugin {
     add_filter('openid-connect-generic-redirect-user-back', __CLASS__ . '::redirectAfterOpenIdConnectLogin', 10, 2);
 
     // Update user profile meta data upon login.
-    add_action('updated_user_meta', __CLASS__ . '::updated_user_meta', 10, 4);
+    add_action('openid-connect-generic-login', __CLASS__ . '::onOpenIdConnectLogin', 10, 5);
 
     // Register new email notification upon customer billing/shipping address change.
     add_filter('woocommerce_email_actions', __NAMESPACE__ . '\WooCommerce::woocommerce_email_actions');
@@ -376,12 +376,11 @@ class Plugin {
   /**
    * Updates local user meta data with UserInfo provided by SSO.
    *
-   * @implements updated_{$meta_type}_meta
+   * @implements openid-connect-generic-login
    */
-  public static function updated_user_meta($meta_id, $user_id, $meta_key, $user_claims) {
-    if ($meta_key !== Plugin::USER_META_USERINFO) {
-      return;
-    }
+  public static function onOpenIdConnectLogin($user, $token_response, $id_token_claim, $user_claims, $subject_identity) {
+    $user_id = $user->ID;
+
     update_user_meta($user_id, 'first_name', $user_claims['firstname']);
     update_user_meta($user_id, 'last_name', $user_claims['lastname']);
 

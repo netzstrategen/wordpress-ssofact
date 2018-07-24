@@ -10,6 +10,13 @@ namespace Netzstrategen\Ssofact;
 class WooCommerce {
 
   /**
+   * Whether the checkout was initiated by an anonymous user.
+   *
+   * @var bool
+   */
+  private static $isAnonymousCheckout;
+
+  /**
    * @implements woocommerce_email_actions
    */
   public static function woocommerce_email_actions($actions) {
@@ -295,8 +302,6 @@ class WooCommerce {
    * @implements woocommerce_checkout_process
    */
   public static function woocommerce_checkout_process() {
-    global $woocommerce;
-
     // Verifies that the given email address is NOT registered yet.
     // Note: The API endpoint checks the opposite; a positive result is an error.
     // @todo Handle email change for logged-in users.
@@ -324,13 +329,26 @@ class WooCommerce {
       }
     }
 
+    // WC_Checkout::process_customer() calls wp_set_current_user() after creating
+    // the user account, causing the current user to be the customer account,
+    // even though the user will not be authenticated (in our case). Therefore,
+    // we need a flag that informs us about the original user authentication.
+    static::$isAnonymousCheckout = !get_current_user_ID();
+  }
+
+  /**
+   * Submits purchase to SSO.
+   *
+   * @implements woocommerce_checkout_order_processed
+   */
+  public static function woocommerce_checkout_order_processed($order_id, $posted_data, $order) {
+    global $woocommerce;
+
     // Do not attempt to register purchase in case of a validation error.
     if (wc_notice_count('error') || empty($_POST['woocommerce_checkout_place_order']) || empty($_POST['terms'])) {
       return;
     }
 
-    // @todo Move from checkout validation into submission?
-    //   @see woocommerce_checkout_order_processed
     $cart = $woocommerce->cart->get_cart();
     foreach ($cart as $item) {
       $sku = $item['data']->get_sku();
@@ -339,9 +357,9 @@ class WooCommerce {
       throw new \LogicException("Unable to process order: Missing SKU (accessType) in selected product.");
     }
     $address_type = !empty($_POST['ship_to_different_address']) ? 'shipping' : 'billing';
-    $purchase = Plugin::buildPurchaseInfo($sku, $address_type);
+    $purchase = Plugin::buildPurchaseInfo($sku, $address_type, static::$isAnonymousCheckout ? 0 : $order->get_customer_id());
 
-    if (is_user_logged_in()) {
+    if (!static::$isAnonymousCheckout) {
       // Changing the email address is a special process requiring to confirm
       // the new address, which should not be supported during checkout.
       unset($purchase['email']);
@@ -357,6 +375,12 @@ class WooCommerce {
       Server::addDebugMessage();
     }
     else {
+      if (!empty($response['userId'])) {
+        update_user_meta($order->get_customer_id(), 'openid-connect-generic-subject-identity', $response['userId']);
+      }
+      if (!empty($response['aboNo'])) {
+        update_user_meta($order->get_customer_id(), 'billing_subscriber_id', $response['aboNo']);
+      }
       Server::addDebugMessage();
     }
   }

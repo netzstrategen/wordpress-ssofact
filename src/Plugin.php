@@ -411,7 +411,7 @@ class Plugin {
     update_user_meta($user_id, 'last_update', $user_claims['lastchgdate']);
 
     // update_user_meta($user_id, 'roles', $user_claims['']);
-    // update_user_meta($user_id, '', $user_claims['optins']); // array ( 'email_doi' => '0', 'list_premium' => '0', 'list_noch-fragen' => '0', 'list_freizeit' => '0', 'confirm_agb' => '0', 'acquisitionMail' => '0', 'acquisitionEmail' => '0', 'acquisitionPhone' => '0', 'changemail' => '0', )
+    update_user_meta($user_id, 'optins', $user_claims['optins']);
 
     // wp_capabilities | {"administrator":true}                                                                                                                                 |
     // wp_user_level | 10
@@ -512,18 +512,32 @@ class Plugin {
     }
 
     $optin_source = $_POST;
-    $terms_accepted = !empty($_POST['terms']);
+    $userinfo['optins'] = [];
+    if (isset($last_known_userinfo['optins'])) {
+      $userinfo['optins'] += $last_known_userinfo['optins'];
+    }
+    $terms_accepted = !empty($_POST['terms']) ? 1 : !empty($last_known_userinfo['optins']['confirm_agb']);
+    
     $userinfo += [
       'optins' => [
+        'confirm_agb' => (int) $terms_accepted,
+        'acquisitionEmail' => (int) !empty($optin_source['optin_email']),
+        'acquisitionMail' => (int) !empty($optin_source['optin_mail']),
+        'acquisitionPhone' =>(int) !empty($optin_source['optin_phone']),
         'list_noch-fragen' => (int) !empty($optin_source['list_noch-fragen']),
         'list_premium' => (int) !empty($optin_source['list_premium']),
         'list_freizeit' => (int) !empty($optin_source['list_freizeit']),
-        'confirm_agb' => (int) $terms_accepted,
-        'acquisitionEmail' => (int) !empty($optin_source['confirm_agb']),
-        'acquisitionMail' => (int) !empty($optin_source['confirm_mail']),
-        'acquisitionPhone' =>(int) !empty($optin_source['confirm_phone']),
       ],
     ];
+    $wgm_optins = [
+      'confirm_agb' => 0,
+    ];
+    $optins = array_keys(array_merge($wgm_optins, WooCommerce::OPTINS));
+    foreach ($optins as $key) {
+      if (isset($optin_source[$key])) {
+        $userinfo['optins'][$key] = !empty($optin_source[$key]);
+      }
+    }
     return $userinfo;
   }
 

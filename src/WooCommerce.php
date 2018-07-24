@@ -9,7 +9,7 @@ namespace Netzstrategen\Ssofact;
 
 class WooCommerce {
 
-  const OPT_INS = [
+  const OPTINS = [
     'list_noch-fragen' => [
       'label' => 'Newsletter Noch Fragen',
       'priority' => 100,
@@ -21,10 +21,6 @@ class WooCommerce {
     'list_freizeit' => [
       'label' => 'Newsletter Freizeit',
       'priority' => 120,
-    ],
-    'confirm_agb' => [
-      'label' => 'AGB-Bestätigung',
-      'priority' => 130,
     ],
   ];
 
@@ -515,7 +511,7 @@ class WooCommerce {
 
     echo '<fieldset class="account-edit-optin-checks">';
 
-    foreach (static::OPT_INS as $opt_in_id => $opt_in_args) {
+    foreach (static::OPTINS as $opt_in_id => $opt_in_args) {
       $args = [
         'type' => 'checkbox',
         'label' => $opt_in_args['label'],
@@ -606,7 +602,7 @@ class WooCommerce {
       return;
     }
     $optins_list = '';
-    foreach (static::OPT_INS as $opt_in_id => $opt_in_args) {
+    foreach (static::OPTINS as $opt_in_id => $opt_in_args) {
       if (!isset($_POST['optins'][$opt_in_id])) {
         continue;
       }

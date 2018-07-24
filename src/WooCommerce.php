@@ -368,6 +368,9 @@ class WooCommerce {
    * @implements woocommerce_after_save_address_validation
    */
   public static function woocommerce_after_save_address_validation($user_id, $address_type, $address) {
+    if (wc_notice_count('error')) {
+      return;
+    }
     $userinfo = Plugin::buildUserInfo($address_type, $user_id);
 
     $userinfo = array_diff_key($userinfo, [

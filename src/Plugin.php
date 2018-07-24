@@ -431,25 +431,28 @@ class Plugin {
     update_user_meta($user_id, 'first_name', $user_claims['firstname']);
     update_user_meta($user_id, 'last_name', $user_claims['lastname']);
 
-    update_user_meta($user_id, 'billing_salutation', $user_claims['salutation']);
+    $address_type = 'shipping';
+
+    update_user_meta($user_id, $address_type . '_salutation', $user_claims['salutation']);
     // update_user_meta($user_id, '', $user_claims['title']);
-    update_user_meta($user_id, 'billing_first_name', $user_claims['firstname']);
+    update_user_meta($user_id, $address_type . '_first_name', $user_claims['firstname']);
     if ($user_claims['salutation'] === 'Firma') {
-      update_user_meta($user_id, 'billing_last_name', '');
-      update_user_meta($user_id, 'billing_company_contact', $user_claims['lastname']);
+      update_user_meta($user_id, $address_type . '_last_name', '');
+      update_user_meta($user_id, $address_type . '_company_contact', $user_claims['lastname']);
     }
     else {
-      update_user_meta($user_id, 'billing_last_name', $user_claims['lastname']);
-      update_user_meta($user_id, 'billing_company_contact', '');
+      update_user_meta($user_id, $address_type . '_last_name', $user_claims['lastname']);
+      update_user_meta($user_id, $address_type . '_company_contact', '');
     }
-    update_user_meta($user_id, 'billing_company', $user_claims['company']);
-    update_user_meta($user_id, 'billing_address_1', $user_claims['street']);
-    update_user_meta($user_id, 'billing_house_number', $user_claims['housenr']);
-    update_user_meta($user_id, 'billing_postcode', $user_claims['zipcode']);
-    update_user_meta($user_id, 'billing_city', $user_claims['city']);
-    // update_user_meta($user_id, 'billing_state', $user_claims['']);
+    update_user_meta($user_id, $address_type . '_company', $user_claims['company']);
+    update_user_meta($user_id, $address_type . '_address_1', $user_claims['street']);
+    update_user_meta($user_id, $address_type . '_house_number', $user_claims['housenr']);
+    update_user_meta($user_id, $address_type . '_postcode', $user_claims['zipcode']);
+    update_user_meta($user_id, $address_type . '_city', $user_claims['city']);
+    // update_user_meta($user_id, $address_type . '_state', $user_claims['']);
     // @todo Implement mapping for country. (D <=> DE)
-    update_user_meta($user_id, 'billing_country', $user_claims['country']);
+    update_user_meta($user_id, $address_type . '_country', $user_claims['country']);
+
     update_user_meta($user_id, 'billing_phone_prefix', $user_claims['phone_prefix']);
     update_user_meta($user_id, 'billing_phone', $user_claims['phone']);
 

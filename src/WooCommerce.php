@@ -207,6 +207,18 @@ class WooCommerce {
     $fields['billing'] = WooCommerce::woocommerce_billing_fields($fields['billing']);
     $fields['shipping'] = WooCommerce::woocommerce_shipping_fields($fields['shipping']);
 
+    // If the user only has a shipping address but no billing address (after
+    // associating the existing subscription with the account but without a
+    // purchase yet), use the shipping address as billing address by default.
+    if (($user_id = get_current_user_ID()) && '' === get_user_meta($user_id, 'billing_address_1', TRUE) && '' !== get_user_meta($user_id, 'shipping_address_1', TRUE)) {
+      foreach ($fields['shipping'] as $shipping_name => $field) {
+        $billing_name = strtr($shipping_name, ['shipping_' => 'billing_']);
+        if (isset($fields['billing'][$billing_name]) && '' !== $value = get_user_meta($user_id, $shipping_name, TRUE)) {
+          $fields['billing'][$billing_name]['default'] = $value;
+        }
+      }
+    }
+
     // Remove username and password fields from checkout form (email is username).
     unset($fields['account']['account_username']);
     unset($fields['account']['account_password']);

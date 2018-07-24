@@ -159,6 +159,8 @@ class Plugin {
     // Validates checkout fields against SSO.
     add_action('woocommerce_checkout_process', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_process', 20);
 
+    // Submits the order to the SSO/alfa.
+    add_action('woocommerce_checkout_order_processed', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_order_processed', 20, 3);
 
     // Validate changed email address against SSO.
     add_action('woocommerce_save_account_details_errors', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details_errors', 20, 2);
@@ -454,10 +456,10 @@ class Plugin {
    *   The user ID for which the generate the user info for. Defaults to the
    *   currently logged-in user.
    */
-  public static function buildUserInfo($key_prefix = 'billing', $user_id = 0) {
+  public static function buildUserInfo($key_prefix = 'billing', $user_id = NULL) {
     $address_source = $_POST;
 
-    if ($user_id < 1) {
+    if (!isset($user_id)) {
       $user_id = get_current_user_ID();
     }
     if ($user_id) {
@@ -566,7 +568,7 @@ class Plugin {
    *   The user ID for which the generate the user info for. Defaults to the
    *   currently logged-in user.
    */
-  public static function buildPurchaseInfo($sku, $key_prefix = 'billing', $user_id = 0) {
+  public static function buildPurchaseInfo($sku, $key_prefix = 'billing', $user_id = NULL) {
     $purchase = static::buildUserInfo($key_prefix, $user_id);
 
     $sku_parts = preg_split('@[:-]@', $sku);

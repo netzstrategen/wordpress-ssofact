@@ -452,8 +452,9 @@ class Plugin {
     // update_user_meta($user_id, $address_type . '_state', $user_claims['']);
     // @todo Implement mapping for country. (D <=> DE)
     update_user_meta($user_id, $address_type . '_country', $user_claims['country']);
-    update_user_meta($user_id, $address_type . '_phone_prefix', $user_claims['phone_prefix']);
-    update_user_meta($user_id, $address_type . '_phone', $user_claims['phone']);
+
+    update_user_meta($user_id, 'billing_phone_prefix', $user_claims['phone_prefix']);
+    update_user_meta($user_id, 'billing_phone', $user_claims['phone']);
 
     // Take over the new modification timestamp from the SSO.
     update_user_meta($user_id, 'last_update', $user_claims['lastchgdate']);

@@ -69,6 +69,7 @@ class Plugin {
 
     // Redirects user after OpenID Connect login.
     add_filter('openid-connect-generic-redirect-user-back', __CLASS__ . '::redirectAfterOpenIdConnectLogin', 10, 2);
+    add_filter('wp_redirect', __CLASS__ . '::wp_redirect', 10, 2);
 
     // Update user profile meta data upon login.
     add_action('openid-connect-generic-login', __CLASS__ . '::onOpenIdConnectLogin', 10, 5);
@@ -280,6 +281,16 @@ class Plugin {
    * @implements openid-connect-generic-redirect-user-back
    */
   public static function redirectAfterOpenIdConnectLogin($redirect_url, $user) {
+    if ($_GET['target']) {
+      $redirect_url = site_url($_GET['target']);
+    }
+    return $redirect_url;
+  }
+
+  /**
+   * @implements wp_redirect
+   */
+  public static function wp_redirect($redirect_url, $status) {
     if ($_GET['target']) {
       $redirect_url = site_url($_GET['target']);
     }

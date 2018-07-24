@@ -84,17 +84,19 @@ class Alfa {
     $matrix = static::getProductMatrix();
     $matches = [];
 
-    // echo "<pre>\n"; var_dump($matrix['stite']); echo "</pre>";
-    echo '<strong>Expected bundle:</strong> ' . $matrix['stite']['bundle'] . ' (<code>' . $matrix['stite']['accessType'] . '</code>) [hardcoded]<br>';
+    $expected = $_GET['accessType'] ?? 'print';
+    // echo "<pre>\n"; var_dump($matrix[$expected]); echo "</pre>";
+    echo '<strong>Expected bundle:</strong> ' . $matrix[$expected]['bundle'] . ' (<code>' . $matrix[$expected]['accessType'] . '</code>)<br>';
+    echo '<small>[append <code>?accessType=' . $expected . '</code> to the URL to change the expected product]</small><br>';
     echo '<strong>Expected products:</strong><br><ul>';
-    foreach ($matrix['stite']['products'] as $value) {
-      echo '<li><pre>' . $value . '</pre></li>';
+    foreach ($matrix[$expected]['products'] as $value) {
+      echo '<li><code>' . $value . '</code></li>';
     }
     echo '</ul>';
     // echo "<pre>\n"; var_dump($purchases); echo "</pre>";
     echo '<strong>Actual products:</strong><br><ul>';
     foreach ($purchases as $value) {
-      echo '<li><pre>' . $value . '</pre></li>';
+      echo '<li><code>' . $value . '</code></li>';
     }
     echo '</ul>';
     echo '<strong>Matches in subscriptions.xml:</strong><br>';

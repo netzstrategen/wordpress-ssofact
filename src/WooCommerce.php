@@ -341,7 +341,7 @@ class WooCommerce {
       throw new \LogicException("Unable to process order: Missing SKU (accessType) in selected product.");
     }
     $key = 'deactivate_ship_to_different_address_if_purchase_on_account';
-    $address_type = isset($_POST[$key]) && $_POST[$key] === 'no' ? 'shipping' : 'billing';
+    $address_type = isset($_POST[$key]) && $_POST[$key] !== 'no' ? 'shipping' : 'billing';
     $purchase = Plugin::buildPurchaseInfo($sku, $address_type);
 
     if (is_user_logged_in()) {

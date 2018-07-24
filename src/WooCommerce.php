@@ -458,15 +458,24 @@ class WooCommerce {
       $userinfo['code'] = $token;
       $userinfo['action'] = 'forgotPassword';
     }
-    elseif (!empty($_POST['password_1']) && !empty($_POST['password_current']) && $_POST['password_1'] !== $_POST['password_current']) {
-      $userinfo['pass'] = Plugin::encrypt($_POST['password_1']);
-      $userinfo['pass_verify'] = Plugin::encrypt($_POST['password_current']);
-      $userinfo['action'] = 'changePassword';
-    }
     elseif (!empty($_POST['account_email']) && $_POST['account_email'] !== $userinfo['email']) {
       $userinfo['temp_email'] = $_POST['account_email'];
       $userinfo['pass_verify'] = Plugin::encrypt($_POST['password_current']);
       $userinfo['action'] = 'changeEmail';
+    }
+    if (!$token && !empty($_POST['password_1']) && !empty($_POST['password_current']) && $_POST['password_1'] !== $_POST['password_current']) {
+      $first_userinfo = $userinfo;
+
+      $userinfo['pass'] = Plugin::encrypt($_POST['password_1']);
+      $userinfo['pass_verify'] = Plugin::encrypt($_POST['password_current']);
+      $userinfo['action'] = 'changePassword';
+
+      // SSO server only supports one action at a time, so if the user changed
+      // the email and password at once, a second update needs to be performed.
+      if (!empty($first_userinfo['action'])) {
+        $second_userinfo = array_intersect_key($userinfo, ['id' => 1, 'pass' => 1, 'pass_verify' => 1, 'action' => 1]);
+        $userinfo = $first_userinfo;
+      }
     }
 
     $response = Server::updateUser($userinfo);
@@ -475,6 +484,15 @@ class WooCommerce {
       Server::addDebugMessage();
     }
     else {
+      // Perform the password change in a second request if email and password
+      // were changed at once.
+      if (!empty($second_userinfo)) {
+        $response = Server::updateUser($second_userinfo);
+        if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
+          wc_add_notice(isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.'), 'error');
+          Server::addDebugMessage();
+        }
+      }
       // Invalidate the one-time token immediately on successful update.
       Plugin::invalidatePasswordResetToken();
     }

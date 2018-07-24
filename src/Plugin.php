@@ -421,7 +421,14 @@ class Plugin {
     update_user_meta($user_id, 'billing_salutation', $user_claims['salutation']);
     // update_user_meta($user_id, '', $user_claims['title']);
     update_user_meta($user_id, 'billing_first_name', $user_claims['firstname']);
-    update_user_meta($user_id, 'billing_last_name', $user_claims['lastname']);
+    if ($user_claims['salutation'] === 'Firma') {
+      update_user_meta($user_id, 'billing_last_name', '');
+      update_user_meta($user_id, 'billing_company_contact', $user_claims['lastname']);
+    }
+    else {
+      update_user_meta($user_id, 'billing_last_name', $user_claims['lastname']);
+      update_user_meta($user_id, 'billing_company_contact', '');
+    }
     update_user_meta($user_id, 'billing_company', $user_claims['company']);
     update_user_meta($user_id, 'billing_address_1', $user_claims['street']);
     update_user_meta($user_id, 'billing_house_number', $user_claims['housenr']);

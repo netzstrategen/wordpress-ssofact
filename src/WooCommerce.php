@@ -108,7 +108,6 @@ class WooCommerce {
     $fields['last_name']['priority'] = 50;
     $fields['postcode']['priority'] = 60;
     $fields['city']['priority'] = 70;
-    $fields['state']['priority'] = 75;
     // @todo What overrides this to "Adresszeile 1" in administrative user profile?
     $fields['address_1']['label'] = __('Street address', 'woocommerce');
     $fields['address_1']['priority'] = 80;
@@ -120,6 +119,7 @@ class WooCommerce {
     ];
     unset($fields['address_1']['placeholder']);
     unset($fields['address_2']);
+    unset($fields['state']);
     $fields['country']['priority'] = 90;
 
     $fields['phone_prefix'] = [
@@ -374,6 +374,7 @@ class WooCommerce {
       // Properties that cannot be changed by the client.
       'moddate' => 0,
       'lastchgdate' => 0,
+      'profile_update_date' => 0,
       'last_login' => 0,
       'confirmed' => 0,
       'deactivated' => 0,
@@ -601,6 +602,16 @@ class WooCommerce {
       echo Alfa::mapPurchases(Alfa::getPurchases());
       echo $output;
     }
+  }
+
+  /**
+   * @implements wcs_user_has_subscription
+   */
+  public static function wcs_user_has_subscription($has_subscription, $user_id, $product_id, $status) {
+    if (empty($product_id)) {
+      $has_subscription = (bool) get_user_meta($user_id, 'paying_customer', TRUE);
+    }
+    return $has_subscription;
   }
 
   /**

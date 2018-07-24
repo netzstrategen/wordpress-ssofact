@@ -56,12 +56,15 @@ class Alfa {
     return $matrix;
   }
 
-  public static function getPurchases() {
-    // $alfa_purchases = file_get_contents(ABSPATH . 'purchases.json');
-    // $alfa_purchases = json_decode($alfa_purchases, TRUE);
-    $alfa_purchases = get_user_meta(get_current_user_ID(), 'alfa_purchases', TRUE) ?: ['purchases' => []];
+  public static function getPurchases(array $alfa_purchases = NULL) {
+    if (!isset($alfa_purchases)) {
+      $alfa_purchases = get_user_meta(get_current_user_ID(), 'alfa_purchases', TRUE);
+    }
+    if (empty($alfa_purchases)) {
+      $alfa_purchases = ['purchases' => []];
+    }
     $purchases = [];
-    $today = date('Ymd');
+    $today = date_i18n('Ymd');
     foreach ($alfa_purchases['purchases'] as $key => $purchase) {
       $purchase = &$purchase['purchase'];
       $expiration = $purchase['toDay'];

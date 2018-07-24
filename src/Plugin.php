@@ -73,6 +73,9 @@ class Plugin {
     // Update user profile meta data upon login.
     add_action('openid-connect-generic-login', __CLASS__ . '::onOpenIdConnectLogin', 10, 5);
 
+    // Inject subscription status into WooCommerce Subcriptions.
+    add_filter('wcs_user_has_subscription', __NAMESPACE__ . '\WooCommerce::wcs_user_has_subscription', 10, 4);
+
     // Register new email notification upon customer billing/shipping address change.
     add_filter('woocommerce_email_actions', __NAMESPACE__ . '\WooCommerce::woocommerce_email_actions');
     add_filter('woocommerce_email_classes', __NAMESPACE__ . '\WooCommerce::woocommerce_email_classes');
@@ -381,6 +384,37 @@ class Plugin {
   public static function onOpenIdConnectLogin($user, $token_response, $id_token_claim, $user_claims, $subject_identity) {
     $user_id = $user->ID;
 
+    // billing_email is only kept in sync but not displayed or used.
+    update_user_meta($user_id, 'billing_email', $user_claims['email']);
+    // update_user_meta($user_id, '', $user_claims['fcms_id']);
+    // update_user_meta($user_id, '', $user_claims['facebook_id']);
+
+    $subscriber_id = $user_claims['subscriber_id'] ?? $user_claims['subscribernr'];
+    update_user_meta($user_id, 'billing_subscriber_id', $subscriber_id);
+    update_user_meta($user_id, 'alfa_purchases', $user_claims['alfa_purchases']);
+
+    // A user_status 'confirmed' (active/blocked) is not supported by WordPress
+    // Core; the database table column exists but is unused. However, the user
+    // will not be able to log in in the first place.
+    if ($subscriber_id) {
+      $user->add_role('customer');
+      $purchases = Alfa::getPurchases($user_claims['alfa_purchases']);
+      update_user_meta($user_id, 'paying_customer', (int) !empty($purchases));
+    }
+    else {
+      $user->remove_role('customer');
+      update_user_meta($user_id, 'paying_customer', 0);
+    }
+    // update_user_meta($user_id, 'roles', $user_claims['']);
+
+    // update_user_meta($user_id, 'optins', $user_claims['optins']);
+
+    // User profile data may only be updated if the UserInfo from the SSO is
+    // newer than our local data.
+    $last_edit = get_user_meta($user_id, 'last_update', TRUE);
+    if ($last_edit && $last_edit > $user_claims['profile_update_date']) {
+      return;
+    }
     update_user_meta($user_id, 'first_name', $user_claims['firstname']);
     update_user_meta($user_id, 'last_name', $user_claims['lastname']);
 
@@ -393,26 +427,14 @@ class Plugin {
     update_user_meta($user_id, 'billing_house_number', $user_claims['housenr']);
     update_user_meta($user_id, 'billing_postcode', $user_claims['zipcode']);
     update_user_meta($user_id, 'billing_city', $user_claims['city']);
-    update_user_meta($user_id, 'billing_country', $user_claims['country']);
     // update_user_meta($user_id, 'billing_state', $user_claims['']);
+    // @todo Implement mapping for country. (D <=> DE)
+    update_user_meta($user_id, 'billing_country', $user_claims['country']);
     update_user_meta($user_id, 'billing_phone_prefix', $user_claims['phone_prefix']);
     update_user_meta($user_id, 'billing_phone', $user_claims['phone']);
-    // billing_email is only kept in sync but not displayed or used.
-    update_user_meta($user_id, 'billing_email', $user_claims['email']);
 
-    update_user_meta($user_id, 'billing_subscriber_id', $user_claims['subscriber_id'] ?? $user_claims['subscribernr']);
-    update_user_meta($user_id, 'alfa_purchases', $user_claims['alfa_purchases']);
-    // update_user_meta($user_id, '', $user_claims['fcms_id']);
-    // update_user_meta($user_id, '', $user_claims['facebook_id']);
-
-    // update_user_meta($user_id, '', $user_claims['confirmed']);
-    update_user_meta($user_id, 'last_update', $user_claims['lastchgdate']);
-
-    // update_user_meta($user_id, 'roles', $user_claims['']);
-    // update_user_meta($user_id, '', $user_claims['optins']); // array ( 'email_doi' => '0', 'list_premium' => '0', 'list_noch-fragen' => '0', 'list_freizeit' => '0', 'confirm_agb' => '0', 'acquisitionMail' => '0', 'acquisitionEmail' => '0', 'acquisitionPhone' => '0', 'changemail' => '0', )
-
-    // wp_capabilities | {"administrator":true}                                                                                                                                 |
-    // wp_user_level | 10
+    // Take over the new modification timestamp from the SSO.
+    update_user_meta($user_id, 'last_update', $user_claims['profile_update_date']);
   }
 
   /**
@@ -469,7 +491,7 @@ class Plugin {
         'housenr' => $address_source[$key_prefix . '_house_number'],
         'zipcode' => $address_source[$key_prefix . '_postcode'],
         'city' => $address_source[$key_prefix . '_city'],
-        // @todo Implement proper mapping for country. (D <=> DE)
+        // @todo Implement mapping for country. (D <=> DE)
         'country' => 'DE', // $address_source[$key_prefix . '_country'],
         // 'birthday' => ,
       ];

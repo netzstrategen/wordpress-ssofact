@@ -594,10 +594,6 @@ class Plugin {
       // 'type' => 'Product',
       // 'object' => 'Zeitung',
       'edition' => $edition,
-      // @todo Custom delivery start date for print subscriptions.
-      'fromDay' => date_i18n('Ymd'),
-      // @todo Does the shop specify this freely on the client-side?
-      // 'toDay' => date_i18n('Ymd', strtotime('plus 30 days')),
       // Payment method options:
       // - german_market_purchase_on_account => 'r' (invoice)
       // - german_market_sepa_direct_debit => 'a' (direct debit)
@@ -623,6 +619,12 @@ class Plugin {
     elseif (stripos($edition, 'e') === 0) {
       $purchase['permission']['object'] = 'EST';
     }
+    // Optional custom delivery start date for print subscriptions.
+    if (!empty($_POST['h_deliverydate'])) {
+      // Convert 'j-n-Y' into 'Ymd' (with leading zeros).
+      $purchase['permission']['fromDay'] = vsprintf('%3$04d%2$02d%1$02d', explode('-', $_POST['h_deliverydate']));
+    }
+
     // Ensure that all values for the alfa purchase are strings.
     $purchase['permission'] = array_map('strval', $purchase['permission']);
     return $purchase;

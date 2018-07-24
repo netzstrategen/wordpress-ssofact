@@ -479,6 +479,11 @@ class WooCommerce {
         }
       }
     }
+    // Re-inject values for removed fields as they will be emptied otherwise.
+    // @see WC_Form_Handler::save_account_details()
+    $user->first_name = $current_user->first_name;
+    $user->last_name = $current_user->last_name;
+    $user->display_name = $current_user->display_name;
   }
 
   /**
@@ -495,7 +500,7 @@ class WooCommerce {
       $userinfo['code'] = $token;
       $userinfo['action'] = 'forgotPassword';
     }
-    elseif (!empty($_POST['account_email']) && $_POST['account_email'] !== $userinfo['email']) {
+    elseif (!empty($_POST['account_email']) && $_POST['account_email'] !== $current_email) {
       $userinfo['temp_email'] = $_POST['account_email'];
       $userinfo['pass_verify'] = Plugin::encrypt($_POST['password_current']);
       $userinfo['action'] = 'changeEmail';

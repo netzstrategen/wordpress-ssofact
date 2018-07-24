@@ -489,7 +489,7 @@ class WooCommerce {
       $userinfo['pass_verify'] = Plugin::encrypt($_POST['password_current']);
       $userinfo['action'] = 'changeEmail';
     }
-    if (!empty($_POST['password_1']) && !empty($_POST['password_current']) && $_POST['password_1'] !== $_POST['password_current']) {
+    if (!$token && !empty($_POST['password_1']) && !empty($_POST['password_current']) && $_POST['password_1'] !== $_POST['password_current']) {
       $first_userinfo = $userinfo;
 
       $userinfo['pass'] = Plugin::encrypt($_POST['password_1']);

@@ -317,7 +317,7 @@ class WooCommerce {
       }
     }
     // Check whether the given subscriber ID matches the registered address.
-    if (!empty($_POST['billing_subscriber_id'])) {
+    if (!empty($_POST['billing_subscriber_id']) && !get_user_meta(get_current_user_ID(), 'billing_subscriber_id', TRUE)) {
       $address_type = !empty($_POST['ship_to_different_address']) ? 'shipping' : 'billing';
       if (isset($_POST[$address_type . '_salutation']) && $_POST[$address_type . '_salutation'] === 'Firma') {
         $response = Server::checkSubscriberId(

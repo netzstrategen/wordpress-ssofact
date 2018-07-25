@@ -400,6 +400,7 @@ class WooCommerce {
       // Properties that cannot be changed by the client.
       'moddate' => 0,
       'lastchgdate' => 0,
+      'profile_update_date' => 0,
       'last_login' => 0,
       'confirmed' => 0,
       'deactivated' => 0,

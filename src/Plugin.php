@@ -425,7 +425,7 @@ class Plugin {
     // User profile data may only be updated if the UserInfo from the SSO is
     // newer than our local data.
     $last_edit = get_user_meta($user_id, 'last_update', TRUE);
-    if ($last_edit && $last_edit > $user_claims['lastchgdate']) {
+    if ($last_edit && $last_edit > $user_claims['profile_update_date']) {
       return;
     }
     update_user_meta($user_id, 'first_name', $user_claims['firstname']);
@@ -457,7 +457,7 @@ class Plugin {
     update_user_meta($user_id, 'billing_phone', $user_claims['phone']);
 
     // Take over the new modification timestamp from the SSO.
-    update_user_meta($user_id, 'last_update', $user_claims['lastchgdate']);
+    update_user_meta($user_id, 'last_update', $user_claims['profile_update_date']);
   }
 
   /**

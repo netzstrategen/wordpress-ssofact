@@ -327,16 +327,30 @@ class WooCommerce {
       }
     }
     // Check whether the given subscriber ID matches the registered address.
-    if (!empty($_POST['billing_subscriber_id'])) {
-      $response = Server::checkSubscriberId(
-        $_POST['billing_subscriber_id'],
-        $_POST['billing_first_name'] ?? '',
-        $_POST['billing_last_name'] ?? $_POST['billing_company_contact'] ?? '',
-        $_POST['billing_postcode'] ?? ''
-      );
+    if (!empty($_POST['billing_subscriber_id']) && !get_user_meta(get_current_user_ID(), 'billing_subscriber_id', TRUE)) {
+      $address_type = !empty($_POST['ship_to_different_address']) ? 'shipping' : 'billing';
+      if (isset($_POST[$address_type . '_salutation']) && $_POST[$address_type . '_salutation'] === 'Firma') {
+        $response = Server::checkSubscriberId(
+          $_POST['billing_subscriber_id'],
+          '',
+          $_POST[$address_type . '_company'] ?? '',
+          $_POST[$address_type . '_postcode'] ?? ''
+        );
+      }
+      else {
+        $response = Server::checkSubscriberId(
+          $_POST['billing_subscriber_id'],
+          $_POST[$address_type . '_first_name'] ?? '',
+          $_POST[$address_type . '_last_name'] ?? '',
+          $_POST[$address_type . '_postcode'] ?? ''
+        );
+      }
       if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
         $message = isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.');
         wc_add_notice($message, 'error');
+        Server::addDebugMessage();
+      }
+      else {
         Server::addDebugMessage();
       }
     }

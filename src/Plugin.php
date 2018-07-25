@@ -361,7 +361,7 @@ class Plugin {
   public static function logout_redirect($url) {
     $url = strtr($url, [
       '/logout' => '/logout/' . OpenID_Connect_Generic::getSettings()->client_id,
-      'post_logout_redirect_uri' => 'target',
+      'post_logout_redirect_uri' => 'redirect_uri',
     ]);
     return $url;
   }

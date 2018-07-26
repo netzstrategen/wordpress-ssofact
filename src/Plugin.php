@@ -158,7 +158,8 @@ class Plugin {
     add_filter('woocommerce_save_account_details_required_fields', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details_required_fields');
 
     // Validates checkout fields against SSO.
-    add_action('woocommerce_checkout_process', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_process', 20);
+    // Run before WGM_Template::do_de_checkout_after_validation() [priority 1]
+    add_action('woocommerce_after_checkout_validation', __NAMESPACE__ . '\WooCommerce::woocommerce_after_checkout_validation', 0, 2);
 
     // Submits the order to the SSO/alfa.
     add_action('woocommerce_checkout_order_processed', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_order_processed', 20, 3);

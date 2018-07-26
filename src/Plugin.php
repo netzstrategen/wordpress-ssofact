@@ -179,6 +179,9 @@ class Plugin {
       return;
     }
 
+    // Redirect local login and forgot-password pages to corresponding SSO pages.
+    add_action('wp', __CLASS__ . '::wp');
+
     // Replaces the front-end login form of WooCommerce to submit to the SSO
     // server instead of WordPress. The administrative login on /wp-login.php is
     // not changed and still authenticates against the local WordPress site only.
@@ -245,6 +248,28 @@ class Plugin {
       $url = strtr($url, ['/openid-connect-authorize' => '/shop/openid-connect/ssofact']);
     }
     return $url;
+  }
+
+  /**
+   * @implements wp
+   */
+  public static function wp() {
+    if (!is_user_logged_in() && is_account_page()) {
+      $query = [];
+      if (is_wc_endpoint_url('lost-password')) {
+        $query['pageid'] = 53;
+        $target = '/shop/user/account';
+      }
+      else {
+        $target = $_REQUEST['redirect_to'] ?? '/user';
+      }
+      $authorize_uri = Plugin::getAuthorizeUrl($target);
+      $query['next'] = $authorize_uri;
+      $url = 'https://' . SSOFACT_SERVER_DOMAIN . '/?' . http_build_query($query);
+      if (wp_redirect($url, 307)) {
+        exit;
+      }
+    }
   }
 
   /**

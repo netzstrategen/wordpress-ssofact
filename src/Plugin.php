@@ -258,8 +258,11 @@ class Plugin {
       $query = [];
       if (is_wc_endpoint_url('lost-password')) {
         $query['pageid'] = 53;
+        $target = '/shop/user/account';
       }
-      $target = $_REQUEST['redirect_to'] ?? '/shop/user/account';
+      else {
+        $target = $_REQUEST['redirect_to'] ?? '/user';
+      }
       $authorize_uri = Plugin::getAuthorizeUrl($target);
       $query['next'] = $authorize_uri;
       $url = 'https://' . SSOFACT_SERVER_DOMAIN . '/?' . http_build_query($query);

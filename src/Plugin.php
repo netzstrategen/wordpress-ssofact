@@ -307,7 +307,7 @@ class Plugin {
    * @implements openid-connect-generic-redirect-user-back
    */
   public static function redirectAfterOpenIdConnectLogin($redirect_url, $user) {
-    if ($_GET['target']) {
+    if (isset($_GET['target'])) {
       $redirect_url = site_url($_GET['target']);
     }
     return $redirect_url;
@@ -317,7 +317,7 @@ class Plugin {
    * @implements wp_redirect
    */
   public static function wp_redirect($redirect_url, $status) {
-    if ($_GET['target']) {
+    if (isset($_GET['target'])) {
       $redirect_url = site_url($_GET['target']);
     }
     return $redirect_url;

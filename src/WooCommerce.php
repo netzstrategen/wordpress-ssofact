@@ -311,9 +311,9 @@ class WooCommerce {
   /**
    * Validates checkout fields against SSO.
    *
-   * @implements woocommerce_checkout_process
+   * @implements woocommerce_after_checkout_validation
    */
-  public static function woocommerce_checkout_process() {
+  public static function woocommerce_after_checkout_validation($data, $errors) {
     // Verifies that the given email address is NOT registered yet.
     // Note: The API endpoint checks the opposite; a positive result is an error.
     // @todo Handle email change for logged-in users.
@@ -322,7 +322,7 @@ class WooCommerce {
       // Error 607: "Given email is unknown" is the only allowed positive case.
       if (!isset($response['statuscode']) || $response['statuscode'] !== 607) {
         $message = isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.');
-        wc_add_notice($message, 'error');
+        $errors->add('billing_email', $message);
         Server::addDebugMessage();
       }
     }
@@ -347,7 +347,7 @@ class WooCommerce {
       }
       if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
         $message = isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.');
-        wc_add_notice($message, 'error');
+        $errors->add('billing_subscriber_id', $message);
         Server::addDebugMessage();
       }
       else {

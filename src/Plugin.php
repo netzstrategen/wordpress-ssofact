@@ -457,6 +457,8 @@ class Plugin {
     update_user_meta($user_id, 'billing_phone_prefix', $user_claims['phone_prefix']);
     update_user_meta($user_id, 'billing_phone', $user_claims['phone']);
 
+    update_user_meta($user_id, 'billing_iban', $user_claims['iban']);
+
     // Take over the new modification timestamp from the SSO.
     update_user_meta($user_id, 'last_update', $user_claims['profile_update_date']);
   }

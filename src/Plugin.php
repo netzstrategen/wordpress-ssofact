@@ -253,7 +253,7 @@ class Plugin {
   /**
    * @implements wp
    */
-  public static function wp($query) {
+  public static function wp() {
     if (!is_user_logged_in() && is_account_page()) {
       $query = [];
       if (is_wc_endpoint_url('lost-password')) {

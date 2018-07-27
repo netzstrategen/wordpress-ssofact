@@ -262,19 +262,17 @@ class WooCommerce {
   }
 
   public static function adjustCompanyFields(array $fields, $address_type) {
-    if (!empty($_POST[$address_type . '_salutation'])) {
-      if ($_POST[$address_type . '_salutation'] === 'Firma') {
-        $fields[$address_type . '_company']['required'] = TRUE;
-        $fields[$address_type . '_company_contact']['required'] = TRUE;
-        $fields[$address_type . '_first_name']['required'] = FALSE;
-        $fields[$address_type . '_last_name']['required'] = FALSE;
-      }
-      else {
-        $fields[$address_type . '_company']['required'] = FALSE;
-        $fields[$address_type . '_company_contact']['required'] = FALSE;
-        $fields[$address_type . '_first_name']['required'] = TRUE;
-        $fields[$address_type . '_last_name']['required'] = TRUE;
-      }
+    if (!empty($_POST[$address_type . '_salutation']) && $_POST[$address_type . '_salutation'] === 'Firma') {
+      $fields[$address_type . '_company']['required'] = TRUE;
+      $fields[$address_type . '_company_contact']['required'] = TRUE;
+      $fields[$address_type . '_first_name']['required'] = FALSE;
+      $fields[$address_type . '_last_name']['required'] = FALSE;
+    }
+    else {
+      $fields[$address_type . '_company']['required'] = FALSE;
+      $fields[$address_type . '_company_contact']['required'] = FALSE;
+      $fields[$address_type . '_first_name']['required'] = TRUE;
+      $fields[$address_type . '_last_name']['required'] = TRUE;
     }
     return $fields;
   }

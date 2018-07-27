@@ -10,16 +10,22 @@ namespace Netzstrategen\Ssofact;
 class WooCommerce {
 
   const OPTINS = [
-    'list_noch-fragen' => [
-      'label' => 'Newsletter Noch Fragen',
+    'list_redaktion-stimmede-editorial-weekly' => [
+      'label' => 'Newsletter des Chefredakteurs',
       'priority' => 100,
     ],
-    'list_premium' => [
-      'label' => 'Newsletter Premium',
+    'list_redaktion-stimmede-editorial-premium-daily' => [
+      'label' => 'Morgen-Briefing aus der Redaktion',
       'priority' => 110,
     ],
-    'list_freizeit' => [
-      'label' => 'Newsletter Freizeit',
+    /*
+    'list_redaktion-stimmede-service-freizeit-custom' => [
+      'label' => 'Freizeit-Tipps fürs Wochenende',
+      'priority' => 120,
+    ],
+    */
+    'acquisitionEmail' => [
+      'label' => 'Ja, ich möchte auch zukünftig über aktuelle Angebote aus dem Verlags- und Dienstleistungsbereich der Mediengruppe Heilbronner Stimme per Telefon und/oder E-Mail informiert werden. Mein Einverständnis hierzu kann ich jederzeit widerrufen.',
       'priority' => 120,
     ],
   ];
@@ -278,6 +284,19 @@ class WooCommerce {
   }
 
   /**
+   * @implements woocommerce_de_add_review_order
+   */
+  public static function woocommerce_de_add_review_order() {
+    // The advertising opt-in should only be displayed when not opt-in yet.
+    $optins = get_user_meta(get_current_user_ID(), 'optins', TRUE);
+    if (empty($optins['acquisitionEmail'])) {
+      woocommerce_form_field('acquisitionEmail', WooCommerce::OPTINS['acquisitionEmail'] + [
+        'type' => 'checkbox',
+      ]);
+    }
+  }
+
+  /**
    * Appends the house number to the billing/shipping address in thankyou page.
    *
    * @implements woocommerce_get_order_address
@@ -444,12 +463,6 @@ class WooCommerce {
       'article_test' => 0,
     ]);
 
-    // Opt-ins that cannot be changed by the client.
-    $userinfo['optins'] = array_diff_key($userinfo['optins'], [
-      'email_doi' => 0,
-      'changemail' => 0,
-    ]);
-
     // @todo UX: Save last_edited timestamp and stop updating the locally stored
     //   user profile with UserInfo from SSO unless its last_updated timestamp
     //   is newer.
@@ -556,6 +569,24 @@ class WooCommerce {
       Plugin::invalidatePasswordResetToken();
     }
     Server::addDebugMessage();
+
+    // Save opt-ins manually, as new UserInfo is only retrieved with next login.
+    $optins = get_user_meta(get_current_user_ID(), 'optins', TRUE);
+    foreach (WooCommerce::OPTINS as $optin_name => $definition) {
+      if (isset($_POST[$optin_name])) {
+        $optins[$optin_name] = $_POST[$optin_name];
+      }
+    }
+    update_user_meta(get_current_user_ID(), 'optins', $optins);
+  }
+
+  /**
+   * @implements woocommerce_save_account_details
+   */
+  public static function woocommerce_save_account_details_redirect($user_id) {
+    // Stay on the account edit form page.
+    wp_safe_redirect(wc_get_account_endpoint_url('edit-account'));
+    exit;
   }
 
   /**
@@ -573,16 +604,16 @@ class WooCommerce {
 
     echo '<fieldset class="account-edit-optin-checks">';
 
-    foreach (static::OPTINS as $opt_in_id => $opt_in_args) {
-      $args = [
+    $optins = get_user_meta(get_current_user_ID(), 'optins', TRUE);
+    foreach (static::OPTINS as $optin_name => $definition) {
+      // The acquisition opt-ins should only appear during checkout.
+      if (strpos($optin_name, 'acquisitionEmail') === 0) {
+        continue;
+      }
+      woocommerce_form_field($optin_name, $definition + [
         'type' => 'checkbox',
-        'label' => $opt_in_args['label'],
-        'required' => FALSE,
-        'id' => $opt_in_id,
-        'priority' => $opt_in_args['priority'],
-      ];
-
-      woocommerce_form_field($opt_in_id, $args);
+        'default' => $optins[$optin_name],
+      ]);
     }
     echo '</fieldset>';
   }

@@ -157,6 +157,9 @@ class Plugin {
     add_action('woocommerce_edit_account_form', __NAMESPACE__ . '\WooCommerce::woocommerce_edit_account_form');
     add_filter('woocommerce_save_account_details_required_fields', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details_required_fields');
 
+    // Add acquisition opt-in to checkout confirmation page.
+    add_action('woocommerce_de_add_review_order', __NAMESPACE__ . '\WooCommerce::woocommerce_de_add_review_order');
+
     // Validates checkout fields against SSO.
     // Run before WGM_Template::do_de_checkout_after_validation() [priority 1]
     add_action('woocommerce_after_checkout_validation', __NAMESPACE__ . '\WooCommerce::woocommerce_after_checkout_validation', 0, 2);
@@ -171,6 +174,8 @@ class Plugin {
     add_action('woocommerce_save_account_details_errors', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details_errors', 20, 2);
     // Updates user info in SSO upon editing account details.
     add_action('woocommerce_save_account_details', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details');
+    // Do not redirect to dashboard after saving account details.
+    add_action('woocommerce_save_account_details', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details_redirect', 100);
 
     // Send redirect URL to forgot-password form on SSO.
     add_action('woocommerce_before_template_part', __NAMESPACE__ . '\WooCommerce::woocommerce_before_template_part');
@@ -586,32 +591,23 @@ class Plugin {
     }
 
     $optin_source = $_POST;
-    $userinfo['optins'] = [];
-    if (isset($last_known_userinfo['optins'])) {
-      $userinfo['optins'] += $last_known_userinfo['optins'];
+    if (!empty($_POST['terms'])) {
+      $optin_source['confirm_agb'] = (int) $_POST['terms'];
     }
-    $terms_accepted = !empty($_POST['terms']) ? 1 : !empty($last_known_userinfo['optins']['confirm_agb']);
-    
-    $userinfo += [
-      'optins' => [
-        'confirm_agb' => (int) $terms_accepted,
-        'acquisitionEmail' => (int) !empty($optin_source['optin_email']),
-        'acquisitionMail' => (int) !empty($optin_source['optin_mail']),
-        'acquisitionPhone' =>(int) !empty($optin_source['optin_phone']),
-        'list_noch-fragen' => (int) !empty($optin_source['list_noch-fragen']),
-        'list_premium' => (int) !empty($optin_source['list_premium']),
-        'list_freizeit' => (int) !empty($optin_source['list_freizeit']),
-      ],
-    ];
+    $userinfo['optins'] = $last_known_userinfo['optins'] ?? [];
+
     $wgm_optins = [
-      'confirm_agb' => 0,
+      'confirm_agb' => [],
     ];
-    $optins = array_keys(array_merge($wgm_optins, WooCommerce::OPTINS));
-    foreach ($optins as $key) {
+    $optins = array_merge($wgm_optins, WooCommerce::OPTINS);
+    foreach ($optins as $key => $definition) {
       if (isset($optin_source[$key])) {
-        $userinfo['optins'][$key] = !empty($optin_source[$key]);
+        $userinfo['optins'][$key] = (int) !empty($optin_source[$key]);
       }
     }
+    // Remove opt-ins that cannot be changed by the client.
+    unset($userinfo['optins']['email_doi'], $userinfo['optins']['changemail']);
+
     return $userinfo;
   }
 
@@ -649,9 +645,9 @@ class Plugin {
       // - 'h': half-yearly
       // - 'j': yearly
       'paymentPattern' => 'm',
-      'acquisitionEMail' => $purchase['optins']['acquisitionEmail'] ? 'j' : 'n',
-      'acquisitionMail' => $purchase['optins']['acquisitionMail'] ? 'j' : 'n',
-      'acquisitionPhone' => $purchase['optins']['acquisitionPhone'] ? 'j' : 'n',
+      'acquisitionEmail' => !empty($purchase['optins']['acquisitionEmail']) ? 'j' : 'n',
+      'acquisitionMail' => !empty($purchase['optins']['acquisitionMail']) ? 'j' : 'n',
+      'acquisitionPhone' => !empty($purchase['optins']['acquisitionPhone']) ? 'j' : 'n',
       // 'accessCount' => 1,
       // 'promotionId' => '',
       // 'agentNumber' => '',

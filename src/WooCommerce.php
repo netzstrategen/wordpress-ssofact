@@ -607,12 +607,12 @@ class WooCommerce {
     $optins = get_user_meta(get_current_user_ID(), 'optins', TRUE);
     foreach (static::OPTINS as $optin_name => $definition) {
       // The acquisition opt-ins should only appear during checkout.
-      if (strpos($optin_name, 'acquisitionEmail') === 0) {
+      if (strpos($optin_name, 'acquisition') === 0) {
         continue;
       }
       woocommerce_form_field($optin_name, $definition + [
         'type' => 'checkbox',
-        'default' => $optins[$optin_name],
+        'default' => $optins[$optin_name] ?? 0,
       ]);
     }
     echo '</fieldset>';

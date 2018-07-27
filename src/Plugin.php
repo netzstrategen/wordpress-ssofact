@@ -70,6 +70,9 @@ class Plugin {
     // Run after daggerhart-openid-connect-generic (99).
     add_filter('logout_redirect', __CLASS__ . '::logout_redirect', 100);
 
+    // Skip nonce check for user logout.
+    add_action('check_admin_referer', __CLASS__ . '::check_admin_referer', 10, 2);
+
     if (is_admin()) {
       return;
     }
@@ -185,6 +188,32 @@ class Plugin {
       'post_logout_redirect_uri' => 'target',
     ]);
     return $url;
+  }
+
+  /**
+   * @implements check_admin_referer
+   */
+  public static function check_admin_referer($action, $result) {
+    if ($action === 'log-out') {
+      // Borrowed code from wp-login.php.
+      $user = wp_get_current_user();
+
+      wp_logout();
+
+      if ( ! empty( $_REQUEST['redirect_to'] ) ) {
+        $redirect_to = $requested_redirect_to = $_REQUEST['redirect_to'];
+      } else {
+        $redirect_to = 'wp-login.php?loggedout=true';
+        $requested_redirect_to = '';
+      }
+
+      if ( $switched_locale ) {
+        restore_previous_locale();
+      }
+
+      wp_safe_redirect( $redirect_to );
+      exit();
+    }
   }
 
   /**

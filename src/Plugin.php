@@ -631,7 +631,7 @@ class Plugin {
 
     $optin_source = $_POST;
     if (!empty($_POST['terms'])) {
-      $optin_source['confirm_agb'] = (int) $_POST['terms'];
+      $optin_source['confirm_agb'] = 1;
     }
     $userinfo['optins'] = $last_known_userinfo['optins'] ?? [];
 

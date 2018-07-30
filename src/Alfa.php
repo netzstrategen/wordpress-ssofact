@@ -12,6 +12,8 @@ namespace Netzstrategen\Ssofact;
  */
 class Alfa {
 
+  const ACCESS_WEB = 'OABO';
+
   public static function getProductMatrix() {
     $filepath = ABSPATH . '../ftp/alfa/gp/subscriptions.xml';
     $output_filepath = ABSPATH . '../ftp/alfa/gp/subcriptions.csv';
@@ -54,6 +56,23 @@ class Alfa {
     //   file_put_contents($output_filepath, implode(',', $line) . "\n", FILE_APPEND);
     // }
     return $matrix;
+  }
+
+  /**
+   * Returns whether the given alfa accessType grants access to premium online articles.
+   *
+   * @param string $access_type
+   *   The alfa accessType to check.
+   *
+   * @return bool
+   */
+  public static function isAccessTypeWeb(string $access_type) {
+    $matrix = static::getProductMatrix();
+    if (isset($matrix[$access_type])) {
+      $matches = preg_grep('@\b' . static::ACCESS_WEB . '\b@', $matrix[$access_type]['products']);
+      return !empty($matches);
+    }
+    return FALSE;
   }
 
   public static function getPurchases(array $alfa_purchases = NULL) {

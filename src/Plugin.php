@@ -704,6 +704,9 @@ class Plugin {
       // Convert 'j-n-Y' into 'Ymd' (with leading zeros).
       $purchase['permission']['fromDay'] = vsprintf('%3$04d%2$02d%1$02d', explode('-', $_POST['h_deliverydate']));
     }
+    if (Alfa::isAccessTypeWeb($accessType)) {
+      $purchase['optins']['list_redaktion-stimmede-editorial-premium-daily'] = 1;
+    }
 
     // Ensure that all values for the alfa purchase are strings.
     $purchase['permission'] = array_map('strval', $purchase['permission']);

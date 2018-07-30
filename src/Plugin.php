@@ -437,6 +437,13 @@ class Plugin {
   public static function onOpenIdConnectLogin($user, $token_response, $id_token_claim, $user_claims, $subject_identity) {
     $user_id = $user->ID;
 
+    // Synchronize email address in user account.
+    if ($user->user_email !== $user_claims['email']) {
+      wp_update_user([
+        'ID' => $user->ID,
+        'user_email' => $user_claims['email'],
+      ]);
+    }
     // billing_email is only kept in sync but not displayed or used.
     update_user_meta($user_id, 'billing_email', $user_claims['email']);
     // update_user_meta($user_id, '', $user_claims['fcms_id']);

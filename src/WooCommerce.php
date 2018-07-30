@@ -288,7 +288,6 @@ class WooCommerce {
    */
   public static function option_german_market_checkbox_1_tac_pd_rp_activation($value) {
     $optins = get_user_meta(get_current_user_ID(), 'optins', TRUE);
-    $optins['confirm_agb'] = 1;
     if (!empty($optins['confirm_agb'])) {
       $value = 'off';
     }
@@ -405,7 +404,7 @@ class WooCommerce {
     global $woocommerce;
 
     // Do not attempt to register purchase in case of a validation error.
-    if (wc_notice_count('error') || empty($_POST['woocommerce_checkout_place_order']) || empty($_POST['terms'])) {
+    if (wc_notice_count('error') || empty($_POST['woocommerce_checkout_place_order'])) {
       return;
     }
 

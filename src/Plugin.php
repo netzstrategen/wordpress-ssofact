@@ -151,6 +151,14 @@ class Plugin {
     add_filter('woocommerce_localisation_address_formats', __NAMESPACE__ . '\WooCommerce::woocommerce_localisation_address_formats');
     add_filter('woocommerce_formatted_address_replacements', __NAMESPACE__ . '\WooCommerce::woocommerce_formatted_address_replacements', 10, 2);
 
+    add_filter('woocommerce_formatted_address_force_country_display', '__return_true');
+    // Prefills custom address data fields.
+    add_filter('woocommerce_customer_get_billing', __NAMESPACE__ . '\WooCommerce::woocommerce_customer_get_address', 10, 2);
+    add_filter('woocommerce_customer_get_shipping', __NAMESPACE__ . '\WooCommerce::woocommerce_customer_get_address', 10, 2);
+    add_filter('woocommerce_order_get_billing', __NAMESPACE__ . '\WooCommerce::woocommerce_customer_get_address', 10, 2);
+    add_filter('woocommerce_order_get_shipping', __NAMESPACE__ . '\WooCommerce::woocommerce_customer_get_address', 10, 2);
+    add_filter('woocommerce_order_get_billing_phone', __NAMESPACE__ . '\WooCommerce::woocommerce_order_get_billing_phone', 10, 2);
+
     // Removes core profile fields from account edit form.
     // Adds opt-in checkboxes to user account edit form.
     add_action('woocommerce_edit_account_form_start', 'ob_start', 0, 0);

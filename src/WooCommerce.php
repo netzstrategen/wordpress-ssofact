@@ -322,6 +322,7 @@ class WooCommerce {
    */
   public static function woocommerce_localisation_address_formats($formats) {
     foreach ($formats as $country => $value) {
+      $formats[$country] .= "\n{phone}";
       $formats[$country] = strtr($formats[$country], [
         '{name}' => '{salutation}{name}',
         '{address_1}' => '{address_1}{house_number}',
@@ -337,8 +338,35 @@ class WooCommerce {
   public static function woocommerce_formatted_address_replacements($replacements, $fields) {
     $replacements['{salutation}'] = !empty($fields['salutation']) ? $fields['salutation'] . ' ' : '';
     $replacements['{house_number}'] = !empty($fields['house_number']) ? ' ' . $fields['house_number'] : '';
+    $replacements['{phone}'] = !empty($fields['phone']) ? $fields['phone'] . ' ' : '';
     $replacements['{phone_prefix}'] = !empty($fields['phone_prefix']) ? $fields['phone_prefix'] . '-' : '';
     return $replacements;
+  }
+
+  /**
+   * @implements woocommerce_customer_get_<$prop>
+   *
+   * @see WC_Data::get_prop()
+   */
+  public static function woocommerce_customer_get_address($values, $customer) {
+    $type = explode('_', current_filter());
+    $type = array_pop($type);
+    $values += [
+      'house_number' => $customer->get_meta($type . '_house_number'),
+      'salutation' => $customer->get_meta($type . '_salutation'),
+      'phone_prefix' => $customer->get_meta($type . '_phone_prefix'),
+    ];
+    return $values;
+  }
+
+  /**
+   * @implements woocommerce_<$object_type>_get_<$prop>
+   *
+   * @see WC_Data::get_prop()
+   */
+  public static function woocommerce_order_get_billing_phone($value, $object_type) {
+    // Return empty as we added the field to the address format already.
+    return '';
   }
 
   /**

@@ -351,10 +351,19 @@ class WooCommerce {
   public static function woocommerce_customer_get_address($values, $customer) {
     $type = explode('_', current_filter());
     $type = array_pop($type);
+    if (!$house_number = $customer->get_meta($type . '_house_number')) {
+      $house_number = $customer->get_meta('_' . $type . '_house_number');
+    }
+    if (!$salutation = $customer->get_meta($type . '_salutation')) {
+      $salutation = $customer->get_meta('_' . $type . '_salutation');
+    }
+    if (!$phone_prefix = $customer->get_meta($type . '_phone_prefix')) {
+      $phone_prefix = $customer->get_meta('_' . $type . '_phone_prefix');
+    }
     $values += [
-      'house_number' => $customer->get_meta($type . '_house_number'),
-      'salutation' => $customer->get_meta($type . '_salutation'),
-      'phone_prefix' => $customer->get_meta($type . '_phone_prefix'),
+      'house_number' => $house_number,
+      'salutation' => $salutation,
+      'phone_prefix' => $phone_prefix,
     ];
     return $values;
   }

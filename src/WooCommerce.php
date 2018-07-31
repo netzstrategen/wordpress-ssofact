@@ -81,21 +81,67 @@ class WooCommerce {
    * @implements woocommerce_after_customer_login_form
    */
   public static function woocommerce_after_customer_login_form() {
+    // Ignore output, the whole form is replaced with the SSO markup.
     $output = ob_get_clean();
-    $authorize_uri = Plugin::getAuthorizeUrl();
+
+    $target = $_REQUEST['redirect_to'] ?? '/user';
+    $next = site_url($target);
+    $authorize_uri = Plugin::getAuthorizeUrl($target);
     $action = 'https://' . SSOFACT_SERVER_DOMAIN . '/?' . http_build_query([
       'next' => $authorize_uri,
     ]);
-    $output = strtr($output, [
-      'login" method="post">' => 'login" method="post" action="' . $action . '">',
-      'name="login"' => 'name="submit"',
-      'name="username"' => 'name="login"',
-      'name="password"' => 'name="pass"',
-      'checkbox inline">' => 'checkbox inline" hidden>',
-      'name="rememberme" type="checkbox"' => 'name="permanent_login" type="hidden"',
-      'value="forever"' => 'value="1"',
+    $href_forgot_password = 'https://' . SSOFACT_SERVER_DOMAIN . '/?' . http_build_query([
+      'pageid' => 53,
+      'next' => site_url('/shop/user/account'),
     ]);
-    echo $output;
+    $href_register = 'https://' . SSOFACT_SERVER_DOMAIN . '/registrieren.html?' . http_build_query([
+      'next' => $next,
+    ]);
+    ?>
+<link rel="stylesheet" href="https://<?= SSOFACT_SERVER_DOMAIN ?>/pu_stimme/styles_frametemplate/01_styles.css" media="all" />
+<script>
+var nfycDisableRedirect = true;
+var nfyFacebookAppId = '637920073225349';
+</script>
+<script src="https://<?= SSOFACT_SERVER_DOMAIN ?>/cms_media/minify/2/javascript/javascript_4.js"></script>
+
+<div class=nfy-sso-hs>
+  <div class="nfy-box nfy-website-user nfy-box-login">
+    <h1 class="nfy-element-header">Anmelden</h1>
+    <div class="nfy-box-content">
+      <form action="<?= $action ?>" method="post" name="loginForm" id="loginForm" class="nfy-form nfy-flex-form">
+        <div class="form-item field">
+          <input maxlength="255" placeholder="E-Mail-Adresse eingeben" name="login" type="text" />
+        </div>
+        <div class="form-item field">
+          <input maxlength="255" placeholder="Passwort eingeben" name="pass" type="password" />
+        </div>
+        <div class="form-item field nfy-checkbox">
+          <label class="choice-input checkbox">
+            <input type="hidden" name="permanent_login" value="" />
+            <input id="nfy-qform-checkbox" name="permanent_login" type="checkbox" value="1" checked />
+              <span class="choice-input__indicator checkbox__indicator"></span>
+              <span class="choice-input__label">Angemeldet bleiben</span>
+          </label>
+        </div>
+        <a class="button--link button" href="<?= $href_forgot_password ?>">Passwort vergessen?</a>
+        <input class="button--primary button" value="Anmelden" type="submit" />
+        <!-- <input name="redirect_url" type="hidden" value="" /> -->
+      </form>
+    </div>
+  </div>
+  <div class="nfy-social-login-text">Alternativ mit Facebook anmelden</div>
+  <div class="fb-login-button" data-scope="public_profile,email" data-width="500"
+  onlogin="nfyFacebookStatusCallback()" data-max-rows="1" data-size="large"
+  data-button-type="login_with" data-show-faces="false" data-auto-logout-link="false"
+  data-use-continue-as="false"></div>
+  <div class="nfy-box-info nfy-register-link-info">
+    <div class=nfy-box>Sie sind noch nicht registriert?
+      <a class=nfy-link href="<?= $href_register ?>">Hier registrieren</a>
+    </div>
+  </div>
+</div>
+    <?php
   }
 
   /**

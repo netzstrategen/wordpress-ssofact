@@ -27,8 +27,6 @@ class WooCommerceEmailAddressChanged extends \WC_Email {
 		parent::__construct();
 
 		$this->recipient = $this->get_option('recipient', get_option('admin_email'));
-
-		$this->recipient = 'daniel+admin@netzstrategen.com'; // @todo REMOVEME
 	}
 
 	public function get_default_subject() {

@@ -157,9 +157,6 @@ class Plugin {
     add_action('woocommerce_edit_account_form', __NAMESPACE__ . '\WooCommerce::woocommerce_edit_account_form');
     add_filter('woocommerce_save_account_details_required_fields', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details_required_fields');
 
-    // Removes terms & conditions opt-in in checkout once confirmed.
-    add_filter('option_german_market_checkbox_1_tac_pd_rp_activation', __NAMESPACE__ . '\WooCommerce::option_german_market_checkbox_1_tac_pd_rp_activation');
-    add_filter('option_default_german_market_checkbox_1_tac_pd_rp_activation', __NAMESPACE__ . '\WooCommerce::option_german_market_checkbox_1_tac_pd_rp_activation');
     // Add acquisition opt-in to checkout confirmation page.
     add_action('woocommerce_de_add_review_order', __NAMESPACE__ . '\WooCommerce::woocommerce_de_add_review_order');
 

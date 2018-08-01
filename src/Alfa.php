@@ -121,40 +121,57 @@ class Alfa {
 
   public static function renderPurchases(array $purchases) {
     $object_labels = [
-      'HST' => 'Täglich gedruckte Zeitung',
+      'HST' => 'Zeitung täglich gedruckt',
       'EST' => 'E-Paper im Web',
-      'iST' => 'E-Paper als iStimme App',
+      'iST' => 'E-Paper in der iStimme App',
       'OABO' => 'Stimme.de Premium',
       'mST' => 'mStimme mobil',
       'BES' => 'BES?',
       'TVS' => 'TVS?',
     ];
     $edition_labels = [
+      'H' => 'Heilbronn Stadtausgabe',
       'EH' => 'Heilbronn Stadtausgabe',
+      'HZK' => 'Hohenloher Zeitung Künzelsau',
       'EHZK' => 'Hohenloher Zeitung Künzelsau',
+      'HZO' => 'Hohenloher Zeitung Öhringen',
       'EHZO' => 'Hohenloher Zeitung Öhringen',
+      'KS' => 'Kraichgau Stimme',
       'EKS' => 'Kraichgau Stimme',
+      'N' => 'Heilbronner Stimme Nordausgabe',
       'EN' => 'Heilbronner Stimme Nordausgabe',
+      'O' => 'Heilbronner Stimme Ostausgabe',
       'EO' => 'Heilbronner Stimme Ostausgabe',
+      'W' => 'Heilbronner Stimme Westausgabe',
       'EW' => 'Heilbronner Stimme Westausgabe',
     ];
-    $rows = [];
     foreach ($purchases as $key => &$purchase) {
       unset($purchase['type'], $purchase['ivw'], $purchase['ident'], $purchase['accessCount']);
       $purchase['date_start'] = preg_replace('@(\d{4})(\d{2})(\d{2})@', '$3.$2.$1', $purchase['fromDay']);
-      $purchase['date_end'] = preg_replace('@(\d{4})(\d{2})(\d{2})@', '$3.$2.$1', $purchase['toDay']);
+      if ($purchase['toDay'] < date('Ymd', strtotime('today +20 years'))) {
+        $purchase['date_end'] = preg_replace('@(\d{4})(\d{2})(\d{2})@', '$3.$2.$1', $purchase['toDay']);
+      }
+      else {
+        $purchase['date_end'] = '–';
+      }
       $purchase['label'] = $object_labels[$purchase['object']];
-      if (!empty($purchase['edition']) && isset($edition_labels[$purchase['edition']])) {
-        $purchase['label'] .= ' - ' . $edition_labels[$purchase['edition']];
+      if (!empty($purchase['edition'])) {
+        if (isset($edition_labels[$purchase['edition']])) {
+          $purchase['label'] .= ' - ' . $edition_labels[$purchase['edition']];
+        }
+        else {
+          $purchase['label'] .= ' - ' . $purchase['edition'];
+        }
       }
     }
     ?>
+<div class="pull">
 <table>
   <thead>
     <tr>
       <th>Bezug</th>
-      <th>von</th>
-      <th>bis</th>
+      <th>ab</th>
+      <th>endet</th>
     </tr>
   </thead>
   <tbody>
@@ -171,6 +188,7 @@ class Alfa {
     ?>
   </tbody>
 </table>
+</div>
     <?php
   }
 

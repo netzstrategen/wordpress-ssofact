@@ -715,8 +715,8 @@ var nfyFacebookAppId = '637920073225349';
   public static function woocommerce_after_template_part($template_name) {
     if ($template_name === 'myaccount/my-subscriptions.php') {
       $output = ob_get_clean();
-      echo Alfa::mapPurchases(Alfa::getPurchases());
-      echo $output;
+      echo WooCommerce::viewSubscription();
+      // echo $output;
     }
   }
 
@@ -734,7 +734,8 @@ var nfyFacebookAppId = '637920073225349';
    * @implements woocommerce_account_view-subscription_endpoint
    */
   public static function viewSubscription() {
-    Alfa::mapPurchases(Alfa::getPurchases());
+    Alfa::renderPurchases(Alfa::getPurchases(NULL, TRUE));
+    // Alfa::mapPurchases(Alfa::getPurchasesFlattened());
   }
 
   /**

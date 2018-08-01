@@ -75,7 +75,7 @@ class Alfa {
     return FALSE;
   }
 
-  public static function getPurchases(array $alfa_purchases = NULL) {
+  public static function getPurchases(array $alfa_purchases = NULL, $raw = FALSE) {
     if (!isset($alfa_purchases)) {
       $alfa_purchases = get_user_meta(get_current_user_ID(), 'alfa_purchases', TRUE);
     }
@@ -91,12 +91,87 @@ class Alfa {
         unset($alfa_purchases['purchases'][$key]);
         continue;
       }
-      $product_code = $purchase['object'] . ':' . $purchase['edition'];
-      $product_code .= ':' . $purchase['ivw'];
-      $purchases[$product_code] = $product_code;
+      if ($raw) {
+        $purchases[] = $purchase;
+      }
+      else {
+        $purchases[$purchase['object']][$purchase['edition']][$purchase['ivw']] = $purchase['object'] . ':' . $purchase['edition'] . ':' . $purchase['ivw'];
+      }
     }
-    ksort($purchases);
+    if (!$raw) {
+      ksort($purchases);
+    }
     return $purchases;
+  }
+
+  public static function getPurchasesFlattened(array $alfa_purchases = NULL) {
+    $purchases = Alfa::getPurchases($alfa_purchases);
+    $flattened_purchases = [];
+    foreach ($purchases as $object => $editions) {
+      foreach ($editions as $edition => $ivw_keys) {
+        foreach ($ivw_keys as $ivw => $unused) {
+          $product_code = $object . ':' . $edition . ':' . $ivw;
+          $flattened_purchases[$product_code] = $product_code;
+        }
+      }
+    }
+    ksort($flattened_purchases);
+    return $flattened_purchases;
+  }
+
+  public static function renderPurchases(array $purchases) {
+    $object_labels = [
+      'HST' => 'Täglich gedruckte Zeitung',
+      'EST' => 'E-Paper im Web',
+      'iST' => 'E-Paper als iStimme App',
+      'OABO' => 'Stimme.de Premium',
+      'mST' => 'mStimme mobil',
+      'BES' => 'BES?',
+      'TVS' => 'TVS?',
+    ];
+    $edition_labels = [
+      'EH' => 'Heilbronn Stadtausgabe',
+      'EHZK' => 'Hohenloher Zeitung Künzelsau',
+      'EHZO' => 'Hohenloher Zeitung Öhringen',
+      'EKS' => 'Kraichgau Stimme',
+      'EN' => 'Heilbronner Stimme Nordausgabe',
+      'EO' => 'Heilbronner Stimme Ostausgabe',
+      'EW' => 'Heilbronner Stimme Westausgabe',
+    ];
+    $rows = [];
+    foreach ($purchases as $key => &$purchase) {
+      unset($purchase['type'], $purchase['ivw'], $purchase['ident'], $purchase['accessCount']);
+      $purchase['date_start'] = preg_replace('@(\d{4})(\d{2})(\d{2})@', '$3.$2.$1', $purchase['fromDay']);
+      $purchase['date_end'] = preg_replace('@(\d{4})(\d{2})(\d{2})@', '$3.$2.$1', $purchase['toDay']);
+      $purchase['label'] = $object_labels[$purchase['object']];
+      if (!empty($purchase['edition']) && isset($edition_labels[$purchase['edition']])) {
+        $purchase['label'] .= ' - ' . $edition_labels[$purchase['edition']];
+      }
+    }
+    ?>
+<table>
+  <thead>
+    <tr>
+      <th>Bezug</th>
+      <th>von</th>
+      <th>bis</th>
+    </tr>
+  </thead>
+  <tbody>
+    <?php
+    foreach ($purchases as $purchase) {
+      ?>
+    <tr>
+      <td><?= $purchase['label'] ?></td>
+      <td><?= $purchase['date_start'] ?></td>
+      <td><?= $purchase['date_end'] ?></td>
+    </tr>
+      <?php
+    }
+    ?>
+  </tbody>
+</table>
+    <?php
   }
 
   public static function mapPurchases(array $purchases) {

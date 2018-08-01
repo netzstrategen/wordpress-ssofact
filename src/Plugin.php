@@ -146,13 +146,11 @@ class Plugin {
     add_filter('woocommerce_shipping_fields', __NAMESPACE__ . '\WooCommerce::woocommerce_shipping_fields');
     // Validates and updates user info in SSO upon editing address.
     add_action('woocommerce_after_save_address_validation', __NAMESPACE__ . '\WooCommerce::woocommerce_after_save_address_validation', 10, 3);
+
     // Adds salutation, house number, phone_prefix to address output.
-    add_filter('woocommerce_get_order_address', __NAMESPACE__ . '\WooCommerce::woocommerce_get_order_address', 10, 3);
     add_filter('woocommerce_localisation_address_formats', __NAMESPACE__ . '\WooCommerce::woocommerce_localisation_address_formats');
     add_filter('woocommerce_formatted_address_replacements', __NAMESPACE__ . '\WooCommerce::woocommerce_formatted_address_replacements', 10, 2);
-
     add_filter('woocommerce_formatted_address_force_country_display', '__return_true');
-    // Prefills custom address data fields.
     add_filter('woocommerce_customer_get_billing', __NAMESPACE__ . '\WooCommerce::woocommerce_customer_get_address', 10, 2);
     add_filter('woocommerce_customer_get_shipping', __NAMESPACE__ . '\WooCommerce::woocommerce_customer_get_address', 10, 2);
     add_filter('woocommerce_order_get_billing', __NAMESPACE__ . '\WooCommerce::woocommerce_customer_get_address', 10, 2);

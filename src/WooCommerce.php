@@ -308,16 +308,6 @@ class WooCommerce {
   }
 
   /**
-   * Appends the house number to the billing/shipping address in thankyou page.
-   *
-   * @implements woocommerce_get_order_address
-   */
-  public static function woocommerce_get_order_address($data, $type, $order) {
-    $data['address_1'] .= ' ' . get_post_meta($order->get_id(), $type . '_house_number', TRUE);
-    return $data;
-  }
-
-  /**
    * @implements woocommerce_localisation_address_formats
    */
   public static function woocommerce_localisation_address_formats($formats) {

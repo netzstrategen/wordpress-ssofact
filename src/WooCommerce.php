@@ -9,6 +9,8 @@ namespace Netzstrategen\Ssofact;
 
 class WooCommerce {
 
+  const REMOVE_FIELD_CHECKOUT_SECTION_PREFIX = '###REMOVEPREFIX';
+
   const OPTINS = [
     'list_redaktion-stimmede-editorial-weekly' => [
       'label' => 'Newsletter des Chefredakteurs',
@@ -169,18 +171,24 @@ var nfyFacebookAppId = '637920073225349';
       ],
       'required' => TRUE,
       'priority' => 20,
+      'class' => ['field--salutation'],
     ];
     // alfa VM does not have a dedicated address field for a company name; if
     // "Firma" is selected as salutation then the first name will be ignored and
     // the last name should contain the name of a contact person in the company.
     $fields['company']['required'] = TRUE;
     $fields['company']['priority'] = 30;
+    $fields['company']['class'] = ['field--company'];
     $fields['company_contact'] = $fields['last_name'];
     $fields['company_contact']['label'] = __('Contact person', Plugin::L10N);
     $fields['company_contact']['priority'] = 35;
+    $fields['company_contact']['class'] = ['field--company_contact'];
     $fields['first_name']['priority'] = 40;
+    $fields['first_name']['class'] = ['field--first_name'];
     $fields['last_name']['priority'] = 50;
+    $fields['last_name']['class'] = ['field--last_name'];
     $fields['postcode']['priority'] = 60;
+    $fields['postcode']['class'] = ['field--postcode'];
     $fields['city']['priority'] = 70;
     // @todo What overrides this to "Adresszeile 1" in administrative user profile?
     $fields['address_1']['label'] = __('Street address', 'woocommerce');
@@ -271,9 +279,6 @@ var nfyFacebookAppId = '637920073225349';
    * @implements woocommerce_checkout_fields
    */
   public static function woocommerce_checkout_fields($fields) {
-    $fields['billing'] = WooCommerce::woocommerce_billing_fields($fields['billing']);
-    $fields['shipping'] = WooCommerce::woocommerce_shipping_fields($fields['shipping']);
-
     // If the user only has a shipping address but no billing address (after
     // associating the existing subscription with the account but without a
     // purchase yet), use the shipping address as billing address by default.
@@ -286,10 +291,40 @@ var nfyFacebookAppId = '637920073225349';
       }
     }
 
-    // Remove username and password fields from checkout form (email is username).
-    unset($fields['account']['account_username']);
-    unset($fields['account']['account_password']);
     return $fields;
+  }
+
+  /**
+   * @implements woocommerce_checkout_get_value
+   *
+   * @todo WooCommerce does not store values of custom address fields nor custom
+   *   meta data in the customer user session since ~2.7. Fields starting with
+   *   'billing_' or 'shipping_' are still supposed to work, but only seem to be
+   *   taken over into the order in a direct POST, but not when the checkout
+   *   reloads.
+   * @see https://github.com/woocommerce/woocommerce/issues/6226
+   * @see https://github.com/woocommerce/woocommerce/issues/12634
+   * @see https://docs.woocommerce.com/document/tutorial-customising-checkout-fields-using-actions-and-filters/
+   * @see https://stackoverflow.com/questions/45602936/woocommerce-set-checkout-field-values
+   */
+  public static function woocommerce_checkout_get_value($value, $field) {
+    if ($value === NULL && ($session_value = WC()->session->get($field))) {
+      $value = $session_value;
+    }
+    return $value;
+  }
+
+  /**
+   * Returns whether the current page is the second/final checkout confirmation page.
+   */
+  public static function isCheckoutConfirmationPage() {
+    // @see WGM_Template::change_order_button_text()
+    $check_id = get_option('woocommerce_check_page_id');
+    if (function_exists('icl_object_id')) {
+      $check_id = icl_object_id($check_id);
+    }
+    $is_confirm_and_place_order_page = get_the_ID() == $check_id;
+    return $is_confirm_and_place_order_page;
   }
 
   /**
@@ -302,15 +337,218 @@ var nfyFacebookAppId = '637920073225349';
       unset($fields['billing_email']);
 
       // An existing subscriber ID cannot be changed.
-      if (get_user_meta(get_current_user_ID(), 'billing_subscriber_id', TRUE)) {
+      if ($subscriber_id = get_user_meta(get_current_user_ID(), 'billing_subscriber_id', TRUE)) {
         $fields['billing_subscriber_id']['required'] = TRUE;
         $fields['billing_subscriber_id']['custom_attributes']['readonly'] = 'readonly';
       }
     }
+    elseif (!WooCommerce::isCheckoutConfirmationPage()) {
+      $fields['billing_email']['label'] .= static::REMOVE_FIELD_CHECKOUT_SECTION_PREFIX;
+    }
+
+    if (WooCommerce::isCheckoutConfirmationPage()) {
+      // Only output subscriber ID here.
+    }
+    elseif ($subscriber = WC()->session->get('subscriber_data')) {
+      $greeting = esc_html('#' . $subscriber['abono'] . ': ' . $subscriber['salutation'] . ' ' . $subscriber['lastname']);
+      $fields['subscriber_associate'] = [
+        'type' => 'checkbox',
+        'label' => __('Yes, I am a subscriber already', Plugin::L10N) . ': <strong>' . $greeting . '</strong>',
+        'priority' => -100,
+        'default' => 1,
+      ];
+
+      // @see WooCommerce::woocommerce_checkout_billing_pre()
+      unset($fields['billing_subscriber_id']);
+    }
+    elseif (!is_user_logged_in() || empty($subscriber_id)) {
+      $has_associate_values = !empty($_POST) ? !empty($_POST['subscriber_associate']) : WC()->session->get('subscriber_associate');
+      $fields['subscriber_associate'] = [
+        'type' => 'checkbox',
+        'label' => __('Yes, I am a subscriber already', Plugin::L10N),
+        'priority' => $subscriber_priority = -100,
+        'default' => $has_associate_values,
+      ];
+      $subscriber_fields = ['subscriber_id', 'postcode', 'salutation', 'first_name', 'last_name', 'company', 'company_contact'];
+      foreach ($subscriber_fields as $key) {
+        $field = ($key === 'subscriber_id' ? 'billing_' : 'subscriber_') . $key;
+        $fields[$field] = $fields['billing_' . $key];
+        $fields[$field]['label'] .= static::REMOVE_FIELD_CHECKOUT_SECTION_PREFIX;
+        $fields[$field]['required'] = $has_associate_values;
+        $subscriber_priority += 10;
+        $fields[$field]['priority'] = $subscriber_priority;
+        if ($value = !empty($_POST) ? ($_POST[$field] ?? NULL) : WC()->session->get($field)) {
+          $fields[$field]['default'] = $value;
+        }
+      }
+      // Prefill user input in billing fields, too.
+      $prefill_fields = ['salutation', 'first_name', 'last_name', 'company', 'company_contact'];
+      foreach ($prefill_fields as $field) {
+        $field = 'billing_' . $field;
+        if ($value = !empty($_POST) ? ($_POST[$field] ?? NULL) : WC()->session->get($field)) {
+          $fields[$field]['default'] = $value;
+        }
+      }
+      // Require a company name if salutation has been set to company.
+      $fields = WooCommerce::adjustCompanyFields($fields, 'subscriber');
+    }
 
     // Require a company name if salutation has been set to company.
     $fields = WooCommerce::adjustCompanyFields($fields, 'billing');
+
     return $fields;
+  }
+
+  /**
+   * @implements woocommerce_form_field_args
+   */
+  public static function woocommerce_form_field_args($field) {
+    if (isset($field['label']) && strpos($field['label'], static::REMOVE_FIELD_CHECKOUT_SECTION_PREFIX) !== FALSE) {
+      $field['label'] = strtr($field['label'], [
+        static::REMOVE_FIELD_CHECKOUT_SECTION_PREFIX => '',
+      ]);
+    }
+    return $field;
+  }
+
+  /**
+   * @implements woocommerce_checkout_required_field_notice
+   */
+  public static function woocommerce_checkout_required_field_notice($notice) {
+    if (strpos($notice, static::REMOVE_FIELD_CHECKOUT_SECTION_PREFIX) !== FALSE) {
+      $notice = strtr($notice, [
+        static::REMOVE_FIELD_CHECKOUT_SECTION_PREFIX => '',
+        // @see WC_Checkout::validate_posted_data()
+        str_replace('%s', '', __('Billing %s', 'woocommerce')) => '',
+        str_replace('%s', '', __('Shipping %s', 'woocommerce')) => '',
+      ]);
+    }
+    return $notice;
+  }
+
+  /**
+   * @implements woocommerce_after_checkout_billing_form
+   */
+  public static function woocommerce_after_checkout_billing_form() {
+    $form = ob_get_clean();
+    if ($subscriber = WC()->session->get('subscriber_data')) {
+      $form = str_replace('name="subscriber_associate"', 'name="subscriber_associate" required disabled', $form);
+    }
+    echo $form;
+    if (!$subscriber) {
+      echo '<p id="subscriber_submit_field" class="form-row form-actions" data-priority="-30">';
+      echo '<button name="woocommerce_checkout_place_order" class="button button--primary">';
+      echo 'Meine bestehenden Daten verwenden';
+      echo '</button>';
+      echo '</p>';
+    }
+  }
+
+  /**
+   * @implements woocommerce_checkout_process
+   *
+   * Normally, woocommerce_checkout_posted_data would be the proper hook to
+   * assign field values, but it is invoked _after_ woocommerce_billing_fields
+   * and woocommerce_checkout_fields, where we need to set the 'default' value
+   * properties for our custom fields (because WooCommerce does not store nor
+   * populate custom address field values in the session for anonymous users),
+   * which is a race condition.
+   *
+   * Theoretically, it should work in the following constellation, but it did
+   * not at the time of this writing:
+   *
+   * - woocommerce_billing_fields defines the additional fields.
+   * - woocommerce_checkout_posted_data processes submitted POST data into
+   *   customer meta data values using WC()->customer->update_meta_data().
+   * - The built-in checkout templates use WC()->checkout->get_value() to
+   *   retrieve the value from the customer meta for all fields.
+   *
+   * The custom meta data values do not appear to be saved to the user session.
+   *
+   * @see WooCommerce::woocommerce_checkout_fields()
+   * @see WooCommerce::woocommerce_checkout_get_value()
+   * @see WC_Checkout::get_value()
+   */
+  public static function woocommerce_checkout_process() {
+    // Do not overwrite successfully associated subscriber data.
+    if (WC()->session->get('subscriber_data')) {
+      return;
+    }
+    // WooCommerce does not retain values of custom fields.
+    // Not anchored at front to also save the value of billing_subscriber_id.
+    foreach (preg_grep('@subscriber_@', array_keys($_POST)) as $key) {
+      WC()->session->set($key, $_POST[$key]);
+    }
+
+    $response = WooCommerce::validateSubscriberId();
+    Server::addDebugMessage();
+    if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
+      $message = isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.');
+      wc_add_notice($message, 'error');
+    }
+    else {
+      // Store the result for usage in alfa purchase info instead of the actually
+      // submitted form data (so that alfa maps the subscriber ID to the address)
+      // and as a marker to hide the subscriber association form elements in the
+      // checkout (in case the user goes back).
+      // @see WooCommerce::woocommerce_checkout_order_processed()
+      WC()->session->set('subscriber_data', $response + [
+        'abono' => $_POST['billing_subscriber_id'],
+        'firstname' => $_POST['subscriber_first_name'],
+        'lastname' => $_POST['subscriber_last_name'],
+        'company' => $_POST['subscriber_company'],
+        'company_contact' => $_POST['subscriber_company_contact'],
+      ]);
+
+      $prefill_fields = [
+        'street' => 'address_1',
+        'zipcode' => 'postcode',
+        'city' => 'city',
+        // @todo Country code mapping.
+        'country' => 'country',
+        'phone' => 'phone',
+      ];
+      foreach ($prefill_fields as $userinfo_key => $field) {
+        if (empty($_POST['billing_' . $field])) {
+          // WC_Checkout::get_value() consumes the POST value if there is one.
+          $_POST['billing_' . $field] = $response[$userinfo_key];
+          WC()->customer->{"set_billing_{$field}"}($response[$userinfo_key]);
+        }
+      }
+      $prefill_fields = [
+        'salutation' => 'salutation',
+        'housenr' => 'house_number',
+        'phone_prefix' => 'phone_prefix',
+      ];
+      foreach ($prefill_fields as $userinfo_key => $field) {
+        if (empty($_POST['billing_' . $field])) {
+          $_POST['billing_' . $field] = $response[$userinfo_key];
+          WC()->session->set('billing_' . $field, $response[$userinfo_key]);
+        }
+      }
+      wc_add_notice(sprintf('<strong>Willkommen zurück, %s %s!</strong>', $_POST['subscriber_salutation'], $_POST['subscriber_last_name']), 'success');
+
+      // Reload the checkout page to populate the address fields.
+      WC()->session->set('reload_checkout', TRUE);
+    }
+    // Also take over the user input into corresponding fields.
+    $prefill_fields = ['first_name', 'last_name', 'company'];
+    foreach ($prefill_fields as $field) {
+      if (empty($_POST['billing_' . $field])) {
+        $_POST['billing_' . $field] = $_POST['subscriber_' . $field];
+        WC()->customer->{"set_billing_{$field}"}($_POST['subscriber_' . $field]);
+      }
+    }
+    $prefill_fields = ['salutation', 'company_contact'];
+    foreach ($prefill_fields as $field) {
+      if (empty($_POST['billing_' . $field])) {
+        $_POST['billing_' . $field] = $_POST['subscriber_' . $field];
+        WC()->session->set('billing_' . $field, $_POST['subscriber_' . $field]);
+      }
+    }
+
+    // Save all additions.
+    WC()->customer->save();
   }
 
   /**
@@ -326,7 +564,8 @@ var nfyFacebookAppId = '637920073225349';
   }
 
   public static function adjustCompanyFields(array $fields, $address_type) {
-    if (!empty($_POST[$address_type . '_salutation']) && $_POST[$address_type . '_salutation'] === 'Firma') {
+    $value = !empty($_POST) && isset($_POST[$address_type . '_salutation']) ? $_POST[$address_type . '_salutation'] : WC()->session->get($address_type . '_salutation');
+    if ($value === 'Firma') {
       $fields[$address_type . '_company']['required'] = TRUE;
       $fields[$address_type . '_company_contact']['required'] = TRUE;
       $fields[$address_type . '_first_name']['required'] = FALSE;
@@ -442,24 +681,8 @@ var nfyFacebookAppId = '637920073225349';
       }
     }
     // Check whether the given subscriber ID matches the registered address.
-    if (!empty($_POST['billing_subscriber_id']) && !get_user_meta(get_current_user_ID(), 'billing_subscriber_id', TRUE)) {
-      $address_type = !empty($_POST['ship_to_different_address']) ? 'shipping' : 'billing';
-      if (isset($_POST[$address_type . '_salutation']) && $_POST[$address_type . '_salutation'] === 'Firma') {
-        $response = Server::checkSubscriberId(
-          $_POST['billing_subscriber_id'],
-          '',
-          $_POST[$address_type . '_company'] ?? '',
-          $_POST[$address_type . '_postcode'] ?? ''
-        );
-      }
-      else {
-        $response = Server::checkSubscriberId(
-          $_POST['billing_subscriber_id'],
-          $_POST[$address_type . '_first_name'] ?? '',
-          $_POST[$address_type . '_last_name'] ?? '',
-          $_POST[$address_type . '_postcode'] ?? ''
-        );
-      }
+    if (!WC()->session->get('subscriber_data') && !empty($_POST['billing_subscriber_id']) && !get_user_meta(get_current_user_ID(), 'billing_subscriber_id', TRUE)) {
+      $response = WooCommerce::validateSubscriberId();
       if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
         $message = isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.');
         $errors->add('billing_subscriber_id', $message);
@@ -475,6 +698,33 @@ var nfyFacebookAppId = '637920073225349';
     // even though the user will not be authenticated (in our case). Therefore,
     // we need a flag that informs us about the original user authentication.
     static::$isAnonymousCheckout = !get_current_user_ID();
+  }
+
+  /**
+   * Validates subscriber ID association user input.
+   */
+  public static function validateSubscriberId($address_type = 'subscriber') {
+    static $response;
+    if (isset($response)) {
+      return $response;
+    }
+    if (isset($_POST[$address_type . '_salutation']) && $_POST[$address_type . '_salutation'] === 'Firma') {
+      $response = Server::checkSubscriberId(
+        $_POST['billing_subscriber_id'],
+        '',
+        $_POST[$address_type . '_company'] ?? '',
+        $_POST[$address_type . '_postcode'] ?? ''
+      );
+    }
+    else {
+      $response = Server::checkSubscriberId(
+        $_POST['billing_subscriber_id'],
+        $_POST[$address_type . '_first_name'] ?? '',
+        $_POST[$address_type . '_last_name'] ?? '',
+        $_POST[$address_type . '_postcode'] ?? ''
+      );
+    }
+    return $response;
   }
 
   /**
@@ -507,6 +757,31 @@ var nfyFacebookAppId = '637920073225349';
       $response = Server::registerPurchase($purchase);
     }
     else {
+      if ($subscriber = WC()->session->get('subscriber_data')) {
+        $replace_fields = [
+          'salutation',
+          'company',
+          // 'title',
+          'firstname',
+          'lastname',
+          'street',
+          'housenr',
+          'zipcode',
+          'city',
+          'country',
+          // 'birthday',
+          'phone_prefix',
+          'phone',
+        ];
+        foreach ($replace_fields as $key) {
+          if (isset($subscriber[$key])) {
+            $purchase[$key] = $subscriber[$key];
+          }
+          else {
+            unset($purchase[$key]);
+          }
+        }
+      }
       $purchase['confirmationUrl'] = wc_customer_edit_account_url();
       $response = Server::registerUserAndPurchase($purchase);
     }

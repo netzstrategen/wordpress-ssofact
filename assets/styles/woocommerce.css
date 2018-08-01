@@ -1,6 +1,23 @@
-#billing_first_name_field .optional,
-#shipping_first_name_field .optional,
-#billing_company_field .optional,
-#shipping_company_field .optional {
+#subscriber_associate_field .optional {
   display: none;
+}
+
+.field--first_name .optional,
+.field--last_name .optional,
+.field--company .optional,
+.field--company_contact .optional,
+.subscriber-fields__field-wrapper .optional {
+  font-size: 0;
+}
+.field--first_name .optional:after,
+.field--last_name .optional:after,
+.field--company .optional:after,
+.field--company_contact .optional:after,
+.subscriber-fields__field-wrapper .optional:after {
+  content: '*';
+  font-size: initial;
+}
+
+.form-actions {
+  text-align: right;
 }

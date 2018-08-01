@@ -143,7 +143,18 @@ class Plugin {
     add_filter('woocommerce_default_address_fields', __NAMESPACE__ . '\WooCommerce::sortFieldsByPriority', 100);
     add_filter('woocommerce_checkout_fields', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_fields');
     add_filter('woocommerce_billing_fields', __NAMESPACE__ . '\WooCommerce::woocommerce_billing_fields');
+    add_action('woocommerce_before_checkout_billing_form', 'ob_start', 0, 0);
+    add_action('woocommerce_after_checkout_billing_form', __NAMESPACE__ . '\WooCommerce::woocommerce_after_checkout_billing_form');
     add_filter('woocommerce_shipping_fields', __NAMESPACE__ . '\WooCommerce::woocommerce_shipping_fields');
+
+    // Saves and loads custom address field values to the user session.
+    add_action('woocommerce_checkout_process', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_process');
+    add_filter('woocommerce_checkout_get_value', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_get_value', 10, 2);
+
+    // Removes "Billing" field label prefix from error messages for some fields.
+    add_filter('woocommerce_form_field_args', __NAMESPACE__ . '\WooCommerce::woocommerce_form_field_args');
+    add_filter('woocommerce_checkout_required_field_notice', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_required_field_notice');
+
     // Validates and updates user info in SSO upon editing address.
     add_action('woocommerce_after_save_address_validation', __NAMESPACE__ . '\WooCommerce::woocommerce_after_save_address_validation', 10, 3);
 

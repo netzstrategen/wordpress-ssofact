@@ -342,17 +342,6 @@ var nfyFacebookAppId = '637920073225349';
   }
 
   /**
-   * @implements option_NAME
-   */
-  public static function option_german_market_checkbox_1_tac_pd_rp_activation($value) {
-    $optins = get_user_meta(get_current_user_ID(), 'optins', TRUE);
-    if (!empty($optins['confirm_agb'])) {
-      $value = 'off';
-    }
-    return $value;
-  }
-
-  /**
    * @implements woocommerce_de_add_review_order
    */
   public static function woocommerce_de_add_review_order() {

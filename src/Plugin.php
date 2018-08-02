@@ -593,7 +593,7 @@ class Plugin {
     // be contained in the order confirmation email and manually processed by
     // the customer service team. Even if the user only specified the ID in the
     // checkout form, it has already been validated to be correct by now.
-    if (!empty($address_source['billing_subscriber_id']) || ($user_id > 0 && get_user_meta($user_id, 'billing_subscriber_id', TRUE))) {
+    if ($user_id > 0 && (!empty($address_source['billing_subscriber_id']) || get_user_meta($user_id, 'billing_subscriber_id', TRUE))) {
       $userinfo = array_diff_key($userinfo, [
         'salutation' => 0,
         'company' => 0,

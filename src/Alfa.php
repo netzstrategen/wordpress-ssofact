@@ -120,32 +120,54 @@ class Alfa {
   }
 
   public static function renderPurchases(array $purchases) {
+    $priorities = [
+      'HST' => 0,
+      'OABO' => 10,
+      'EST' => 20,
+      'iST' => 25,
+      'mST' => 30,
+    ];
     $object_labels = [
-      'HST' => 'Zeitung täglich gedruckt',
+      'HST' => 'Zeitung gedruckt',
       'EST' => 'E-Paper im Web',
-      'iST' => 'E-Paper in der iStimme App',
-      'OABO' => 'Stimme.de Premium',
-      'mST' => 'mStimme mobil',
+      'iST' => 'E-Paper auf dem Tablet',
+      'OABO' => 'Premium Zugang',
+      'mST' => 'mStimme App',
       'BES' => 'BES?',
       'TVS' => 'TVS?',
     ];
     $edition_labels = [
-      'H' => 'Heilbronn Stadtausgabe',
-      'EH' => 'Heilbronn Stadtausgabe',
+      'STDE' => 'Stimme.de',
+      'H' => 'Stadtausgabe Heilbronn',
+      'EH' => 'Stadtausgabe Heilbronn',
+      'iH' => 'Stadtausgabe Heilbronn',
       'HZK' => 'Hohenloher Zeitung Künzelsau',
       'EHZK' => 'Hohenloher Zeitung Künzelsau',
+      'iHZK' => 'Hohenloher Zeitung Künzelsau',
       'HZO' => 'Hohenloher Zeitung Öhringen',
       'EHZO' => 'Hohenloher Zeitung Öhringen',
+      'iHZO' => 'Hohenloher Zeitung Öhringen',
       'KS' => 'Kraichgau Stimme',
       'EKS' => 'Kraichgau Stimme',
-      'N' => 'Heilbronner Stimme Nordausgabe',
-      'EN' => 'Heilbronner Stimme Nordausgabe',
-      'O' => 'Heilbronner Stimme Ostausgabe',
-      'EO' => 'Heilbronner Stimme Ostausgabe',
-      'W' => 'Heilbronner Stimme Westausgabe',
-      'EW' => 'Heilbronner Stimme Westausgabe',
+      'iKS' => 'Kraichgau Stimme',
+      'N' => 'Heilbronner Stimme Ausgabe Nord',
+      'EN' => 'Heilbronner Stimme Ausgabe Nord',
+      'iN' => 'Heilbronner Stimme Ausgabe Nord',
+      'O' => 'Heilbronner Stimme Ausgabe Ost',
+      'EO' => 'Heilbronner Stimme Ausgabe Ost',
+      'iO' => 'Heilbronner Stimme Ausgabe Ost',
+      'W' => 'Heilbronner Stimme Ausgabe West',
+      'EW' => 'Heilbronner Stimme Ausgabe West',
+      'iW' => 'Heilbronner Stimme Ausgabe West',
     ];
     foreach ($purchases as $key => &$purchase) {
+      if ($purchase['object'] === 'BES' || $purchase['object'] === 'TVS') {
+        unset($purchases[$key]);
+        continue;
+      }
+      if (isset($priorities[$purchase['object']])) {
+        $purchase['priority'] = $priorities[$purchase['object']];
+      }
       unset($purchase['type'], $purchase['ivw'], $purchase['ident'], $purchase['accessCount']);
       $purchase['date_start'] = preg_replace('@(\d{4})(\d{2})(\d{2})@', '$3.$2.$1', $purchase['fromDay']);
       if ($purchase['toDay'] < date('Ymd', strtotime('today +20 years'))) {
@@ -164,6 +186,7 @@ class Alfa {
         }
       }
     }
+    $purchases = WooCommerce::sortFieldsByPriority($purchases);
     ?>
 <div class="pull">
 <table>

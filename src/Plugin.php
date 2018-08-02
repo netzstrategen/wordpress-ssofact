@@ -806,6 +806,15 @@ class Plugin {
   }
 
   /**
+   * Returns whether the current user is confirming the account after testing a premium article.
+   */
+  public static function isArticleTestConfirmationPage() {
+    $user_id = get_current_user_ID();
+    $userinfo = get_user_meta($user_id, Plugin::USER_META_USERINFO, TRUE);
+    return $userinfo && empty($userinfo['alfa_purchases']) && !empty($userinfo['article_test']) && !empty($userinfo['code']);
+  }
+
+  /**
    * Loads front-end assets.
    */
   public static function wp_enqueue_scripts() {

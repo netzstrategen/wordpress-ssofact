@@ -1164,8 +1164,10 @@ var nfyFacebookAppId = '637920073225349';
     }
     // Re-inject values for removed fields as they will be emptied otherwise.
     // @see WC_Form_Handler::save_account_details()
-    $user->first_name = $current_user->first_name;
-    $user->last_name = $current_user->last_name;
+    if (!Plugin::isArticleTestConfirmationPage()) {
+      $user->first_name = $current_user->first_name;
+      $user->last_name = $current_user->last_name;
+    }
     $user->display_name = $current_user->display_name;
   }
 
@@ -1249,26 +1251,60 @@ var nfyFacebookAppId = '637920073225349';
    */
   public static function woocommerce_edit_account_form() {
     $form = ob_get_clean();
-    $form = preg_replace('@^\s*<p.+?(?:account_first_name|account_last_name|account_display_name).+?</p>@sm', '', $form);
-    if (Plugin::getPasswordResetToken()) {
-      $form = preg_replace('@^\s*<p.+?(?:password_current).+?</p>@sm', '', $form);
+    if (!Plugin::isArticleTestConfirmationPage()) {
+      $form = preg_replace('@^\s*<p [a-z_ "=-]+>\s+<label for="(?:account_first_name|account_last_name).+?</p>@sm', '', $form);
     }
-    echo $form;
-
-    echo '<fieldset class="account-edit-optin-checks">';
+    $form = preg_replace('@^\s*<p [a-z_ "=-]+>\s+<label for="(?:account_display_name).+?</p>@sm', '', $form);
+    if (Plugin::getPasswordResetToken()) {
+      $form = preg_replace('@^\s*<legend>Passwor.+?$@m', '', $form);
+      $form = preg_replace('@^\s*<p [a-z_ "=-]+>\s+<label for="(?:account_email|password_current).+?</p>@sm', '', $form);
+      $form = str_replace(' (leer lassen für keine Änderung)', '', $form);
+    }
 
     $optins = get_user_meta(get_current_user_ID(), 'optins', TRUE);
-    foreach (static::OPTINS as $optin_name => $definition) {
-      // The acquisition opt-ins should only appear during checkout.
-      if (strpos($optin_name, 'acquisition') === 0) {
-        continue;
+
+    if (!Plugin::isArticleTestConfirmationPage()) {
+      echo $form;
+
+      foreach (static::OPTINS as $optin_name => $definition) {
+        // The acquisition opt-ins should only appear during checkout.
+        if (strpos($optin_name, 'acquisition') === 0) {
+          continue;
+        }
+        woocommerce_form_field($optin_name, $definition + [
+          'type' => 'checkbox',
+          'default' => $optins[$optin_name] ?? 0,
+        ]);
       }
-      woocommerce_form_field($optin_name, $definition + [
+    }
+    else {
+      ?>
+<p>Wir freuen uns, dass Sie sich für unsere Premium Inhalte interessieren.</p>
+
+<h3>Jetzt Registrierung abschließen und 30 Tage lang alle Premium Inhalte auf stimme.de kostenlos lesen!</h3>
+<p>Vergeben Sie ein Passwort und geben Sie Ihren Namen an für Ihren Account.
+   Damit haben Sie 30 Tage kostenlosen Zugang zu allen Premium Artikeln.
+   Keine Kündigung notwendig – Das Abo endet automatisch nach 30 Tagen.</p>
+
+<?= $form ?>
+
+      <?php
+      $optin_name = 'acquisitionEmail';
+      woocommerce_form_field($optin_name, [
         'type' => 'checkbox',
         'default' => $optins[$optin_name] ?? 0,
+        'required' => TRUE,
+        'label' => 'Damit ich das besondere Angebot erhalte, willige ich ein,
+          aus dem Verlags- und Dienstleistungsbereich der
+          <a href="https://www.stimme-medien.de" target="_blank">Mediengruppe Heilbronner Stimme</a>
+          per E-Mail über Verlagsangebote informiert zu werden.
+          <br>
+          <br>
+          <strong>Vertrauensgarantie:</strong> Eine Weitergabe Ihrer Daten an Dritte erfolgt nicht.
+          Diese Einwilligung können Sie jederzeit per Mail an <a href="mailto:zeitung@stimme.de">zeitung@stimme.de</a>
+          oder unter der Rufnummer 07131 615-615 widerrufen!',
       ]);
     }
-    echo '</fieldset>';
   }
 
   /**
@@ -1277,7 +1313,12 @@ var nfyFacebookAppId = '637920073225349';
    * @implements woocommerce_save_account_details_required_fields
    */
   public static function woocommerce_save_account_details_required_fields(array $fields) {
-    unset($fields['account_first_name'], $fields['account_last_name']);
+    if (!Plugin::isArticleTestConfirmationPage()) {
+      unset($fields['account_first_name'], $fields['account_last_name']);
+    }
+    else {
+      $fields['acquisitionEmail'] = 'Verlagsangebote der Mediengruppe Heilbronner Stimme per E-Mail erhalten';
+    }
     unset($fields['account_display_name']);
     if (Plugin::getPasswordResetToken()) {
       unset($fields['account_email']);

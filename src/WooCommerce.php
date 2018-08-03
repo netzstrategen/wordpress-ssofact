@@ -316,7 +316,7 @@ class WooCommerce {
       $formats[$country] = strtr($formats[$country], [
         '{name}' => '{salutation}{name}',
         '{address_1}' => '{address_1}{house_number}',
-        '{phone}' => '{phone_prefix}{phone}',
+        '{phone}' => 'Telefon: {phone_prefix}{phone}',
       ]);
     }
     return $formats;
@@ -326,6 +326,10 @@ class WooCommerce {
    * @implements woocommerce_formatted_address_replacements
    */
   public static function woocommerce_formatted_address_replacements($replacements, $fields) {
+    if (!empty($fields['salutation']) && $fields['salutation'] === 'Firma') {
+      $fields['salutation'] = '';
+      $replacements['{name}'] = $fields['company_contact'];
+    }
     $replacements['{salutation}'] = !empty($fields['salutation']) ? $fields['salutation'] . ' ' : '';
     $replacements['{house_number}'] = !empty($fields['house_number']) ? ' ' . $fields['house_number'] : '';
     $replacements['{phone}'] = !empty($fields['phone']) ? $fields['phone'] . ' ' : '';
@@ -341,18 +345,22 @@ class WooCommerce {
   public static function woocommerce_customer_get_address($values, $customer) {
     $type = explode('_', current_filter());
     $type = array_pop($type);
-    if (!$house_number = $customer->get_meta($type . '_house_number')) {
-      $house_number = $customer->get_meta('_' . $type . '_house_number');
-    }
     if (!$salutation = $customer->get_meta($type . '_salutation')) {
       $salutation = $customer->get_meta('_' . $type . '_salutation');
+    }
+    if (!$company_contact = $customer->get_meta($type . '_company_contact')) {
+      $company_contact = $customer->get_meta('_' . $type . '_company_contact');
+    }
+    if (!$house_number = $customer->get_meta($type . '_house_number')) {
+      $house_number = $customer->get_meta('_' . $type . '_house_number');
     }
     if (!$phone_prefix = $customer->get_meta($type . '_phone_prefix')) {
       $phone_prefix = $customer->get_meta('_' . $type . '_phone_prefix');
     }
     $values += [
-      'house_number' => $house_number,
       'salutation' => $salutation,
+      'company_contact' => $company_contact,
+      'house_number' => $house_number,
       'phone_prefix' => $phone_prefix,
     ];
     return $values;

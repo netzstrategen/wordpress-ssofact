@@ -124,13 +124,11 @@ class Alfa {
       'HST' => 0,
       'OABO' => 10,
       'EST' => 20,
-      'iST' => 25,
       'mST' => 30,
     ];
     $object_labels = [
       'HST' => 'Zeitung gedruckt',
-      'EST' => 'E-Paper im Web',
-      'iST' => 'E-Paper auf dem Tablet',
+      'EST' => 'E-Paper im Web und auf dem Tablet',
       'OABO' => 'Premium Zugang',
       'mST' => 'mStimme App',
       'BES' => 'BES?',
@@ -140,28 +138,23 @@ class Alfa {
       'STDE' => 'Stimme.de',
       'H' => 'Stadtausgabe Heilbronn',
       'EH' => 'Stadtausgabe Heilbronn',
-      'iH' => 'Stadtausgabe Heilbronn',
       'HZK' => 'Hohenloher Zeitung Künzelsau',
       'EHZK' => 'Hohenloher Zeitung Künzelsau',
-      'iHZK' => 'Hohenloher Zeitung Künzelsau',
       'HZO' => 'Hohenloher Zeitung Öhringen',
       'EHZO' => 'Hohenloher Zeitung Öhringen',
-      'iHZO' => 'Hohenloher Zeitung Öhringen',
       'KS' => 'Kraichgau Stimme',
       'EKS' => 'Kraichgau Stimme',
-      'iKS' => 'Kraichgau Stimme',
       'N' => 'Heilbronner Stimme Ausgabe Nord',
       'EN' => 'Heilbronner Stimme Ausgabe Nord',
-      'iN' => 'Heilbronner Stimme Ausgabe Nord',
       'O' => 'Heilbronner Stimme Ausgabe Ost',
       'EO' => 'Heilbronner Stimme Ausgabe Ost',
-      'iO' => 'Heilbronner Stimme Ausgabe Ost',
       'W' => 'Heilbronner Stimme Ausgabe West',
       'EW' => 'Heilbronner Stimme Ausgabe West',
-      'iW' => 'Heilbronner Stimme Ausgabe West',
     ];
     foreach ($purchases as $key => &$purchase) {
-      if ($purchase['object'] === 'BES' || $purchase['object'] === 'TVS') {
+      // BES ("Besen") and TVS ("TV app") are obsolete.
+      // A user with EST (epaper) can always access iST (iStimme tablet app).
+      if ($purchase['object'] === 'iST' || $purchase['object'] === 'BES' || $purchase['object'] === 'TVS') {
         unset($purchases[$key]);
         continue;
       }

@@ -73,20 +73,12 @@ class WooCommerce {
   }
 
   /**
-   * @implements woocommerce_before_customer_login_form
+   * Returns URLs for login form action, and forgot password and register links.
    */
-  public static function woocommerce_before_customer_login_form() {
-    ob_start();
-  }
-
-  /**
-   * @implements woocommerce_after_customer_login_form
-   */
-  public static function woocommerce_after_customer_login_form() {
-    // Ignore output, the whole form is replaced with the SSO markup.
-    $output = ob_get_clean();
-
-    $target = $_REQUEST['redirect_to'] ?? '/user';
+  public static function getLoginFormUrls($target = NULL) {
+    if (!isset($target)) {
+      $target = $_REQUEST['redirect_to'] ?? '/user';
+    }
     $next = site_url($target);
     $authorize_uri = Plugin::getAuthorizeUrl($target);
     $action = 'https://' . SSOFACT_SERVER_DOMAIN . '/?' . http_build_query([
@@ -99,6 +91,21 @@ class WooCommerce {
     $href_register = 'https://' . SSOFACT_SERVER_DOMAIN . '/registrieren.html?' . http_build_query([
       'next' => $next,
     ]);
+    return [
+      'action' => $action,
+      'href_forgot_password' => $href_forgot_password,
+      'href_register' => $href_register,
+    ];
+  }
+
+  /**
+   * @implements woocommerce_after_customer_login_form
+   */
+  public static function woocommerce_after_customer_login_form() {
+    // Ignore output, the whole form is replaced with the SSO markup.
+    $output = ob_get_clean();
+
+    extract(WooCommerce::getLoginFormUrls());
     ?>
 <link rel="stylesheet" href="https://<?= SSOFACT_SERVER_DOMAIN ?>/pu_stimme/styles_frametemplate/01_styles.css" media="all" />
 <script>
@@ -144,6 +151,45 @@ var nfyFacebookAppId = '637920073225349';
   </div>
 </div>
     <?php
+  }
+
+  /**
+   * @implements woocommerce_login_form_end
+   */
+  public static function woocommerce_login_form_end() {
+    $output = ob_get_clean();
+    extract(WooCommerce::getLoginFormUrls('/shop/checkout'));
+
+    $output = strtr($output, [
+      'login" method="post"' => 'login" method="post" action="' . $action . '"',
+      'name="login"' => 'name="submit" data-action="' . $action . '"',
+      'name="username"' => 'name="login"',
+      'name="password"' => 'name="pass"',
+      'checkbox inline">' => 'checkbox inline" hidden>',
+      'name="rememberme" type="checkbox"' => 'name="permanent_login" type="hidden"',
+      'value="forever"' => 'value="1"',
+      site_url('/shop/user/lost-password') => $href_forgot_password,
+    ]);
+    echo $output;
+    // Add links to switch between the login and register forms.
+    if (is_checkout()) {
+      ?>
+<div class="login__footer">
+  <p>Sie haben noch kein Kundenkonto? Hier gehts zur <a id="switchToRegister" href="#">Registrierung</a>.</p>
+  <p style="display: none;">Sie haben schon ein Konto? Hier gehts zum <a id="switchToLogin" href="#">Login</a>.</p>
+</div>
+      <?php
+    }
+  }
+
+  /**
+   * @implements woocommerce_checkout_billing
+   */
+  public static function woocommerce_checkout_billing() {
+    if (is_user_logged_in()) {
+      return;
+    }
+    woocommerce_login_form(['redirect' => wc_get_page_permalink('checkout')]);
   }
 
   /**
@@ -561,6 +607,15 @@ var nfyFacebookAppId = '637920073225349';
     // Require a company name if salutation has been set to company.
     $fields = WooCommerce::adjustCompanyFields($fields, 'shipping');
     return $fields;
+  }
+
+  /**
+   * Adds back to previous step on the checkout form.
+   *
+   * @implements woocommerce_checkout_after_customer_details
+   */
+  public static function woocommerce_checkout_after_customer_details() {
+    echo '<input type="button" class="button go-back-button" id="go-back-button" value="' . __('Go back to previous page', 'woocommerce-german-market') . '">';
   }
 
   public static function adjustCompanyFields(array $fields, $address_type) {
@@ -1005,7 +1060,7 @@ var nfyFacebookAppId = '637920073225349';
    * @implements woocommerce_before_template_part
    */
   public static function woocommerce_before_template_part($template_name) {
-    if ($template_name === 'myaccount/form-lost-password.php' || $template_name === 'myaccount/my-subscriptions.php') {
+    if ($template_name === 'myaccount/form-lost-password.php' || $template_name === 'global/form-login.php' || $template_name === 'myaccount/my-subscriptions.php') {
       ob_start();
     }
   }
@@ -1035,7 +1090,15 @@ var nfyFacebookAppId = '637920073225349';
    * @implements woocommerce_after_template_part
    */
   public static function woocommerce_after_template_part($template_name) {
-    if ($template_name === 'myaccount/my-subscriptions.php') {
+    if ($template_name === 'global/form-login.php') {
+      $output = ob_get_clean();
+      $output = strtr($output, [
+        '<form class="woocommerce-form woocommerce-form-login' => '<div class="woocommerce-account-fields woocommerce-form woocommerce-form-login',
+        '</form>' => '</div>',
+      ]);
+      echo $output;
+    }
+    elseif ($template_name === 'myaccount/my-subscriptions.php') {
       $output = ob_get_clean();
       echo WooCommerce::viewSubscription();
       // echo $output;

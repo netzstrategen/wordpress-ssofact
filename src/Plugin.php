@@ -147,6 +147,12 @@ class Plugin {
     add_action('woocommerce_after_checkout_billing_form', __NAMESPACE__ . '\WooCommerce::woocommerce_after_checkout_billing_form');
     add_filter('woocommerce_shipping_fields', __NAMESPACE__ . '\WooCommerce::woocommerce_shipping_fields');
 
+    // Adds the account login/register form elements to the checkout form.
+    add_action('woocommerce_checkout_billing', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_billing', 0);
+
+    // Adds back to previous step on the checkout form.
+    add_action('woocommerce_checkout_after_customer_details', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_after_customer_details');
+
     // Saves and loads custom address field values to the user session.
     add_action('woocommerce_checkout_process', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_process');
     add_filter('woocommerce_checkout_get_value', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_get_value', 10, 2);
@@ -211,8 +217,12 @@ class Plugin {
     // Replaces the front-end login form of WooCommerce to submit to the SSO
     // server instead of WordPress. The administrative login on /wp-login.php is
     // not changed and still authenticates against the local WordPress site only.
-    add_action('woocommerce_before_customer_login_form', __NAMESPACE__ . '\WooCommerce::woocommerce_before_customer_login_form');
+    add_action('woocommerce_before_customer_login_form', 'ob_start', 0, 0);
     add_action('woocommerce_after_customer_login_form', __NAMESPACE__ . '\WooCommerce::woocommerce_after_customer_login_form');
+    if (!is_user_logged_in()) {
+      add_action('woocommerce_before_checkout_form', 'ob_start', 0, 0);
+      add_action('woocommerce_login_form_end', __NAMESPACE__ . '\WooCommerce::woocommerce_login_form_end');
+    }
 
     // Validate current password against SSO.
     add_action('check_password', __CLASS__ . '::check_password', 20, 4);

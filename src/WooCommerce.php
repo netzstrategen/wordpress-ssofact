@@ -40,6 +40,13 @@ class WooCommerce {
   private static $isAnonymousCheckout;
 
   /**
+   * Whether the checkout form is actually submitted.
+   *
+   * @var bool
+   */
+  private static $isFinalCheckoutSubmission;
+
+  /**
    * @implements woocommerce_email_actions
    */
   public static function woocommerce_email_actions($actions) {
@@ -175,8 +182,8 @@ var nfyFacebookAppId = '637920073225349';
     if (is_checkout()) {
       ?>
 <div class="login__footer">
-  <p>Sie haben noch kein Kundenkonto? Hier gehts zur <a id="switchToRegister" href="#">Registrierung</a>.</p>
-  <p style="display: none;">Sie haben schon ein Konto? Hier gehts zum <a id="switchToLogin" href="#">Login</a>.</p>
+  <p class="account--register">Sie haben noch kein Kundenkonto? Hier gehts zur <a id="switchToRegister" href="#">Registrierung</a>.</p>
+  <p class="account--login" style="display: none;">Sie haben schon ein Konto? Hier gehts zum <a id="switchToLogin" href="#">Login</a>.</p>
 </div>
       <?php
     }
@@ -257,7 +264,7 @@ var nfyFacebookAppId = '637920073225349';
       'priority' => 100,
     ];
     if (isset($fields['phone'])) {
-      $fields['phone']['priority'] = 105;
+      $fields['phone']['priority'] = 110;
     }
 
     return $fields;
@@ -337,7 +344,40 @@ var nfyFacebookAppId = '637920073225349';
       }
     }
 
+    if (!static::$isFinalCheckoutSubmission && !empty($_POST['step'])) {
+      add_filter('woocommerce_add_success', __CLASS__ . '::woocommerce_add_success');
+      switch ($_POST['step']) {
+        case 'login':
+        case 'account':
+          foreach ($fields['billing'] as $key => $field) {
+            if ($key !== 'billing_email') {
+              $fields['billing'][$key]['required'] = FALSE;
+            }
+          }
+
+        case 'address':
+          // Disable validation of direct debit fields of woocommerce-german-market.
+          remove_filter('gm_checkout_validation_first_checkout', ['WGM_Gateway_Sepa_Direct_Debit', 'validate_required_fields']);
+          break;
+      }
+    }
+
     return $fields;
+  }
+
+  /**
+   * @implements woocommerce_add_success
+   */
+  public static function woocommerce_add_success($notice_message) {
+    // When submitting the checkout form with 'woocommerce_checkout_update_totals'
+    // (which we are doing between checkout steps) then WooCommerce believes that
+    // the checkout form was submitted without AJAX/JS in order to update the
+    // shipping costs; remove this unnecessary/confusing message.
+    // @see WC_Shortcode_Checkout::checkout()
+    if ($notice_message === __('The order totals have been updated. Please confirm your order by pressing the "Place order" button at the bottom of the page.', 'woocommerce')) {
+      $notice_message = '';
+    }
+    return $notice_message;
   }
 
   /**
@@ -395,11 +435,25 @@ var nfyFacebookAppId = '637920073225349';
     if (WooCommerce::isCheckoutConfirmationPage()) {
       // Only output subscriber ID here.
     }
-    elseif ($subscriber = WC()->session->get('subscriber_data')) {
-      $greeting = esc_html('#' . $subscriber['abono'] . ': ' . $subscriber['salutation'] . ' ' . $subscriber['lastname']);
+    elseif (($subscriber = WC()->session->get('subscriber_data')) || !empty($subscriber_id)) {
+      if (empty($subscriber) && !empty($subscriber_id)) {
+        $subscriber = [
+          'abono' => $subscriber_id,
+          'salutation' => get_user_meta(get_current_user_ID(), 'billing_salutation', TRUE),
+          'lastname' => get_user_meta(get_current_user_ID(), 'billing_last_name', TRUE),
+          'company_contact' => get_user_meta(get_current_user_ID(), 'billing_company_contact', TRUE),
+        ];
+      }
+      if ($subscriber['salutation'] === 'Firma') {
+        $greeting = $subscriber['company_contact'];
+      }
+      else {
+        $greeting = $subscriber['salutation'] . ' ' . $subscriber['lastname'];
+      }
+      $greeting = esc_html('#' . $subscriber['abono'] . ': ' . $greeting);
       $fields['subscriber_associate'] = [
         'type' => 'checkbox',
-        'label' => __('Yes, I am a subscriber already', Plugin::L10N) . ': <strong>' . $greeting . '</strong>',
+        'label' => 'Ich bin bereits Kunde' . ': <strong>' . $greeting . '</strong>',
         'priority' => -100,
         'default' => 1,
       ];
@@ -411,7 +465,7 @@ var nfyFacebookAppId = '637920073225349';
       $has_associate_values = !empty($_POST) ? !empty($_POST['subscriber_associate']) : WC()->session->get('subscriber_associate');
       $fields['subscriber_associate'] = [
         'type' => 'checkbox',
-        'label' => __('Yes, I am a subscriber already', Plugin::L10N),
+        'label' => 'Ich bin bereits Kunde',
         'priority' => $subscriber_priority = -100,
         'default' => $has_associate_values,
       ];
@@ -436,7 +490,9 @@ var nfyFacebookAppId = '637920073225349';
         }
       }
       // Require a company name if salutation has been set to company.
-      $fields = WooCommerce::adjustCompanyFields($fields, 'subscriber');
+      if ($has_associate_values) {
+        $fields = WooCommerce::adjustCompanyFields($fields, 'subscriber');
+      }
     }
 
     // Require a company name if salutation has been set to company.
@@ -449,7 +505,7 @@ var nfyFacebookAppId = '637920073225349';
    * @implements woocommerce_form_field_args
    */
   public static function woocommerce_form_field_args($field) {
-    if (isset($field['label']) && strpos($field['label'], static::REMOVE_FIELD_CHECKOUT_SECTION_PREFIX) !== FALSE) {
+    if (isset($field['label']) && FALSE !== strpos($field['label'], static::REMOVE_FIELD_CHECKOUT_SECTION_PREFIX)) {
       $field['label'] = strtr($field['label'], [
         static::REMOVE_FIELD_CHECKOUT_SECTION_PREFIX => '',
       ]);
@@ -461,7 +517,7 @@ var nfyFacebookAppId = '637920073225349';
    * @implements woocommerce_checkout_required_field_notice
    */
   public static function woocommerce_checkout_required_field_notice($notice) {
-    if (strpos($notice, static::REMOVE_FIELD_CHECKOUT_SECTION_PREFIX) !== FALSE) {
+    if (FALSE !== strpos($notice, static::REMOVE_FIELD_CHECKOUT_SECTION_PREFIX)) {
       $notice = strtr($notice, [
         static::REMOVE_FIELD_CHECKOUT_SECTION_PREFIX => '',
         // @see WC_Checkout::validate_posted_data()
@@ -477,11 +533,12 @@ var nfyFacebookAppId = '637920073225349';
    */
   public static function woocommerce_after_checkout_billing_form() {
     $form = ob_get_clean();
-    if ($subscriber = WC()->session->get('subscriber_data')) {
-      $form = str_replace('name="subscriber_associate"', 'name="subscriber_associate" required disabled', $form);
+    $is_subscriber = WC()->session->get('subscriber_data') || (($user_id = get_current_user_ID()) && get_user_meta($user_id, 'billing_subscriber_id', TRUE));
+    if ($is_subscriber) {
+      $form = str_replace('name="subscriber_associate"', 'name="subscriber_associate" checked required disabled', $form);
     }
     echo $form;
-    if (!$subscriber) {
+    if (!$is_subscriber) {
       echo '<p id="subscriber_submit_field" class="form-row form-actions" data-priority="-30">';
       echo '<button name="woocommerce_checkout_place_order" class="button button--primary">';
       echo 'Meine bestehenden Daten verwenden';
@@ -516,6 +573,13 @@ var nfyFacebookAppId = '637920073225349';
    * @see WC_Checkout::get_value()
    */
   public static function woocommerce_checkout_process() {
+    // Set this once upfront to make it available to all validation/processing.
+    static::$isFinalCheckoutSubmission = empty($_POST['step']);
+
+    // Do not interfere with earlier checkout form steps.
+    if (empty($_POST['subscriber_associate'])) {
+      return;
+    }
     // Do not overwrite successfully associated subscriber data.
     if (WC()->session->get('subscriber_data')) {
       return;
@@ -572,7 +636,13 @@ var nfyFacebookAppId = '637920073225349';
           WC()->session->set('billing_' . $field, $response[$userinfo_key]);
         }
       }
-      wc_add_notice(sprintf('<strong>Willkommen zurück, %s %s!</strong>', $_POST['subscriber_salutation'], $_POST['subscriber_last_name']), 'success');
+      if ($response['salutation'] === 'Firma') {
+        $greeting = $response['company_contact'];
+      }
+      else {
+        $greeting = $response['salutation'] . ' ' . $response['lastname'];
+      }
+      wc_add_notice(sprintf('<strong>Willkommen zurück, %s!</strong>', $greeting), 'success');
 
       // Reload the checkout page to populate the address fields.
       WC()->session->set('reload_checkout', TRUE);
@@ -607,15 +677,6 @@ var nfyFacebookAppId = '637920073225349';
     // Require a company name if salutation has been set to company.
     $fields = WooCommerce::adjustCompanyFields($fields, 'shipping');
     return $fields;
-  }
-
-  /**
-   * Adds back to previous step on the checkout form.
-   *
-   * @implements woocommerce_checkout_after_customer_details
-   */
-  public static function woocommerce_checkout_after_customer_details() {
-    echo '<input type="button" class="button go-back-button" id="go-back-button" value="' . __('Go back to previous page', 'woocommerce-german-market') . '">';
   }
 
   public static function adjustCompanyFields(array $fields, $address_type) {
@@ -723,6 +784,10 @@ var nfyFacebookAppId = '637920073225349';
    * @implements woocommerce_after_checkout_validation
    */
   public static function woocommerce_after_checkout_validation($data, $errors) {
+    if (!static::$isFinalCheckoutSubmission) {
+      // $errors->add('step', WooCommerce::CHECKOUT_FORM_STEP_ERROR);
+    }
+
     // Verifies that the given email address is NOT registered yet.
     // Note: The API endpoint checks the opposite; a positive result is an error.
     // @todo Handle email change for logged-in users.
@@ -736,7 +801,7 @@ var nfyFacebookAppId = '637920073225349';
       }
     }
     // Check whether the given subscriber ID matches the registered address.
-    if (!WC()->session->get('subscriber_data') && !empty($_POST['billing_subscriber_id']) && !get_user_meta(get_current_user_ID(), 'billing_subscriber_id', TRUE)) {
+    if (static::$isFinalCheckoutSubmission && !WC()->session->get('subscriber_data') && !empty($_POST['billing_subscriber_id']) && !get_user_meta(get_current_user_ID(), 'billing_subscriber_id', TRUE)) {
       $response = WooCommerce::validateSubscriberId();
       if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
         $message = isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.');

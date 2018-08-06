@@ -84,6 +84,14 @@ class Plugin {
     // Disable automatic login of newly registered user after checkout.
     add_filter('woocommerce_registration_auth_new_customer', '__return_false');
     add_action('woocommerce_created_customer', __NAMESPACE__ . '\WooCommerce::woocommerce_created_customer');
+
+    // Disable WooCommerce German Market confirmation form manipulation if this
+    // is a multistep checkout form submission.
+    // if (!empty($_POST['step']) && !empty($_POST['woocommerce_checkout_update_totals'])) {
+    //   add_action('german_market_after_frontend_init', function () {
+    //     remove_action('woocommerce_after_checkout_validation', ['WGM_Template', 'checkout_after_validation_without_sec_checkout'], 10, 2);
+    //   });
+    // }
   }
 
   /**
@@ -150,8 +158,13 @@ class Plugin {
     // Adds the account login/register form elements to the checkout form.
     add_action('woocommerce_checkout_billing', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_billing', 0);
 
-    // Adds back to previous step on the checkout form.
-    add_action('woocommerce_checkout_after_customer_details', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_after_customer_details');
+    // Disable WooCommerce German Market confirmation form manipulation if this
+    // is a multistep checkout form submission.
+    if (!empty($_POST['step']) && !empty($_POST['woocommerce_checkout_update_totals'])) {
+      add_filter('gm_checkout_validation_first_checkout', '__return_true');
+      // @todo Find a better solution to disable WGM validation of 'terms'.
+      $_POST['terms'] = 1;
+    }
 
     // Saves and loads custom address field values to the user session.
     add_action('woocommerce_checkout_process', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_process');
@@ -160,6 +173,7 @@ class Plugin {
     // Removes "Billing" field label prefix from error messages for some fields.
     add_filter('woocommerce_form_field_args', __NAMESPACE__ . '\WooCommerce::woocommerce_form_field_args');
     add_filter('woocommerce_checkout_required_field_notice', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_required_field_notice');
+    add_filter('woocommerce_add_error', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_required_field_notice');
 
     // Validates and updates user info in SSO upon editing address.
     add_action('woocommerce_after_save_address_validation', __NAMESPACE__ . '\WooCommerce::woocommerce_after_save_address_validation', 10, 3);

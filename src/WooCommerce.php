@@ -316,7 +316,7 @@ class WooCommerce {
       $formats[$country] = strtr($formats[$country], [
         '{name}' => '{salutation}{name}',
         '{address_1}' => '{address_1}{house_number}',
-        '{phone}' => 'Telefon: {phone_prefix}{phone}',
+        '{phone}' => '{phone_prefix}{phone}',
       ]);
     }
     return $formats;
@@ -333,7 +333,7 @@ class WooCommerce {
     $replacements['{salutation}'] = !empty($fields['salutation']) ? $fields['salutation'] . ' ' : '';
     $replacements['{house_number}'] = !empty($fields['house_number']) ? ' ' . $fields['house_number'] : '';
     $replacements['{phone}'] = !empty($fields['phone']) ? $fields['phone'] . ' ' : '';
-    $replacements['{phone_prefix}'] = !empty($fields['phone_prefix']) ? $fields['phone_prefix'] . '-' : '';
+    $replacements['{phone_prefix}'] = !empty($fields['phone_prefix']) ? 'Telefon: ' . $fields['phone_prefix'] . '-' : '';
     return $replacements;
   }
 

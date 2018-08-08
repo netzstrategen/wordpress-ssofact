@@ -208,6 +208,10 @@ class Plugin {
     add_action('woocommerce_checkout_update_order_meta', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_update_order_meta');
     add_filter('woocommerce_email_order_meta', __NAMESPACE__ . '\WooCommerce::woocommerce_email_order_meta');
 
+    // Display the selected payment interval value in the order confirmation page.
+    add_action('woocommerce_checkout_before_customer_details', 'ob_start', 0, 0);
+    add_action('woocommerce_checkout_after_customer_details', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_after_customer_details');
+
     // Validate changed email address against SSO.
     add_action('woocommerce_save_account_details_errors', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details_errors', 20, 2);
     // Updates user info in SSO upon editing account details.
@@ -707,7 +711,7 @@ class Plugin {
       // - 'v': quarterly
       // - 'h': half-yearly
       // - 'j': yearly
-      'paymentPattern' => 'm',
+      'paymentPattern' => $_POST['payment_interval'] ?? 'm',
       'acquisitionEmail' => !empty($purchase['optins']['acquisitionEmail']) ? 'j' : 'n',
       'acquisitionMail' => !empty($purchase['optins']['acquisitionMail']) ? 'j' : 'n',
       'acquisitionPhone' => !empty($purchase['optins']['acquisitionPhone']) ? 'j' : 'n',

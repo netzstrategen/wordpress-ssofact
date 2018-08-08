@@ -66,8 +66,39 @@ msgstr "Hausnr."
 msgid "Phone prefix"
 msgstr "Vorwahl"
 
-#: src/WooCommerce.php:257 src/WooCommerce.php:271 src/WooCommerce.php:321
-#: src/WooCommerce.php:401 src/WooCommerce.php:416 src/WooCommerce.php:433
+#: src/WooCommerce.php:485
+msgid "Payment interval"
+msgstr "Zahlungsrhythmus"
+
+#: src/WooCommerce.php:487
+msgid "monthly"
+msgstr "Monatlich"
+
+#: src/WooCommerce.php:488
+msgid "quarterly"
+msgstr "Vierteljährlich"
+
+#: src/WooCommerce.php:489
+msgid "half-yearly"
+msgstr "Halbjährlich"
+
+#: src/WooCommerce.php:490
+msgid "yearly"
+msgstr "Jährlich"
+
+#: src/WooCommerce.php:524
+#, php-format
+msgid "Billing %s"
+msgstr ""
+
+#: src/WooCommerce.php:525
+#, php-format
+msgid "Shipping %s"
+msgstr ""
+
+#: src/WooCommerce.php:595 src/WooCommerce.php:756 src/WooCommerce.php:765
+#: src/WooCommerce.php:867 src/WooCommerce.php:920 src/WooCommerce.php:951
+#: src/WooCommerce.php:1001 src/WooCommerce.php:1010
 msgid "Error while saving the changes."
 msgstr ""
 

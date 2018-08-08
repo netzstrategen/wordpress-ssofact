@@ -11,6 +11,13 @@ class WooCommerce {
 
   const REMOVE_FIELD_CHECKOUT_SECTION_PREFIX = '###REMOVEPREFIX';
 
+  const PAYMENT_INTERVALS = [
+    'm' => 'monthly',
+    'v' => 'quarterly',
+    'h' => 'half-yearly',
+    'j' => 'yearly',
+  ];
+
   const OPTINS = [
     'list_redaktion-stimmede-editorial-weekly' => [
       'label' => 'Newsletter des Chefredakteurs',
@@ -344,6 +351,31 @@ var nfyFacebookAppId = '637920073225349';
       }
     }
 
+    // Allow the customer to choose a payment interval if the subscription will
+    // run infinitely (and thus not be paid once upfront).
+    if (WC()->cart->get_total('edit') > 0) {
+      foreach (WC()->cart->cart_contents as $cart_item) {
+        if (\WC_Subscriptions_Product::is_subscription($cart_item['data'])) {
+          $length = \WC_Subscriptions_Product::get_length($cart_item['data']);
+        }
+      }
+      if (isset($length) && $length === 0) {
+        $fields['billing']['payment_interval'] = [
+          'type' => 'radio',
+          'label' => __('Payment interval', Plugin::L10N),
+          'options' => [
+            'm' => __('monthly', Plugin::L10N),
+            'v' => __('quarterly', Plugin::L10N),
+            'h' => __('half-yearly', Plugin::L10N),
+            'j' => __('yearly', Plugin::L10N),
+          ],
+          'required' => TRUE,
+          'default' => 'm',
+          'priority' => 200,
+        ];
+      }
+    }
+
     if (!static::$isFinalCheckoutSubmission && !empty($_POST['step'])) {
       add_filter('woocommerce_add_success', __CLASS__ . '::woocommerce_add_success');
       switch ($_POST['step']) {
@@ -356,6 +388,8 @@ var nfyFacebookAppId = '637920073225349';
           }
 
         case 'address':
+          $fields['billing']['payment_interval']['required'] = FALSE;
+
           // Disable validation of direct debit fields of woocommerce-german-market.
           remove_filter('gm_checkout_validation_first_checkout', ['WGM_Gateway_Sepa_Direct_Debit', 'validate_required_fields']);
           break;
@@ -1240,6 +1274,23 @@ var nfyFacebookAppId = '637920073225349';
       $optins_list .= '<span class="optin-value">' . ($_POST['optins'][$opt_in_id] ? __('Yes', 'woocommerce') : __('No', 'woocommerce')) . '</span><br />';
     }
     echo '<p>' . $optins_list . '</p>';
+  }
+
+  /**
+   * Displays the selected payment interval value in the order confirmation page.
+   *
+   * @implements woocommerce_checkout_after_customer_details
+   */
+  public static function woocommerce_checkout_after_customer_details() {
+    $output = ob_get_clean();
+    $matches = [];
+    $pattern = '@(<span class="wgm-field-label">' . __('Payment interval', Plugin::L10N) . '</span></td><td>)(.+)(</td>)@';
+    preg_match($pattern, $output, $matches);
+    if ($matches && isset(static::PAYMENT_INTERVALS[$matches[2]])) {
+      $payment_interval = __(static::PAYMENT_INTERVALS[$matches[2]], Plugin::L10N);
+      $output = preg_replace($pattern, '$1' . $payment_interval . '$3', $output);
+    }
+    echo $output;
   }
 
 }

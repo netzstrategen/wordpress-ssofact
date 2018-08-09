@@ -84,14 +84,6 @@ class Plugin {
     // Disable automatic login of newly registered user after checkout.
     add_filter('woocommerce_registration_auth_new_customer', '__return_false');
     add_action('woocommerce_created_customer', __NAMESPACE__ . '\WooCommerce::woocommerce_created_customer');
-
-    // Disable WooCommerce German Market confirmation form manipulation if this
-    // is a multistep checkout form submission.
-    // if (!empty($_POST['step']) && !empty($_POST['woocommerce_checkout_update_totals'])) {
-    //   add_action('german_market_after_frontend_init', function () {
-    //     remove_action('woocommerce_after_checkout_validation', ['WGM_Template', 'checkout_after_validation_without_sec_checkout'], 10, 2);
-    //   });
-    // }
   }
 
   /**
@@ -153,6 +145,8 @@ class Plugin {
     add_filter('woocommerce_billing_fields', __NAMESPACE__ . '\WooCommerce::woocommerce_billing_fields');
     add_action('woocommerce_before_checkout_billing_form', 'ob_start', 0, 0);
     add_action('woocommerce_after_checkout_billing_form', __NAMESPACE__ . '\WooCommerce::woocommerce_after_checkout_billing_form');
+    add_action('woocommerce_before_edit_address_form_billing', 'ob_start', 0, 0);
+    add_action('woocommerce_after_edit_address_form_billing', __NAMESPACE__ . '\WooCommerce::woocommerce_after_checkout_billing_form');
     add_filter('woocommerce_shipping_fields', __NAMESPACE__ . '\WooCommerce::woocommerce_shipping_fields');
 
     // Adds the account login/register form elements to the checkout form.
@@ -639,7 +633,13 @@ class Plugin {
     // be contained in the order confirmation email and manually processed by
     // the customer service team. Even if the user only specified the ID in the
     // checkout form, it has already been validated to be correct by now.
-    if ($user_id > 0 && (!empty($address_source['billing_subscriber_id']) || get_user_meta($user_id, 'billing_subscriber_id', TRUE))) {
+    if (is_checkout()) {
+      $remove_address = $user_id > 0 && (!empty($address_source['billing_subscriber_id']) || get_user_meta($user_id, 'billing_subscriber_id', TRUE));
+    }
+    else {
+      $remove_address = $user_id > 0 && get_user_meta($user_id, 'billing_subscriber_id', TRUE);
+    }
+    if ($remove_address) {
       $userinfo = array_diff_key($userinfo, [
         'salutation' => 0,
         'company' => 0,

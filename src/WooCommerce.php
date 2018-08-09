@@ -47,6 +47,13 @@ class WooCommerce {
   private static $isAnonymousCheckout;
 
   /**
+   * Whether the subscriber association user input has been processed (once).
+   *
+   * @var bool
+   */
+  private static $isSubscriberAssociationProcessed = FALSE;
+
+  /**
    * Whether the checkout form is actually submitted.
    *
    * @var bool
@@ -532,6 +539,23 @@ var nfyFacebookAppId = '637920073225349';
     // Require a company name if salutation has been set to company.
     $fields = WooCommerce::adjustCompanyFields($fields, 'billing');
 
+    // When attempting to associate an existing subscription in the user account,
+    // check whether the given subscriber ID matches the registered address.
+    // The current hook is invoked more than once during a form submission, so
+    // ensure to run this only once, as POST data is manipulated.
+    if (!static::$isSubscriberAssociationProcessed && !empty($_POST['subscriber_associate_submit']) && get_query_var('address') === 'billing') {
+      foreach ($fields as $key => $field) {
+        if (strpos($key, 'subscriber') === FALSE) {
+          // The address data returned by alfa may be incomplete; save nevertheless.
+          $fields[$key]['required'] = FALSE;
+
+          // Ensure that there are no values, as they will only be set when empty.
+          unset($_POST['billing_' . $key]);
+        }
+      }
+      WooCommerce::woocommerce_checkout_process();
+    }
+
     return $fields;
   }
 
@@ -564,6 +588,7 @@ var nfyFacebookAppId = '637920073225349';
 
   /**
    * @implements woocommerce_after_checkout_billing_form
+   * @implements woocommerce_after_edit_address_form_billing
    */
   public static function woocommerce_after_checkout_billing_form() {
     $form = ob_get_clean();
@@ -571,13 +596,20 @@ var nfyFacebookAppId = '637920073225349';
     if ($is_subscriber) {
       $form = str_replace('name="subscriber_associate"', 'name="subscriber_associate" checked required disabled', $form);
     }
+    if ($is_address_form = get_query_var('address') === 'billing') {
+      $form = preg_replace('@\s+</div>\s*$@', '', $form);
+    }
     echo $form;
     if (!$is_subscriber) {
-      echo '<p id="subscriber_submit_field" class="form-row form-actions" data-priority="-30">';
-      echo '<button name="woocommerce_checkout_place_order" class="button button--primary">';
+      $name = is_checkout() ? 'woocommerce_checkout_place_order' : 'subscriber_associate_submit';
+      echo '<p id="subscriber_submit_field" class="form-row form-actions" data-priority="-20">';
+      echo '<button id="subscriber_associate_submit" type="submit" name="' . $name . '" value="1" class="button button--primary">';
       echo 'Meine bestehenden Daten verwenden';
       echo '</button>';
       echo '</p>';
+    }
+    if ($is_address_form) {
+      echo '</div>';
     }
   }
 
@@ -607,6 +639,11 @@ var nfyFacebookAppId = '637920073225349';
    * @see WC_Checkout::get_value()
    */
   public static function woocommerce_checkout_process() {
+    if (static::$isSubscriberAssociationProcessed) {
+      return;
+    }
+    static::$isSubscriberAssociationProcessed = TRUE;
+
     // Set this once upfront to make it available to all validation/processing.
     static::$isFinalCheckoutSubmission = empty($_POST['step']);
 
@@ -618,6 +655,7 @@ var nfyFacebookAppId = '637920073225349';
     if (WC()->session->get('subscriber_data')) {
       return;
     }
+    $is_checkout = is_checkout();
     // WooCommerce does not retain values of custom fields.
     // Not anchored at front to also save the value of billing_subscriber_id.
     foreach (preg_grep('@subscriber_@', array_keys($_POST)) as $key) {
@@ -636,7 +674,7 @@ var nfyFacebookAppId = '637920073225349';
       // and as a marker to hide the subscriber association form elements in the
       // checkout (in case the user goes back).
       // @see WooCommerce::woocommerce_checkout_order_processed()
-      WC()->session->set('subscriber_data', $response + [
+      WC()->session->set('subscriber_data', $response += [
         'abono' => $_POST['billing_subscriber_id'],
         'firstname' => $_POST['subscriber_first_name'],
         'lastname' => $_POST['subscriber_last_name'],
@@ -656,7 +694,9 @@ var nfyFacebookAppId = '637920073225349';
         if (empty($_POST['billing_' . $field])) {
           // WC_Checkout::get_value() consumes the POST value if there is one.
           $_POST['billing_' . $field] = $response[$userinfo_key];
-          WC()->customer->{"set_billing_{$field}"}($response[$userinfo_key]);
+          if ($is_checkout) {
+            WC()->customer->{"set_billing_{$field}"}($response[$userinfo_key]);
+          }
         }
       }
       $prefill_fields = [
@@ -667,7 +707,9 @@ var nfyFacebookAppId = '637920073225349';
       foreach ($prefill_fields as $userinfo_key => $field) {
         if (empty($_POST['billing_' . $field])) {
           $_POST['billing_' . $field] = $response[$userinfo_key];
-          WC()->session->set('billing_' . $field, $response[$userinfo_key]);
+          if ($is_checkout) {
+            WC()->session->set('billing_' . $field, $response[$userinfo_key]);
+          }
         }
       }
       if ($response['salutation'] === 'Firma') {
@@ -679,26 +721,34 @@ var nfyFacebookAppId = '637920073225349';
       wc_add_notice(sprintf('<strong>Willkommen zurück, %s!</strong>', $greeting), 'success');
 
       // Reload the checkout page to populate the address fields.
-      WC()->session->set('reload_checkout', TRUE);
+      if ($is_checkout) {
+        WC()->session->set('reload_checkout', TRUE);
+      }
     }
     // Also take over the user input into corresponding fields.
     $prefill_fields = ['first_name', 'last_name', 'company'];
     foreach ($prefill_fields as $field) {
       if (empty($_POST['billing_' . $field])) {
         $_POST['billing_' . $field] = $_POST['subscriber_' . $field];
-        WC()->customer->{"set_billing_{$field}"}($_POST['subscriber_' . $field]);
+        if ($is_checkout) {
+          WC()->customer->{"set_billing_{$field}"}($_POST['subscriber_' . $field]);
+        }
       }
     }
     $prefill_fields = ['salutation', 'company_contact'];
     foreach ($prefill_fields as $field) {
       if (empty($_POST['billing_' . $field])) {
         $_POST['billing_' . $field] = $_POST['subscriber_' . $field];
-        WC()->session->set('billing_' . $field, $_POST['subscriber_' . $field]);
+        if ($is_checkout) {
+          WC()->session->set('billing_' . $field, $_POST['subscriber_' . $field]);
+        }
       }
     }
 
     // Save all additions.
-    WC()->customer->save();
+    if ($is_checkout) {
+      WC()->customer->save();
+    }
   }
 
   /**
@@ -818,10 +868,6 @@ var nfyFacebookAppId = '637920073225349';
    * @implements woocommerce_after_checkout_validation
    */
   public static function woocommerce_after_checkout_validation($data, $errors) {
-    if (!static::$isFinalCheckoutSubmission) {
-      // $errors->add('step', WooCommerce::CHECKOUT_FORM_STEP_ERROR);
-    }
-
     // Verifies that the given email address is NOT registered yet.
     // Note: The API endpoint checks the opposite; a positive result is an error.
     // @todo Handle email change for logged-in users.
@@ -831,18 +877,6 @@ var nfyFacebookAppId = '637920073225349';
       if (!isset($response['statuscode']) || $response['statuscode'] !== 607) {
         $message = isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.');
         $errors->add('billing_email', $message);
-        Server::addDebugMessage();
-      }
-    }
-    // Check whether the given subscriber ID matches the registered address.
-    if (static::$isFinalCheckoutSubmission && !WC()->session->get('subscriber_data') && !empty($_POST['billing_subscriber_id']) && !get_user_meta(get_current_user_ID(), 'billing_subscriber_id', TRUE)) {
-      $response = WooCommerce::validateSubscriberId();
-      if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
-        $message = isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.');
-        $errors->add('billing_subscriber_id', $message);
-        Server::addDebugMessage();
-      }
-      else {
         Server::addDebugMessage();
       }
     }
@@ -962,8 +996,18 @@ var nfyFacebookAppId = '637920073225349';
     if (wc_notice_count('error')) {
       return;
     }
-    $userinfo = Plugin::buildUserInfo($address_type, $user_id);
+    // Note: If the subscriber data is not valid, a form validation error is
+    // output via WooCommerce::validateSubscriberId() resp.
+    // WooCommerce::woocommerce_checkout_process() already.
+    // @see WooCommerce::woocommerce_billing_fields()
 
+    // Remove subscriber associate fields from POST data to prevent the user input
+    // from being saved to user meta.
+    foreach (['associate', 'postcode', 'salutation', 'first_name', 'last_name', 'company', 'company_contact'] as $key) {
+      unset($_POST['subscriber_' . $key]);
+    }
+
+    $userinfo = Plugin::buildUserInfo($address_type, $user_id);
     $userinfo = array_diff_key($userinfo, [
       // Properties that cannot be changed by the client.
       'moddate' => 0,
@@ -985,16 +1029,22 @@ var nfyFacebookAppId = '637920073225349';
       'article_test' => 0,
     ]);
 
-    // @todo UX: Save last_edited timestamp and stop updating the locally stored
-    //   user profile with UserInfo from SSO unless its last_updated timestamp
-    //   is newer.
-    // @todo Send different "action" depending on the action performed; i.e.,
-    //   'initialPassword', 'forgotPassword', 'changeEmail', 'changePassword'.
-
     $response = Server::updateUser($userinfo);
     if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
       wc_add_notice(isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.'), 'error');
       Server::addDebugMessage();
+    }
+    else {
+      // Remove subscriber validation response data from session, so that the
+      // information in the user profile is based on the actual user profile data.
+      if (WC()->session->get('subscriber_data')) {
+        WC()->session->set('subscriber_data', '');
+      }
+
+      // Save the subscriber ID returned by alfa (replacing the user input).
+      if (!empty($response['aboNo'])) {
+        $_POST['billing_subscriber_id'] = $response['aboNo'];
+      }
     }
     Server::addDebugMessage();
   }

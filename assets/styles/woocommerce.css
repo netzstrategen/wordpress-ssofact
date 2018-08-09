@@ -19,5 +19,6 @@
 }
 
 .form-actions {
+  overflow: hidden;
   text-align: right;
 }

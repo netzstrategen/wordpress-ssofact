@@ -61,6 +61,13 @@ class WooCommerce {
   private static $isFinalCheckoutSubmission;
 
   /**
+   * Whether the checkout form is for the trial subscription with less required fields.
+   *
+   * @var bool
+   */
+  private static $isTrialSubscriptionCheckout;
+
+  /**
    * @implements woocommerce_email_actions
    */
   public static function woocommerce_email_actions($actions) {
@@ -281,6 +288,25 @@ var nfyFacebookAppId = '637920073225349';
       $fields['phone']['priority'] = 110;
     }
 
+    // To increase conversions for the free trial subscription (SKU 'stite'),
+    // only first_name and last_name (and opt-ins) should be required.
+    // Must be performed in this hook, as documented by WooCommerce Core.
+    // @see WC_Countries::get_address_fields()
+    if (is_checkout()) {
+      $sku = NULL;
+      foreach (WC()->cart->get_cart() as $item) {
+        $sku = $item['data']->get_sku();
+      }
+      if ($sku === 'stite') {
+        static::$isTrialSubscriptionCheckout = TRUE;
+        foreach (['address_1', 'house_number', 'postcode', 'city', 'country', 'phone_prefix', 'phone'] as $key) {
+          if (isset($fields[$key])) {
+            $fields[$key]['required'] = FALSE;
+          }
+        }
+      }
+    }
+
     return $fields;
   }
 
@@ -356,6 +382,12 @@ var nfyFacebookAppId = '637920073225349';
           $fields['billing'][$billing_name]['default'] = $value;
         }
       }
+    }
+
+    if (!empty(static::$isTrialSubscriptionCheckout)) {
+      // Phone field is added after default address fields.
+      // @see WC_Countries::get_address_fields()
+      $fields['billing']['billing_phone']['required'] = FALSE;
     }
 
     // Allow the customer to choose a payment interval if the subscription will

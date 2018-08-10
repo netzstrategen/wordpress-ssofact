@@ -81,7 +81,11 @@ class Plugin {
     add_filter('woocommerce_email_actions', __NAMESPACE__ . '\WooCommerce::woocommerce_email_actions');
     add_filter('woocommerce_email_classes', __NAMESPACE__ . '\WooCommerce::woocommerce_email_classes');
 
-    // Disable automatic login of newly registered user after checkout.
+    // Disable automatic registration and login of newly registered user in checkout.
+    // woocommerce_checkout_registration_enabled also disables the
+    // .woocommerce-account-fields section in the checkout form.
+    add_filter('woocommerce_checkout_registration_enabled', '__return_false', 100);
+    // add_filter('woocommerce_checkout_registration_required', '__return_false', 100);
     add_filter('woocommerce_registration_auth_new_customer', '__return_false');
     add_action('woocommerce_created_customer', __NAMESPACE__ . '\WooCommerce::woocommerce_created_customer');
   }
@@ -163,6 +167,7 @@ class Plugin {
     // Saves and loads custom address field values to the user session.
     add_action('woocommerce_checkout_process', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_process');
     add_filter('woocommerce_checkout_get_value', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_get_value', 10, 2);
+    add_filter('gm_sepa_fields_in_checkout', __NAMESPACE__ . '\WooCommerce::gm_sepa_fields_in_checkout');
 
     // Removes "Billing" field label prefix from error messages for some fields.
     add_filter('woocommerce_form_field_args', __NAMESPACE__ . '\WooCommerce::woocommerce_form_field_args');
@@ -194,6 +199,7 @@ class Plugin {
     // Validates checkout fields against SSO.
     // Run before WGM_Template::do_de_checkout_after_validation() [priority 1]
     add_action('woocommerce_after_checkout_validation', __NAMESPACE__ . '\WooCommerce::woocommerce_after_checkout_validation', 0, 2);
+    add_action('woocommerce_after_checkout_validation', __NAMESPACE__ . '\WooCommerce::woocommerce_after_checkout_validation_multistep', 0, 2);
 
     // Submits the order to the SSO/alfa.
     add_action('woocommerce_checkout_order_processed', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_order_processed', 20, 3);

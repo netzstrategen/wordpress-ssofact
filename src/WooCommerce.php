@@ -442,6 +442,31 @@ var nfyFacebookAppId = '637920073225349';
   }
 
   /**
+   * @implements woocommerce_ship_to_different_address_checked
+   *
+   * @thanks https://stackoverflow.com/questions/37459797/woocommerce-how-to-retain-checkout-info-when-client-leaves-then-comes-back
+   */
+  public static function woocommerce_ship_to_different_address_checked($value) {
+    if ($value === FALSE && ($session_value = WC()->session->get('ship_to_different_address'))) {
+      $value = $session_value;
+    }
+    return $value;
+  }
+
+  /**
+   * @implements gm_sepa_fields_in_checkout
+   */
+  public static function gm_sepa_fields_in_checkout($fields) {
+    foreach ($fields as $key => $field) {
+      // Relies on WGM's own "first checkout" session data.
+      if ($field['value'] === '' && ($session_value = WC()->session->get('first_checkout_post_arraygerman-market-sepa-' . $key))) {
+        $fields[$key]['value'] = $session_value;
+      }
+    }
+    return $fields;
+  }
+
+  /**
    * Returns whether the current page is the second/final checkout confirmation page.
    */
   public static function isCheckoutConfirmationPage() {
@@ -886,6 +911,30 @@ var nfyFacebookAppId = '637920073225349';
     // even though the user will not be authenticated (in our case). Therefore,
     // we need a flag that informs us about the original user authentication.
     static::$isAnonymousCheckout = !get_current_user_ID();
+  }
+
+  /**
+   * Prevents checkout form submission if a specific step is requested.
+   *
+   * @implements woocommerce_after_checkout_validation
+   */
+  public static function woocommerce_after_checkout_validation_multistep($data, $errors) {
+    // WC_Checkout::update_session() only stores a minimal list of address fields
+    // for the customer in the session, so all other values are lost in case the
+    // page is refreshed. Fix this by storing all values.
+    // @todo Fix this upstream in WooCommerce Core.
+    $customer = WC()->customer;
+    $session = WC()->session;
+    $is_authenticated = (bool) get_current_user_ID();
+    foreach ($data as $field => $value) {
+      if (!$is_authenticated && is_callable([$customer, "set_{$field}"])) {
+        $customer->{"set_{$field}"}($value);
+      }
+      else {
+        $session->set($field, $value);
+      }
+    }
+    WC()->customer->save();
   }
 
   /**

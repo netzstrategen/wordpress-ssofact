@@ -146,10 +146,16 @@ class Plugin {
     add_filter('woocommerce_shipping_fields', __NAMESPACE__ . '\WooCommerce::woocommerce_shipping_fields');
     // Validates and updates user info in SSO upon editing address.
     add_action('woocommerce_after_save_address_validation', __NAMESPACE__ . '\WooCommerce::woocommerce_after_save_address_validation', 10, 3);
+
     // Adds salutation, house number, phone_prefix to address output.
-    add_filter('woocommerce_get_order_address', __NAMESPACE__ . '\WooCommerce::woocommerce_get_order_address', 10, 3);
     add_filter('woocommerce_localisation_address_formats', __NAMESPACE__ . '\WooCommerce::woocommerce_localisation_address_formats');
     add_filter('woocommerce_formatted_address_replacements', __NAMESPACE__ . '\WooCommerce::woocommerce_formatted_address_replacements', 10, 2);
+    add_filter('woocommerce_formatted_address_force_country_display', '__return_true');
+    add_filter('woocommerce_customer_get_billing', __NAMESPACE__ . '\WooCommerce::woocommerce_customer_get_address', 10, 2);
+    add_filter('woocommerce_customer_get_shipping', __NAMESPACE__ . '\WooCommerce::woocommerce_customer_get_address', 10, 2);
+    add_filter('woocommerce_order_get_billing', __NAMESPACE__ . '\WooCommerce::woocommerce_customer_get_address', 10, 2);
+    add_filter('woocommerce_order_get_shipping', __NAMESPACE__ . '\WooCommerce::woocommerce_customer_get_address', 10, 2);
+    add_filter('woocommerce_order_get_billing_phone', __NAMESPACE__ . '\WooCommerce::woocommerce_order_get_billing_phone', 10, 2);
 
     // Removes core profile fields from account edit form.
     // Adds opt-in checkboxes to user account edit form.
@@ -167,7 +173,8 @@ class Plugin {
     // Submits the order to the SSO/alfa.
     add_action('woocommerce_checkout_order_processed', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_order_processed', 20, 3);
 
-    // Displays subscriber ID in new order notification email.
+    // Displays custom fields in order notification email.
+    add_action('woocommerce_checkout_update_order_meta', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_update_order_meta');
     add_filter('woocommerce_email_order_meta', __NAMESPACE__ . '\WooCommerce::woocommerce_email_order_meta');
 
     // Validate changed email address against SSO.

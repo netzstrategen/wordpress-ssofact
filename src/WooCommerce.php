@@ -355,20 +355,11 @@ var nfyFacebookAppId = '637920073225349';
   }
 
   /**
-   * Appends the house number to the billing/shipping address in thankyou page.
-   *
-   * @implements woocommerce_get_order_address
-   */
-  public static function woocommerce_get_order_address($data, $type, $order) {
-    $data['address_1'] .= ' ' . get_post_meta($order->get_id(), $type . '_house_number', TRUE);
-    return $data;
-  }
-
-  /**
    * @implements woocommerce_localisation_address_formats
    */
   public static function woocommerce_localisation_address_formats($formats) {
     foreach ($formats as $country => $value) {
+      $formats[$country] .= "\n{phone}";
       $formats[$country] = strtr($formats[$country], [
         '{name}' => '{salutation}{name}',
         '{address_1}' => '{address_1}{house_number}',
@@ -382,10 +373,54 @@ var nfyFacebookAppId = '637920073225349';
    * @implements woocommerce_formatted_address_replacements
    */
   public static function woocommerce_formatted_address_replacements($replacements, $fields) {
+    if (!empty($fields['salutation']) && $fields['salutation'] === 'Firma') {
+      $fields['salutation'] = '';
+      $replacements['{name}'] = $fields['company_contact'];
+    }
     $replacements['{salutation}'] = !empty($fields['salutation']) ? $fields['salutation'] . ' ' : '';
     $replacements['{house_number}'] = !empty($fields['house_number']) ? ' ' . $fields['house_number'] : '';
-    $replacements['{phone_prefix}'] = !empty($fields['phone_prefix']) ? $fields['phone_prefix'] . '-' : '';
+    $replacements['{phone}'] = !empty($fields['phone']) ? $fields['phone'] . ' ' : '';
+    $replacements['{phone_prefix}'] = !empty($fields['phone_prefix']) ? 'Telefon: ' . $fields['phone_prefix'] . '-' : '';
     return $replacements;
+  }
+
+  /**
+   * @implements woocommerce_customer_get_<$prop>
+   *
+   * @see WC_Data::get_prop()
+   */
+  public static function woocommerce_customer_get_address($values, $customer) {
+    $type = explode('_', current_filter());
+    $type = array_pop($type);
+    if (!$salutation = $customer->get_meta($type . '_salutation')) {
+      $salutation = $customer->get_meta('_' . $type . '_salutation');
+    }
+    if (!$company_contact = $customer->get_meta($type . '_company_contact')) {
+      $company_contact = $customer->get_meta('_' . $type . '_company_contact');
+    }
+    if (!$house_number = $customer->get_meta($type . '_house_number')) {
+      $house_number = $customer->get_meta('_' . $type . '_house_number');
+    }
+    if (!$phone_prefix = $customer->get_meta($type . '_phone_prefix')) {
+      $phone_prefix = $customer->get_meta('_' . $type . '_phone_prefix');
+    }
+    $values += [
+      'salutation' => $salutation,
+      'company_contact' => $company_contact,
+      'house_number' => $house_number,
+      'phone_prefix' => $phone_prefix,
+    ];
+    return $values;
+  }
+
+  /**
+   * @implements woocommerce_<$object_type>_get_<$prop>
+   *
+   * @see WC_Data::get_prop()
+   */
+  public static function woocommerce_order_get_billing_phone($value, $object_type) {
+    // Return empty as we added the field to the address format already.
+    return '';
   }
 
   /**
@@ -751,15 +786,45 @@ var nfyFacebookAppId = '637920073225349';
   }
 
   /**
+   * Copies custom checkout fields into order data.
+   *
+   * @implements woocommerce_checkout_update_order_meta
+   */
+  public static function woocommerce_checkout_update_order_meta($order_id) {
+    $fields = [
+      'billing_subscriber_id',
+      'billing_salutation',
+      'billing_company_contact',
+      'billing_house_number',
+      'billing_phone_prefix',
+      'shipping_salutation',
+      'shipping_company_contact',
+      'shipping_house_number',
+      'payment_interval',
+    ];
+    foreach ($fields as $field) {
+      if (!empty($_POST[$field])) {
+        update_post_meta($order_id, $field, sanitize_text_field($_POST[$field]));
+      }
+    }
+  }
+
+  /**
    * Displays subscriber ID in new order notification email.
    *
    * @woocommerce_email_order_meta
    */
   public static function woocommerce_email_order_meta($order) {
     $user_id = $order->get_user_id();
-    if ($subscriber_id = get_user_meta($user_id, 'subscriber_id', TRUE)) {
+    if ($subscriber_id = get_user_meta($user_id, 'billing_subscriber_id', TRUE)) {
       echo '<p><strong>' . __('Subscription ID:', PLUGIN::L10N) . '</strong> ' . $subscriber_id . '</p>';
     }
+
+    $payment_interval = get_post_meta($order->get_id(), 'payment_interval', TRUE);
+    if ($payment_interval && isset(static::PAYMENT_INTERVALS[$payment_interval])) {
+      echo '<p><strong>' . __('Payment interval', Plugin::L10N) . ':</strong> ' . __(static::PAYMENT_INTERVALS[$payment_interval], Plugin::L10N) . '</p>';
+    }
+
     if (!isset($_POST['optins'])) {
       return;
     }

@@ -42,5 +42,7 @@ add_action('plugins_loaded', __NAMESPACE__ . '\Plugin::loadTextdomain');
 add_action('plugins_loaded', __NAMESPACE__ . '\Plugin::plugins_loaded', 9);
 // Run before OpenID_Connect_Generic::init() on /wp-login.php to adjust
 // redirect_to of WooCommerce.
-add_action('init', __NAMESPACE__ . '\Plugin::init', 9);
+add_action('init', __NAMESPACE__ . '\Plugin::preInit', 9);
+// Run after woocommerce-subscriptions registered its endpoints.
+add_action('init', __NAMESPACE__ . '\Plugin::init', 11);
 add_action('admin_init', __NAMESPACE__ . '\Admin::init');

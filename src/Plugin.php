@@ -111,6 +111,9 @@ class Plugin {
     // Run after daggerhart-openid-connect-generic (99).
     add_filter('logout_redirect', __CLASS__ . '::logout_redirect', 100);
 
+    // Skip nonce check for user logout.
+    add_action('check_admin_referer', __CLASS__ . '::check_admin_referer', 10, 2);
+
     // Remove username and password fields from checkout form (email is username).
     // @see WooCommerce::woocommerce_checkout_fields()
     add_filter('option_woocommerce_registration_generate_username', function () { return 'yes'; });
@@ -182,9 +185,6 @@ class Plugin {
     add_action('woocommerce_lostpassword_form', __NAMESPACE__ . '\WooCommerce::woocommerce_lostpassword_form');
     // Output current alfa purchases on subscriptions page of user account. (WIP)
     add_action('woocommerce_after_template_part', __NAMESPACE__ . '\WooCommerce::woocommerce_after_template_part');
-
-    // Skip nonce check for user logout.
-    add_action('check_admin_referer', __CLASS__ . '::check_admin_referer', 10, 2);
 
     if (is_admin()) {
       return;
@@ -512,6 +512,7 @@ class Plugin {
        * @param WP_User $user                  The WP_User object for the user that's logging out.
        */
       $redirect_to = apply_filters( 'logout_redirect', $redirect_to, $requested_redirect_to, $user );
+
       wp_safe_redirect( $redirect_to );
       exit();
     }

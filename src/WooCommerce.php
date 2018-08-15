@@ -1066,6 +1066,14 @@ var nfyFacebookAppId = '637920073225349';
       if (!empty($response['aboNo'])) {
         update_user_meta($order->get_customer_id(), 'billing_subscriber_id', $response['aboNo']);
       }
+      // Inform authenticated users that they need to log out and back in again
+      // in order for new purchases / accesses to appear in their profile.
+      // @todo Remove this after implementing the 'change' server event.
+      if (!static::$isAnonymousCheckout) {
+        wc_add_notice(vsprintf('Damit Ihre neuen Produktzugänge in Ihrem Benutzerkonto erscheinen, <a href="%s">melden Sie sich erneut an</a>.', [
+          wc_logout_url(site_url('/shop/user')),
+        ]), 'notice');
+      }
       Server::addDebugMessage();
     }
   }

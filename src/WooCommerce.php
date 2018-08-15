@@ -156,7 +156,7 @@ var nfyFacebookAppId = '637920073225349';
         <div class="form-item field nfy-checkbox">
           <label class="choice-input checkbox">
             <input type="hidden" name="permanent_login" value="" />
-            <input id="nfy-qform-checkbox" name="permanent_login" type="checkbox" value="1" checked />
+            <input id="nfy-qform-checkbox" name="permanent_login" type="checkbox" value="1" />
               <span class="choice-input__indicator checkbox__indicator"></span>
               <span class="choice-input__label">Angemeldet bleiben</span>
           </label>

@@ -515,8 +515,7 @@ class Plugin {
     update_user_meta($user_id, $address_type . '_postcode', $user_claims['zipcode']);
     update_user_meta($user_id, $address_type . '_city', $user_claims['city']);
     // update_user_meta($user_id, $address_type . '_state', $user_claims['']);
-    // @todo Implement mapping for country. (D <=> DE)
-    update_user_meta($user_id, $address_type . '_country', $user_claims['country']);
+    update_user_meta($user_id, $address_type . '_country', AlfaCountry::toIso($user_claims['country']));
 
     update_user_meta($user_id, 'billing_phone_prefix', $user_claims['phone_prefix']);
     update_user_meta($user_id, 'billing_phone', $user_claims['phone']);
@@ -617,8 +616,7 @@ class Plugin {
         'housenr' => $address_source[$key_prefix . '_house_number'],
         'zipcode' => $address_source[$key_prefix . '_postcode'],
         'city' => $address_source[$key_prefix . '_city'],
-        // @todo Implement mapping for country. (D <=> DE)
-        'country' => 'DE', // $address_source[$key_prefix . '_country'],
+        'country' => AlfaCountry::toAlfa($address_source[$key_prefix . '_country']),
         // 'birthday' => ,
       ];
     }

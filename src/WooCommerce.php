@@ -1328,7 +1328,7 @@ var nfyFacebookAppId = '637920073225349';
       remove_filter('woocommerce_checkout_show_terms', ['WGM_Template', 'remove_terms_from_checkout_page']);
       woocommerce_form_field('terms', [
         'type' => 'checkbox',
-        'default' => $optins['terms'] ?? 0,
+        'default' => $_POST['terms'] ?? 0,
         'required' => TRUE,
         'label' => sprintf(\WGM_Template::get_terms_text(), esc_url(wc_get_page_permalink('terms'))),
       ]);
@@ -1336,7 +1336,7 @@ var nfyFacebookAppId = '637920073225349';
       $optin_name = 'acquisitionEmail';
       woocommerce_form_field($optin_name, [
         'type' => 'checkbox',
-        'default' => $optins[$optin_name] ?? 0,
+        'default' => $_POST[$optin_name] ?? 0,
         'required' => TRUE,
         'label' => 'Damit ich das besondere Angebot erhalte, willige ich ein,
           aus dem Verlags- und Dienstleistungsbereich der

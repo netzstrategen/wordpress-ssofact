@@ -596,7 +596,7 @@ class Plugin {
     }
 
     // Handle billing/shipping address forms.
-    if (isset($address_source[$key_prefix . '_address_1'])) {
+    if (isset($address_source[$key_prefix . '_salutation'])) {
       if ($address_source[$key_prefix . '_salutation'] === 'Firma') {
         $userinfo += [
           'salutation' => $address_source[$key_prefix . '_salutation'],
@@ -611,6 +611,8 @@ class Plugin {
           'lastname' => $address_source[$key_prefix . '_last_name'],
         ];
       }
+    }
+    if (isset($address_source[$key_prefix . '_address_1'])) {
       $userinfo += [
         // 'title' => $address_source[$key_prefix . '_title'],
         'street' => $address_source[$key_prefix . '_address_1'],

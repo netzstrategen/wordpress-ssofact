@@ -1162,6 +1162,11 @@ var nfyFacebookAppId = '637920073225349';
         }
       }
     }
+    if (Plugin::isArticleTestConfirmationPage()) {
+      if (empty($_POST['terms'])) {
+        wc_add_notice(\WGM_Template::get_terms_error_text(), 'error');
+      }
+    }
     // Re-inject values for removed fields as they will be emptied otherwise.
     // @see WC_Form_Handler::save_account_details()
     $user->first_name = $current_user->first_name;
@@ -1296,7 +1301,10 @@ var nfyFacebookAppId = '637920073225349';
       ]);
       $fields_html = '';
       foreach ($fields as $name => $field) {
-        $fields_html .= woocommerce_form_field($name, ['return' => TRUE] + $field) . "\n";
+        $fields_html .= woocommerce_form_field($name, [
+          'return' => TRUE,
+          'default' => $_POST[$name] ?? '',
+        ] + $field) . "\n";
       }
       ?>
 <p>Wir freuen uns, dass Sie sich für unsere Premium Inhalte interessieren.</p>
@@ -1310,10 +1318,17 @@ var nfyFacebookAppId = '637920073225349';
 <?= $form ?>
 
       <?php
-      // Checkbox for Terms & Conditions
+      // Checkbox for Terms & Conditions.
+      // Normally a separate template, but the amount of required faking of POST
+      // data and invocation of hooks is too excessive.
       // @see woocommerce-german-market/templates/woocommerce-german-market/second-checkout2.php
-      remove_filter( 'woocommerce_checkout_show_terms', array( 'WGM_Template', 'remove_terms_from_checkout_page' ) );
-      wc_get_template( 'checkout/terms.php' );
+      remove_filter('woocommerce_checkout_show_terms', ['WGM_Template', 'remove_terms_from_checkout_page']);
+      woocommerce_form_field('terms', [
+        'type' => 'checkbox',
+        'default' => $optins['terms'] ?? 0,
+        'required' => TRUE,
+        'label' => sprintf(\WGM_Template::get_terms_text(), esc_url(wc_get_page_permalink('terms'))),
+      ]);
 
       $optin_name = 'acquisitionEmail';
       woocommerce_form_field($optin_name, [
@@ -1343,7 +1358,6 @@ var nfyFacebookAppId = '637920073225349';
       $fields['billing_salutation'] = __('Salutation', Plugin::L10N);
       $fields['billing_first_name'] = $fields['account_first_name'];
       $fields['billing_last_name'] = $fields['account_last_name'];
-      $fields['terms'] = 'AGBs';
       $fields['acquisitionEmail'] = 'Verlagsangebote der Mediengruppe Heilbronner Stimme per E-Mail erhalten';
     }
     unset($fields['account_first_name'], $fields['account_last_name']);

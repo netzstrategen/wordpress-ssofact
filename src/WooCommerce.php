@@ -1310,9 +1310,6 @@ var nfyFacebookAppId = '637920073225349';
         ] + $field) . "\n";
       }
       ?>
-<p>Wir freuen uns, dass Sie sich für unsere Premium Inhalte interessieren.</p>
-
-<h3>Jetzt Registrierung abschließen und 30 Tage lang alle Premium Inhalte auf stimme.de kostenlos lesen!</h3>
 <p>Vergeben Sie ein Passwort und geben Sie Ihren Namen an für Ihren Account.
    Damit haben Sie 30 Tage kostenlosen Zugang zu allen Premium Artikeln.
    Keine Kündigung notwendig – Das Abo endet automatisch nach 30 Tagen.</p>
@@ -1349,7 +1346,22 @@ var nfyFacebookAppId = '637920073225349';
           Ohne Einwilligung erhalten Sie das besondere Angebot unter der Telefonnummer 07131&nbsp;615-615 (Ortstarif).
 ',
       ]);
+      // Finally, change the form submit button label.
+      ob_start();
+      add_action('woocommerce_edit_account_form_end', __CLASS__ . '::woocommerce_edit_account_form_end');
     }
+  }
+
+  /**
+   * Changes the button label on the account edit form into a "order now" button.
+   *
+   * @implements woocommerce_edit_account_form_end
+   */
+  public static function woocommerce_edit_account_form_end() {
+    $form = ob_get_clean();
+    $label = 'Jetzt kostenlos testen';
+    $form = preg_replace('@(<button [^>]+>)[^<]+(</button>)@', '$1' . $label . '$2', $form);
+    echo $form;
   }
 
   /**

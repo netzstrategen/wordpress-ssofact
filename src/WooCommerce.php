@@ -1166,6 +1166,9 @@ var nfyFacebookAppId = '637920073225349';
       if (empty($_POST['terms'])) {
         wc_add_notice(\WGM_Template::get_terms_error_text(), 'error');
       }
+      if (empty($_POST['acquisitionEmail'])) {
+        wc_add_notice('Bitte klicken Sie die Einwilligung an, um das besondere Angebot zu erhalten!', 'error');
+      }
     }
     // Re-inject values for removed fields as they will be emptied otherwise.
     // @see WC_Form_Handler::save_account_details()
@@ -1341,9 +1344,10 @@ var nfyFacebookAppId = '637920073225349';
           per E-Mail über Verlagsangebote informiert zu werden.
           <br>
           <br>
-          <strong>Vertrauensgarantie:</strong> Eine Weitergabe Ihrer Daten an Dritte erfolgt nicht.
           Diese Einwilligung können Sie jederzeit per Mail an <a href="mailto:zeitung@stimme.de">zeitung@stimme.de</a>
-          oder unter der Rufnummer 07131 615-615 widerrufen!',
+          oder unter der Rufnummer 07131&nbsp;615-615 widerrufen.
+          Ohne Einwilligung erhalten Sie das besondere Angebot unter der Telefonnummer 07131&nbsp;615-615 (Ortstarif).
+',
       ]);
     }
   }
@@ -1358,7 +1362,6 @@ var nfyFacebookAppId = '637920073225349';
       $fields['billing_salutation'] = __('Salutation', Plugin::L10N);
       $fields['billing_first_name'] = $fields['account_first_name'];
       $fields['billing_last_name'] = $fields['account_last_name'];
-      $fields['acquisitionEmail'] = 'Verlagsangebote der Mediengruppe Heilbronner Stimme per E-Mail erhalten';
     }
     unset($fields['account_first_name'], $fields['account_last_name']);
     unset($fields['account_display_name']);

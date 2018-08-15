@@ -1164,11 +1164,27 @@ var nfyFacebookAppId = '637920073225349';
     }
     // Re-inject values for removed fields as they will be emptied otherwise.
     // @see WC_Form_Handler::save_account_details()
-    if (!Plugin::isArticleTestConfirmationPage()) {
+    if (1 || !Plugin::isArticleTestConfirmationPage()) {
       $user->first_name = $current_user->first_name;
       $user->last_name = $current_user->last_name;
     }
     $user->display_name = $current_user->display_name;
+
+    if (Plugin::isArticleTestConfirmationPage()) {
+      // Disable woocommerce-german-market second checkout page customizations.
+      // add_filter('gm_checkout_validation_first_checkout', '__return_true');
+      remove_action( 'woocommerce_after_checkout_validation', 				array( 'WGM_Template', 'do_de_checkout_after_validation' ), 1, 2 );
+      // Add trial subscription to cart.
+      WC()->cart->empty_cart();
+      WC()->cart->add_to_cart(wc_get_product_id_by_sku('stite'));
+      // Trigger programmatic submission of checkout form.
+      $_REQUEST['woocommerce-process-checkout-nonce'] = wp_create_nonce('woocommerce-process_checkout');
+      // $_POST['billing_first_name'] = $_POST['account_first_name'];
+      // $_POST['billing_last_name'] = $_POST['account_last_name'];
+      $_POST['terms'] = 1; // @todo REMOVE THIS.
+      $_POST['woocommerce_checkout_place_order'] = 1;
+      WC()->checkout->process_checkout();
+    }
   }
 
   /**
@@ -1220,8 +1236,15 @@ var nfyFacebookAppId = '637920073225349';
           Server::addDebugMessage();
         }
       }
+      if (Plugin::isArticleTestConfirmationPage()) {
+        // WC()->cart->add_to_cart(wc_get_product_id_by_sku('stite'));
+        // $_REQUEST['woocommerce-process-checkout-nonce'] = wp_create_nonce('woocommerce-process_checkout');
+        // $_POST['billing_first_name'] = $_POST['account_first_name'];
+        // $_POST['billing_last_name'] = $_POST['account_last_name'];
+        // WC()->checkout->process_checkout();
+      }
       // Invalidate the one-time token immediately on successful update.
-      Plugin::invalidatePasswordResetToken();
+      // Plugin::invalidatePasswordResetToken();
     }
     Server::addDebugMessage();
 
@@ -1251,8 +1274,25 @@ var nfyFacebookAppId = '637920073225349';
    */
   public static function woocommerce_edit_account_form() {
     $form = ob_get_clean();
-    if (!Plugin::isArticleTestConfirmationPage()) {
-      $form = preg_replace('@^\s*<p [a-z_ "=-]+>\s+<label for="(?:account_first_name|account_last_name).+?</p>@sm', '', $form);
+    $form = preg_replace('@^\s*<p [a-z_ "=-]+>\s+<label for="(?:account_first_name|account_last_name).+?</p>@sm', '', $form);
+    if (Plugin::isArticleTestConfirmationPage()) {
+      $fields = WC()->checkout->get_checkout_fields('billing');
+      $fields = array_intersect_key($fields, [
+        'billing_salutation' => 1,
+        'billing_first_name' => 1,
+        'billing_last_name' => 1,
+        'billing_company' => 1,
+        'billing_company_contact' => 1,
+      ]);
+      $fields_html = '';
+      foreach ($fields as $name => $field) {
+        $fields_html .= woocommerce_form_field($name, ['return' => TRUE] + $field) . "\n";
+      }
+      // echo "<pre>\n"; var_dump($fields, $fields_html); echo "</pre>";
+      $form = $fields_html . $form;
+      // $form = str_replace('account_first_name', 'billing_first_name', $form);
+      // $form = str_replace('account_last_name', 'billing_last_name', $form);
+      // echo "<pre>\n"; var_dump(htmlspecialchars($form)); echo "</pre>";
     }
     $form = preg_replace('@^\s*<p [a-z_ "=-]+>\s+<label for="(?:account_display_name).+?</p>@sm', '', $form);
     if (Plugin::getPasswordResetToken()) {
@@ -1278,6 +1318,7 @@ var nfyFacebookAppId = '637920073225349';
       }
     }
     else {
+
       ?>
 <p>Wir freuen uns, dass Sie sich für unsere Premium Inhalte interessieren.</p>
 
@@ -1289,6 +1330,12 @@ var nfyFacebookAppId = '637920073225349';
 <?= $form ?>
 
       <?php
+      // Checkbox for Terms & Conditions
+      // @see woocommerce-german-market/templates/woocommerce-german-market/second-checkout2.php
+      remove_filter( 'woocommerce_checkout_show_terms', array( 'WGM_Template', 'remove_terms_from_checkout_page' ) );
+      wc_get_template( 'checkout/terms.php' );
+      add_filter( 'woocommerce_checkout_show_terms', array( 'WGM_Template', 'remove_terms_from_checkout_page' ) );
+
       $optin_name = 'acquisitionEmail';
       woocommerce_form_field($optin_name, [
         'type' => 'checkbox',
@@ -1313,12 +1360,13 @@ var nfyFacebookAppId = '637920073225349';
    * @implements woocommerce_save_account_details_required_fields
    */
   public static function woocommerce_save_account_details_required_fields(array $fields) {
-    if (!Plugin::isArticleTestConfirmationPage()) {
-      unset($fields['account_first_name'], $fields['account_last_name']);
-    }
-    else {
+    if (Plugin::isArticleTestConfirmationPage()) {
+      // $fields['billing_salutation'] = 'Anrede';
+      // $fields['billing_first_name'] = 'Vorname';
+      // $fields['billing_last_name'] = 'Nachname';
       $fields['acquisitionEmail'] = 'Verlagsangebote der Mediengruppe Heilbronner Stimme per E-Mail erhalten';
     }
+    unset($fields['account_first_name'], $fields['account_last_name']);
     unset($fields['account_display_name']);
     if (Plugin::getPasswordResetToken()) {
       unset($fields['account_email']);

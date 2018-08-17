@@ -722,10 +722,9 @@ var nfyFacebookAppId = '637920073225349';
     $response = WooCommerce::validateSubscriberId();
     Server::addDebugMessage();
     if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
-      $message = isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.');
-      // Add a note to explain what customers should do in case the mapping
-      // remains to fail.
-      $message .= vsprintf(' Sollte das Problem fortbestehen, <a href="%s" target="_blank">kontaktieren Sie bitte unseren Kundenservice</a>.', [
+      // Use a custom error message to explain what customers should do in case
+      // the mapping remains to fail.
+      $message = vsprintf('Ihre Abonummer konnte nicht zugeordnet werden. Sollte das Problem fortbestehen, <a href="%s" target="_blank">kontaktieren Sie bitte unseren Kundenservice</a>.', [
         site_url('/service/kontaktformular'),
       ]);
       wc_add_notice($message, 'error');

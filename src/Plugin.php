@@ -434,13 +434,14 @@ class Plugin {
     if ($result === TRUE) {
       return $result;
     }
-    // If user is already logged in and attemts to reset their password, the
+    // If user is already logged in and attempts to reset their password, the
     // current password is always correct.
     if (get_current_user_ID() && Plugin::getPasswordResetToken()) {
       return TRUE;
     }
     $current_user = get_user_by('id', $user_id);
     $response = Server::validateLogin($current_user->user_email, $password);
+    Server::addDebugMessage();
     if (isset($response['statuscode']) && $response['statuscode'] === 200) {
       return TRUE;
     }

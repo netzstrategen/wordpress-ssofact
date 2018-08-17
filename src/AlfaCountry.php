@@ -270,7 +270,7 @@ class AlfaCountry {
   ];
 
   /**
-   * Returns the alfa country vehicle code for a given ISO country code.
+   * Returns the alfa country vehicle code (if any) for a given ISO country code.
    *
    * @param string $iso_code
    *   The ISO country code to lookup.
@@ -278,11 +278,11 @@ class AlfaCountry {
    * @return string
    */
   public static function toAlfa(string $iso_code) {
-    return static::MAP[$iso_code] ?? $iso_code;
+    return !empty(static::MAP[$iso_code]) ? static::MAP[$iso_code] : $iso_code;
   }
 
   /**
-   * Returns the ISO country code for a given alfa country vehicle code.
+   * Returns the ISO country code (if any) for a given alfa country vehicle code.
    *
    * @param string $alfa_code
    *   The alfa country vehicle code to lookup.

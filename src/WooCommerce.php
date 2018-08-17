@@ -1076,7 +1076,7 @@ var nfyFacebookAppId = '637920073225349';
       Server::addDebugMessage();
 
       // Authenticate anonymous users after checkout.
-      if (!empty($response['login_code'])) {
+      if (static::$isAnonymousCheckout && !empty($response['login_code'])) {
         static::$loginCode = $response['login_code'];
         add_filter('wp_redirect', __CLASS__ . '::wp_redirect_after_woocommerce_checkout_order_processed', 10, 2);
       }

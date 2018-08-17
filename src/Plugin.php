@@ -598,7 +598,7 @@ class Plugin {
     }
 
     // Handle billing/shipping address forms.
-    if (isset($address_source[$key_prefix . '_address_1'])) {
+    if (isset($address_source[$key_prefix . '_salutation'])) {
       if ($address_source[$key_prefix . '_salutation'] === 'Firma') {
         $userinfo += [
           'salutation' => $address_source[$key_prefix . '_salutation'],
@@ -613,6 +613,8 @@ class Plugin {
           'lastname' => $address_source[$key_prefix . '_last_name'],
         ];
       }
+    }
+    if (isset($address_source[$key_prefix . '_address_1'])) {
       $userinfo += [
         // 'title' => $address_source[$key_prefix . '_title'],
         'street' => $address_source[$key_prefix . '_address_1'],
@@ -804,6 +806,15 @@ class Plugin {
     $encryption_key = base64_decode(SSOFACT_ENCRYPTION_KEY);
     $plain_value = openssl_decrypt($encrypted_value, $cipher, $encryption_key, 0, $iv);
     return $plain_value;
+  }
+
+  /**
+   * Returns whether the current user is confirming the account after testing a premium article.
+   */
+  public static function isArticleTestConfirmationPage() {
+    $user_id = get_current_user_ID();
+    $userinfo = get_user_meta($user_id, Plugin::USER_META_USERINFO, TRUE);
+    return $userinfo && empty($userinfo['alfa_purchases']) && !empty($userinfo['article_test']) && !empty($userinfo['code']);
   }
 
   /**

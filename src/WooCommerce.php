@@ -1204,6 +1204,14 @@ var nfyFacebookAppId = '637920073225349';
         }
       }
     }
+    if (Plugin::isArticleTestConfirmationPage()) {
+      if (empty($_POST['terms'])) {
+        wc_add_notice(\WGM_Template::get_terms_error_text(), 'error');
+      }
+      if (empty($_POST['acquisitionEmail'])) {
+        wc_add_notice('Bitte klicken Sie die Einwilligung an, um das besondere Angebot zu erhalten!', 'error');
+      }
+    }
     // Re-inject values for removed fields as they will be emptied otherwise.
     // @see WC_Form_Handler::save_account_details()
     $user->first_name = $current_user->first_name;
@@ -1260,6 +1268,19 @@ var nfyFacebookAppId = '637920073225349';
           Server::addDebugMessage();
         }
       }
+      if (Plugin::isArticleTestConfirmationPage()) {
+        // Disable woocommerce-german-market second checkout page customizations.
+        remove_action('woocommerce_after_checkout_validation', ['WGM_Template', 'do_de_checkout_after_validation'], 1, 2);
+
+        // Add trial subscription to cart.
+        WC()->cart->empty_cart();
+        WC()->cart->add_to_cart(wc_get_product_id_by_sku('stite'));
+
+        // Trigger programmatic submission of checkout form.
+        $_REQUEST['woocommerce-process-checkout-nonce'] = wp_create_nonce('woocommerce-process_checkout');
+        $_POST['woocommerce_checkout_place_order'] = 1;
+        WC()->checkout->process_checkout();
+      }
       // Invalidate the one-time token immediately on successful update.
       Plugin::invalidatePasswordResetToken();
     }
@@ -1291,26 +1312,98 @@ var nfyFacebookAppId = '637920073225349';
    */
   public static function woocommerce_edit_account_form() {
     $form = ob_get_clean();
-    $form = preg_replace('@^\s*<p.+?(?:account_first_name|account_last_name|account_display_name).+?</p>@sm', '', $form);
+    $form = preg_replace('@^\s*<p [a-z_ "=-]+>\s+<label for="(?:account_first_name|account_last_name|account_display_name).+?</p>@sm', '', $form);
     if (Plugin::getPasswordResetToken()) {
-      $form = preg_replace('@^\s*<p.+?(?:password_current).+?</p>@sm', '', $form);
+      $form = preg_replace('@^\s*<legend>Passwor.+?$@m', '', $form);
+      $form = preg_replace('@^\s*<p [a-z_ "=-]+>\s+<label for="(?:account_email|password_current).+?</p>@sm', '', $form);
+      $form = str_replace(' (leer lassen für keine Änderung)', '', $form);
     }
-    echo $form;
-
-    echo '<fieldset class="account-edit-optin-checks">';
 
     $optins = get_user_meta(get_current_user_ID(), 'optins', TRUE);
-    foreach (static::OPTINS as $optin_name => $definition) {
-      // The acquisition opt-ins should only appear during checkout.
-      if (strpos($optin_name, 'acquisition') === 0) {
-        continue;
+
+    if (!Plugin::isArticleTestConfirmationPage()) {
+      echo $form;
+
+      foreach (static::OPTINS as $optin_name => $definition) {
+        // The acquisition opt-ins should only appear during checkout.
+        if (strpos($optin_name, 'acquisition') === 0) {
+          continue;
+        }
+        woocommerce_form_field($optin_name, $definition + [
+          'type' => 'checkbox',
+          'default' => $optins[$optin_name] ?? 0,
+        ]);
       }
-      woocommerce_form_field($optin_name, $definition + [
-        'type' => 'checkbox',
-        'default' => $optins[$optin_name] ?? 0,
-      ]);
     }
-    echo '</fieldset>';
+    else {
+      $fields = WC()->checkout->get_checkout_fields('billing');
+      $fields = array_intersect_key($fields, [
+        'billing_salutation' => 1,
+        'billing_first_name' => 1,
+        'billing_last_name' => 1,
+        'billing_company' => 1,
+        'billing_company_contact' => 1,
+      ]);
+      $fields_html = '';
+      foreach ($fields as $name => $field) {
+        $fields_html .= woocommerce_form_field($name, [
+          'return' => TRUE,
+          'default' => $_POST[$name] ?? '',
+        ] + $field) . "\n";
+      }
+      ?>
+<p>Vergeben Sie ein Passwort und geben Sie Ihren Namen an für Ihren Account.
+   Damit haben Sie 30 Tage kostenlosen Zugang zu allen Premium Artikeln.
+   Keine Kündigung notwendig – Das Abo endet automatisch nach 30 Tagen.</p>
+
+<?= $fields_html ?>
+<?= $form ?>
+
+      <?php
+      // Checkbox for Terms & Conditions.
+      // Normally a separate template, but the amount of required faking of POST
+      // data and invocation of hooks is too excessive.
+      // @see woocommerce-german-market/templates/woocommerce-german-market/second-checkout2.php
+      remove_filter('woocommerce_checkout_show_terms', ['WGM_Template', 'remove_terms_from_checkout_page']);
+      woocommerce_form_field('terms', [
+        'type' => 'checkbox',
+        'default' => $_POST['terms'] ?? 0,
+        'required' => TRUE,
+        'label' => sprintf(\WGM_Template::get_terms_text(), esc_url(wc_get_page_permalink('terms'))),
+      ]);
+
+      $optin_name = 'acquisitionEmail';
+      woocommerce_form_field($optin_name, [
+        'type' => 'checkbox',
+        'default' => $_POST[$optin_name] ?? 0,
+        'required' => TRUE,
+        'label' => 'Damit ich das besondere Angebot erhalte, willige ich ein,
+          aus dem Verlags- und Dienstleistungsbereich der
+          <a href="https://www.stimme-medien.de" target="_blank">Mediengruppe Heilbronner Stimme</a>
+          per E-Mail über Verlagsangebote informiert zu werden.
+          <br>
+          <br>
+          Diese Einwilligung können Sie jederzeit per Mail an <a href="mailto:zeitung@stimme.de">zeitung@stimme.de</a>
+          oder unter der Rufnummer 07131&nbsp;615-615 widerrufen.
+          Ohne Einwilligung erhalten Sie das besondere Angebot unter der Telefonnummer 07131&nbsp;615-615 (Ortstarif).
+',
+      ]);
+      // Finally, change the form submit button label.
+      ob_start();
+      add_action('woocommerce_edit_account_form_end', __CLASS__ . '::woocommerce_edit_account_form_end');
+    }
+  }
+
+  /**
+   * Changes the button label on the account edit form into a "order now" button.
+   *
+   * @implements woocommerce_edit_account_form_end
+   */
+  public static function woocommerce_edit_account_form_end() {
+    $form = ob_get_clean();
+    $label = 'Jetzt kostenlos testen';
+    $form = preg_replace('@(<button [^>]+>)[^<]+(</button>)@', '$1' . $label . '$2', $form);
+    echo $form;
   }
 
   /**
@@ -1319,6 +1412,11 @@ var nfyFacebookAppId = '637920073225349';
    * @implements woocommerce_save_account_details_required_fields
    */
   public static function woocommerce_save_account_details_required_fields(array $fields) {
+    if (Plugin::isArticleTestConfirmationPage()) {
+      $fields['billing_salutation'] = __('Salutation', Plugin::L10N);
+      $fields['billing_first_name'] = $fields['account_first_name'];
+      $fields['billing_last_name'] = $fields['account_last_name'];
+    }
     unset($fields['account_first_name'], $fields['account_last_name']);
     unset($fields['account_display_name']);
     if (Plugin::getPasswordResetToken()) {

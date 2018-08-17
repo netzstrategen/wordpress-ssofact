@@ -1419,9 +1419,6 @@ var nfyFacebookAppId = '637920073225349';
    */
   public static function woocommerce_email_order_meta($order) {
     $user_id = $order->get_user_id();
-    if ($subscriber_id = get_user_meta($user_id, 'billing_subscriber_id', TRUE)) {
-      echo '<p><strong>' . __('Subscription ID:', PLUGIN::L10N) . '</strong> ' . $subscriber_id . '</p>';
-    }
 
     $payment_interval = get_post_meta($order->get_id(), 'payment_interval', TRUE);
     if ($payment_interval && isset(static::PAYMENT_INTERVALS[$payment_interval])) {

@@ -115,16 +115,21 @@ class WooCommerce {
       $target = $_REQUEST['redirect_to'] ?? '/user';
     }
     $next = site_url($target);
+    $confirmation_url = site_url('/shop/user/account');
     $authorize_uri = Plugin::getAuthorizeUrl($target);
     $action = 'https://' . SSOFACT_SERVER_DOMAIN . '/?' . http_build_query([
       'next' => $authorize_uri,
     ]);
     $href_forgot_password = 'https://' . SSOFACT_SERVER_DOMAIN . '/?' . http_build_query([
       'pageid' => 53,
-      'next' => site_url('/shop/user/account'),
+      'next' => $confirmation_url,
     ]);
     $href_register = 'https://' . SSOFACT_SERVER_DOMAIN . '/registrieren.html?' . http_build_query([
+      // Redirect to current page immediately after registering and logging in.
       'next' => $next,
+      // Redirect to user account dashboard after clicking link in confirmation
+      // email.
+      'redirect_url' => $confirmation_url,
     ]);
     return [
       'action' => $action,

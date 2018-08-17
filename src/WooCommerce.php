@@ -508,6 +508,10 @@ var nfyFacebookAppId = '637920073225349';
    * @implements gm_sepa_fields_in_checkout
    */
   public static function gm_sepa_fields_in_checkout($fields) {
+    // There is no session when editing an order in the administration.
+    if (!WC()->session) {
+      return $fields;
+    }
     foreach ($fields as $key => $field) {
       // Relies on WGM's own "first checkout" session data.
       if ($field['value'] === '' && ($session_value = WC()->session->get('first_checkout_post_arraygerman-market-sepa-' . $key))) {
@@ -1555,17 +1559,35 @@ var nfyFacebookAppId = '637920073225349';
   }
 
   /**
-   * Displays subscriber ID in new order notification email.
+   * Displays payment interval in order totals and in new order notification email.
    *
-   * @woocommerce_email_order_meta
+   * @implements woocommerce_get_order_item_totals
+   */
+  public static function woocommerce_get_order_item_totals($total_rows, $order, $tax_display) {
+    $payment_interval = get_post_meta($order->get_id(), 'payment_interval', TRUE);
+    if ($payment_interval && isset(static::PAYMENT_INTERVALS[$payment_interval])) {
+      $new_rows = [];
+      foreach ($total_rows as $key => $value) {
+        $new_rows[$key] = $total_rows[$key];
+        if ($key === 'payment_method') {
+          $new_rows['payment_interval'] = [
+            'label' => __('Payment interval', Plugin::L10N) . ':',
+            'value' => __(static::PAYMENT_INTERVALS[$payment_interval], Plugin::L10N),
+          ];
+        }
+      }
+      $total_rows = $new_rows;
+    }
+    return $total_rows;
+  }
+
+  /**
+   * Displays opt-ins in new order notification email.
+   *
+   * @implements woocommerce_email_order_meta
    */
   public static function woocommerce_email_order_meta($order) {
     $user_id = $order->get_user_id();
-
-    $payment_interval = get_post_meta($order->get_id(), 'payment_interval', TRUE);
-    if ($payment_interval && isset(static::PAYMENT_INTERVALS[$payment_interval])) {
-      echo '<p><strong>' . __('Payment interval', Plugin::L10N) . ':</strong> ' . __(static::PAYMENT_INTERVALS[$payment_interval], Plugin::L10N) . '</p>';
-    }
 
     if (!isset($_POST['optins'])) {
       return;
@@ -1588,7 +1610,6 @@ var nfyFacebookAppId = '637920073225349';
    */
   public static function woocommerce_checkout_after_customer_details() {
     $output = ob_get_clean();
-    $matches = [];
     $pattern = '@(<span class="wgm-field-label">' . __('Payment interval', Plugin::L10N) . '</span></td><td>)(.+)(</td>)@';
     preg_match($pattern, $output, $matches);
     if ($matches && isset(static::PAYMENT_INTERVALS[$matches[2]])) {

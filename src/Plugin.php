@@ -204,9 +204,10 @@ class Plugin {
     // Submits the order to the SSO/alfa.
     add_action('woocommerce_checkout_order_processed', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_order_processed', 20, 3);
 
-    // Displays custom fields in order notification email.
+    // Display custom fields in order totals and notification email.
     add_action('woocommerce_checkout_update_order_meta', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_update_order_meta');
-    add_filter('woocommerce_email_order_meta', __NAMESPACE__ . '\WooCommerce::woocommerce_email_order_meta');
+    add_filter('woocommerce_get_order_item_totals', __NAMESPACE__ . '\WooCommerce::woocommerce_get_order_item_totals', 10, 3);
+    add_action('woocommerce_email_order_meta', __NAMESPACE__ . '\WooCommerce::woocommerce_email_order_meta');
 
     // Display the selected payment interval value in the order confirmation page.
     add_action('woocommerce_checkout_before_customer_details', 'ob_start', 0, 0);
@@ -222,7 +223,8 @@ class Plugin {
     // Send redirect URL to forgot-password form on SSO.
     add_action('woocommerce_before_template_part', __NAMESPACE__ . '\WooCommerce::woocommerce_before_template_part', 10, 4);
     add_action('woocommerce_lostpassword_form', __NAMESPACE__ . '\WooCommerce::woocommerce_lostpassword_form');
-    // Output current alfa purchases on subscriptions page of user account. (WIP)
+
+    // Output current alfa purchases on subscriptions page of user account.
     add_action('woocommerce_after_template_part', __NAMESPACE__ . '\WooCommerce::woocommerce_after_template_part');
 
     // Skip nonce check for user logout.
@@ -244,6 +246,7 @@ class Plugin {
 
     // Validate current password against SSO.
     add_action('check_password', __CLASS__ . '::check_password', 20, 4);
+
     // If user is already logged in and attempts to reset their password, the
     // current password is always correct.
     if (!empty($_POST['action']) && $_POST['action'] === 'save_account_details' && get_current_user_ID() && Plugin::getPasswordResetToken()) {

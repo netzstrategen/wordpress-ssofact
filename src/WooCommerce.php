@@ -742,6 +742,10 @@ var nfyFacebookAppId = '637920073225349';
       wc_add_notice($message, 'error');
     }
     else {
+      // Translate country code value first.
+      if (!empty($response['country'])) {
+        $response['country'] = AlfaCountry::toIso($response['country']);
+      }
       // Store the result for usage in alfa purchase info instead of the actually
       // submitted form data (so that alfa maps the subscriber ID to the address)
       // and as a marker to hide the subscriber association form elements in the
@@ -759,7 +763,6 @@ var nfyFacebookAppId = '637920073225349';
         'street' => 'address_1',
         'zipcode' => 'postcode',
         'city' => 'city',
-        // @todo Country code mapping.
         'country' => 'country',
         'phone' => 'phone',
       ];

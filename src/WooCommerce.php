@@ -34,7 +34,7 @@ class WooCommerce {
     ],
     */
     'acquisitionEmail' => [
-      'label' => 'Ja, ich möchte auch zukünftig über aktuelle Angebote aus dem Verlags- und Dienstleistungsbereich der Mediengruppe Heilbronner Stimme per Telefon und/oder E-Mail informiert werden. Mein Einverständnis hierzu kann ich jederzeit widerrufen.',
+      'label' => 'Ja, ich möchte auch zukünftig von aktuellen Angeboten aus dem Verlags- und Dienstleistungsbereich der <a href="https://www.stimme-medien.de/" target="_blank">Mediengruppe Heilbronner Stimme</a> profitieren. Bitte informieren Sie mich per E-Mail. Vertrauensgarantie: Eine Weitergabe Ihrer Daten an Dritte erfolgt nicht. Diese Einwilligung können Sie jederzeit per Mail an <a href="mailto:zeitung@stimme.de" target="_blank">zeitung@stimme.de</a> oder unter der Rufnummer 07131&nbsp;615-615 widerrufen!',
       'priority' => 120,
     ],
   ];
@@ -1418,7 +1418,7 @@ var nfyFacebookAppId = '637920073225349';
           per E-Mail über Verlagsangebote informiert zu werden.
           <br>
           <br>
-          Diese Einwilligung können Sie jederzeit per Mail an <a href="mailto:zeitung@stimme.de">zeitung@stimme.de</a>
+          Diese Einwilligung können Sie jederzeit per Mail an <a href="mailto:zeitung@stimme.de" target="_blank">zeitung@stimme.de</a>
           oder unter der Rufnummer 07131&nbsp;615-615 widerrufen.
           Ohne Einwilligung erhalten Sie das besondere Angebot unter der Telefonnummer 07131&nbsp;615-615 (Ortstarif).
 ',

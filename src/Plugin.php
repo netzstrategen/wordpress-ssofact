@@ -220,7 +220,7 @@ class Plugin {
     add_action('woocommerce_save_account_details', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details_redirect', 100);
 
     // Send redirect URL to forgot-password form on SSO.
-    add_action('woocommerce_before_template_part', __NAMESPACE__ . '\WooCommerce::woocommerce_before_template_part');
+    add_action('woocommerce_before_template_part', __NAMESPACE__ . '\WooCommerce::woocommerce_before_template_part', 10, 4);
     add_action('woocommerce_lostpassword_form', __NAMESPACE__ . '\WooCommerce::woocommerce_lostpassword_form');
     // Output current alfa purchases on subscriptions page of user account. (WIP)
     add_action('woocommerce_after_template_part', __NAMESPACE__ . '\WooCommerce::woocommerce_after_template_part');
@@ -434,13 +434,14 @@ class Plugin {
     if ($result === TRUE) {
       return $result;
     }
-    // If user is already logged in and attemts to reset their password, the
+    // If user is already logged in and attempts to reset their password, the
     // current password is always correct.
     if (get_current_user_ID() && Plugin::getPasswordResetToken()) {
       return TRUE;
     }
     $current_user = get_user_by('id', $user_id);
     $response = Server::validateLogin($current_user->user_email, $password);
+    Server::addDebugMessage();
     if (isset($response['statuscode']) && $response['statuscode'] === 200) {
       return TRUE;
     }

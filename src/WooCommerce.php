@@ -75,6 +75,13 @@ class WooCommerce {
   private static $isTrialSubscriptionCheckout;
 
   /**
+   * Private storage for passing fully validated user input values between hooks.
+   *
+   * @var array
+   */
+  private static $formStorage;
+
+  /**
    * @implements woocommerce_email_actions
    */
   public static function woocommerce_email_actions($actions) {
@@ -1195,11 +1202,19 @@ var nfyFacebookAppId = '637920073225349';
         }
         else {
           $response = Server::isEmailRegistered($_POST['account_email']);
+          Server::addDebugMessage();
           // Error 607: "Given email is unknown" is the only allowed positive case.
           if (!isset($response['statuscode']) || $response['statuscode'] !== 607) {
             $message = isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.');
             wc_add_notice($message, 'error');
-            Server::addDebugMessage();
+          }
+          else {
+            // If everything is correct, the new email address still needs to be
+            // confirmed via email first. Therefore, we copy the validated value
+            // into a private storage, so it can be processed by
+            // WooCommerce::woocommerce_save_account_details().
+            static::$formStorage['account_email'] = $_POST['account_email'];
+            $user->user_email = $_POST['account_email'] = $current_user->user_email;
           }
         }
       }
@@ -1233,8 +1248,8 @@ var nfyFacebookAppId = '637920073225349';
       $userinfo['code'] = $token;
       $userinfo['action'] = 'forgotPassword';
     }
-    elseif (!empty($_POST['account_email']) && $_POST['account_email'] !== $current_email) {
-      $userinfo['temp_email'] = $_POST['account_email'];
+    elseif (!empty(static::$formStorage['account_email']) && static::$formStorage['account_email'] !== $current_email) {
+      $userinfo['temp_email'] = static::$formStorage['account_email'];
       $userinfo['pass_verify'] = Plugin::encrypt($_POST['password_current']);
       $userinfo['action'] = 'changeEmail';
     }
@@ -1259,6 +1274,16 @@ var nfyFacebookAppId = '637920073225349';
       Server::addDebugMessage();
     }
     else {
+      // If a new email address has been set, replace the success message to
+      // clarify that the user needs to confirm the change via email.
+      if (isset($userinfo['action']) && $userinfo['action'] === 'changeEmail') {
+        $all_notices = WC()->session->get('wc_notices', []);
+        $index = array_search(__('Account details changed successfully.', 'woocommerce'), $all_notices['success']);
+        $all_notices['success'][$index] = vsprintf('Ihre E-Mail-Adresse wurde noch nicht aktualisiert. Bitte prüfen Sie Ihren Posteingang für <em>%s</em> und klicken Sie den Link zur Bestätigung Ihrer neuen E-Mail-Adresse.', [
+          esc_html($userinfo['temp_email']),
+        ]);
+        WC()->session->set('wc_notices', $all_notices);
+      }
       // Perform the password change in a second request if email and password
       // were changed at once.
       if (!empty($second_userinfo)) {
@@ -1313,10 +1338,16 @@ var nfyFacebookAppId = '637920073225349';
   public static function woocommerce_edit_account_form() {
     $form = ob_get_clean();
     $form = preg_replace('@^\s*<p [a-z_ "=-]+>\s+<label for="(?:account_first_name|account_last_name|account_display_name).+?</p>@sm', '', $form);
-    if (Plugin::getPasswordResetToken()) {
-      $form = preg_replace('@^\s*<legend>Passwor.+?$@m', '', $form);
+    $form = preg_replace('@^\s*<legend>Passwor.+?$@m', '', $form);
+    if (!Plugin::getPasswordResetToken()) {
+      // Clarify that current password is also required to set new email address.
+      $form = str_replace('Aktuelles Passwort (leer lassen für keine Änderung)', 'Aktuelles Passwort (erforderlich für neue E-Mail-Adresse oder neues Passwort)', $form);
+    }
+    else {
       $form = preg_replace('@^\s*<p [a-z_ "=-]+>\s+<label for="(?:account_email|password_current).+?</p>@sm', '', $form);
       $form = str_replace(' (leer lassen für keine Änderung)', '', $form);
+      $form = str_replace('Neues Passwort<', 'Passwort vergeben<', $form);
+      $form = str_replace('Neues Passwort', 'Passwort', $form);
     }
 
     $optins = get_user_meta(get_current_user_ID(), 'optins', TRUE);
@@ -1429,9 +1460,15 @@ var nfyFacebookAppId = '637920073225349';
   /**
    * @implements woocommerce_before_template_part
    */
-  public static function woocommerce_before_template_part($template_name) {
+  public static function woocommerce_before_template_part($template_name, $template_path, $located, $args) {
     if ($template_name === 'myaccount/form-lost-password.php' || $template_name === 'global/form-login.php' || $template_name === 'myaccount/my-subscriptions.php') {
       ob_start();
+    }
+    // User input is lost upon any form validation error.
+    // @todo Fix WooCommerce Core to use woocommerce_form_field().
+    if ($template_name === 'myaccount/form-edit-account.php' && !empty($_POST['account_email'])) {
+      $args['user'] = clone $args['user'];
+      $args['user']->user_email = $_POST['account_email'];
     }
   }
 

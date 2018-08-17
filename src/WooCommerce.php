@@ -47,6 +47,13 @@ class WooCommerce {
   private static $isAnonymousCheckout;
 
   /**
+   * A one-time login_code to authenticate anonymous users after checkout.
+   *
+   * @var string
+   */
+  private static $loginCode;
+
+  /**
    * Whether the subscriber association user input has been processed (once).
    *
    * @var bool
@@ -1067,7 +1074,22 @@ var nfyFacebookAppId = '637920073225349';
         update_user_meta($order->get_customer_id(), 'billing_subscriber_id', $response['aboNo']);
       }
       Server::addDebugMessage();
+
+      // Authenticate anonymous users after checkout.
+      if (static::$isAnonymousCheckout && !empty($response['login_code'])) {
+        static::$loginCode = $response['login_code'];
+        add_filter('wp_redirect', __CLASS__ . '::wp_redirect_after_woocommerce_checkout_order_processed', 10, 2);
+      }
     }
+  }
+
+  /**
+   * @implements wp_redirect
+   */
+  public static function wp_redirect_after_woocommerce_checkout_order_processed($redirect_url, $status) {
+    $redirect_url = Plugin::getAuthorizeUrl(wp_make_link_relative($redirect_url));
+    $redirect_url = str_replace('redirect_uri=', 'login_code=' . static::$loginCode . '&redirect_uri=', $redirect_url);
+    return $redirect_url;
   }
 
   /**

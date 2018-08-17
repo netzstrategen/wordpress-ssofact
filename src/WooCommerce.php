@@ -122,7 +122,7 @@ class WooCommerce {
       'next' => $next,
       // Redirect to user account dashboard after clicking link in confirmation
       // email.
-      'redirect_uri' => $confirmation_url,
+      'redirect_url' => $confirmation_url,
     ]);
     return [
       'action' => $action,

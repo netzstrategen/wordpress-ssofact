@@ -1242,6 +1242,9 @@ var nfyFacebookAppId = '637920073225349';
    * @implements woocommerce_save_account_details
    */
   public static function woocommerce_save_account_details($user_id) {
+    // Determine this upfront as the responsible conditions will be changed below.
+    $is_article_test_confirmation_page = Plugin::isArticleTestConfirmationPage();
+
     $userinfo = Plugin::buildUserInfo('account', $user_id);
 
     $current_email = $userinfo['email'];
@@ -1272,12 +1275,16 @@ var nfyFacebookAppId = '637920073225349';
       }
     }
 
+    // @todo This can trigger form validation errors, so move the API call into
+    //   hook woocommerce_save_account_details_errors.
     $response = Server::updateUser($userinfo);
     if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
       wc_add_notice(isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.'), 'error');
       Server::addDebugMessage();
     }
     else {
+      Server::addDebugMessage();
+
       // If a new email address has been set, replace the success message to
       // clarify that the user needs to confirm the change via email.
       if (isset($userinfo['action']) && $userinfo['action'] === 'changeEmail') {
@@ -1297,7 +1304,20 @@ var nfyFacebookAppId = '637920073225349';
           Server::addDebugMessage();
         }
       }
-      if (Plugin::isArticleTestConfirmationPage()) {
+      // Save opt-ins manually, as new UserInfo is only retrieved with next login.
+      $optins = get_user_meta(get_current_user_ID(), 'optins', TRUE);
+      foreach (WooCommerce::OPTINS as $optin_name => $definition) {
+        if (isset($_POST[$optin_name])) {
+          $optins[$optin_name] = (int) $_POST[$optin_name];
+        }
+      }
+      update_user_meta(get_current_user_ID(), 'optins', $optins);
+
+      // Invalidate the one-time token immediately on successful update.
+      Plugin::invalidatePasswordResetToken();
+
+      // Note: This issues a redirect upon valid checkout form data.
+      if ($is_article_test_confirmation_page) {
         // Disable woocommerce-german-market second checkout page customizations.
         remove_action('woocommerce_after_checkout_validation', ['WGM_Template', 'do_de_checkout_after_validation'], 1, 2);
 
@@ -1310,19 +1330,7 @@ var nfyFacebookAppId = '637920073225349';
         $_POST['woocommerce_checkout_place_order'] = 1;
         WC()->checkout->process_checkout();
       }
-      // Invalidate the one-time token immediately on successful update.
-      Plugin::invalidatePasswordResetToken();
     }
-    Server::addDebugMessage();
-
-    // Save opt-ins manually, as new UserInfo is only retrieved with next login.
-    $optins = get_user_meta(get_current_user_ID(), 'optins', TRUE);
-    foreach (WooCommerce::OPTINS as $optin_name => $definition) {
-      if (isset($_POST[$optin_name])) {
-        $optins[$optin_name] = (int) $_POST[$optin_name];
-      }
-    }
-    update_user_meta(get_current_user_ID(), 'optins', $optins);
   }
 
   /**

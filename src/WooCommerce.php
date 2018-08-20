@@ -1319,7 +1319,7 @@ var nfyFacebookAppId = '637920073225349';
     $optins = get_user_meta(get_current_user_ID(), 'optins', TRUE);
     foreach (WooCommerce::OPTINS as $optin_name => $definition) {
       if (isset($_POST[$optin_name])) {
-        $optins[$optin_name] = $_POST[$optin_name];
+        $optins[$optin_name] = (int) $_POST[$optin_name];
       }
     }
     update_user_meta(get_current_user_ID(), 'optins', $optins);

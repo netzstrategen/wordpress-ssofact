@@ -687,6 +687,8 @@ class Plugin {
     }
     // Remove opt-ins that cannot be changed by the client.
     unset($userinfo['optins']['email_doi'], $userinfo['optins']['changemail']);
+    // All opt-ins must be integer values.
+    $userinfo['optins'] = array_map('intval', $userinfo['optins']);
 
     return $userinfo;
   }

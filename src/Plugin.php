@@ -727,7 +727,8 @@ class Plugin {
       // - 'h': half-yearly
       // - 'j': yearly
       'paymentPattern' => $_POST['payment_interval'] ?? 'm',
-      'acquisitionEmail' => !empty($purchase['optins']['acquisitionEmail']) ? 'j' : 'n',
+      // Note: The name of the purchase opt-in in alfa uses an uppercase 'M'.
+      'acquisitionEMail' => !empty($purchase['optins']['acquisitionEmail']) ? 'j' : 'n',
       'acquisitionMail' => !empty($purchase['optins']['acquisitionMail']) ? 'j' : 'n',
       'acquisitionPhone' => !empty($purchase['optins']['acquisitionPhone']) ? 'j' : 'n',
       // 'accessCount' => 1,

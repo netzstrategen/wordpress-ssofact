@@ -167,7 +167,7 @@ var nfyFacebookAppId = '637920073225349';
     <div class="nfy-box-content">
       <form action="<?= $action ?>" method="post" name="loginForm" id="loginForm" class="nfy-form nfy-flex-form">
         <div class="form-item field">
-          <input maxlength="255" placeholder="E-Mail-Adresse eingeben" name="login" type="text" />
+          <input maxlength="255" placeholder="E-Mail-Adresse/Benutzername eingeben" name="login" type="text" />
         </div>
         <div class="form-item field">
           <input maxlength="255" placeholder="Passwort eingeben" name="pass" type="password" />

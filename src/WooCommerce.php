@@ -748,7 +748,7 @@ var nfyFacebookAppId = '637920073225349';
       // Use a custom error message to explain what customers should do in case
       // the mapping remains to fail.
       $message = vsprintf('Ihre Abonummer konnte nicht zugeordnet werden. Sollte das Problem fortbestehen, <a href="%s" target="_blank">kontaktieren Sie bitte unseren Kundenservice</a>.', [
-        site_url('/service/kontaktformular'),
+        site_url('/service/kontakt'),
       ]);
       wc_add_notice($message, 'error');
     }

@@ -1367,6 +1367,8 @@ var nfyFacebookAppId = '637920073225349';
     if (!Plugin::isArticleTestConfirmationPage()) {
       echo $form;
 
+      echo '<div id="optins" class="account-section">';
+      echo '<h3 class="pull-left">Newsletter</h3>';
       foreach (static::OPTINS as $optin_name => $definition) {
         // The acquisition opt-ins should only appear during checkout.
         if (strpos($optin_name, 'acquisition') === 0) {
@@ -1377,6 +1379,7 @@ var nfyFacebookAppId = '637920073225349';
           'default' => $optins[$optin_name] ?? 0,
         ]);
       }
+      echo '</div>';
     }
     else {
       $fields = WC()->checkout->get_checkout_fields('billing');

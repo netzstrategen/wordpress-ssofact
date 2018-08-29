@@ -301,11 +301,11 @@ var nfyFacebookAppId = '637920073225349';
       'type' => 'text',
       'label' => __('Phone prefix', Plugin::L10N),
       'required' => TRUE,
-      'priority' => 100,
+      // 'phone' is added with a priority of 100 whose weight can only be altered
+      // via woocommerce_billing_fields.
+      // @see WC_Countries::get_address_fields()
+      'priority' => 99,
     ];
-    if (isset($fields['phone'])) {
-      $fields['phone']['priority'] = 110;
-    }
 
     // To increase conversions for the free trial subscription (SKU 'stite'),
     // only first_name and last_name (and opt-ins) should be required.

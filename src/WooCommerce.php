@@ -1427,8 +1427,6 @@ var nfyFacebookAppId = '637920073225349';
           aus dem Verlags- und Dienstleistungsbereich der
           <a href="https://www.stimme-medien.de" target="_blank">Mediengruppe Heilbronner Stimme</a>
           per E-Mail über Verlagsangebote informiert zu werden.
-          <br>
-          <br>
           Diese Einwilligung können Sie jederzeit per Mail an <a href="mailto:zeitung@stimme.de" target="_blank">zeitung@stimme.de</a>
           oder unter der Rufnummer 07131&nbsp;615-615 widerrufen.
           Ohne Einwilligung erhalten Sie das besondere Angebot unter der Telefonnummer 07131&nbsp;615-615 (Ortstarif).

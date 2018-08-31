@@ -151,7 +151,7 @@ class Alfa {
       'W' => 'Heilbronner Stimme Ausgabe West',
       'EW' => 'Heilbronner Stimme Ausgabe West',
     ];
-    foreach ($purchases as $key => &$purchase) {
+    foreach ($purchases as $key => $purchase) {
       // BES ("Besen") and TVS ("TV app") are obsolete.
       // A user with EST (epaper) can always access iST (iStimme tablet app).
       if ($purchase['object'] === 'iST' || $purchase['object'] === 'BES' || $purchase['object'] === 'TVS') {
@@ -159,23 +159,23 @@ class Alfa {
         continue;
       }
       if (isset($priorities[$purchase['object']])) {
-        $purchase['priority'] = $priorities[$purchase['object']];
+        $purchases[$key]['priority'] = $priorities[$purchase['object']];
       }
-      unset($purchase['type'], $purchase['ivw'], $purchase['ident'], $purchase['accessCount']);
-      $purchase['date_start'] = preg_replace('@(\d{4})(\d{2})(\d{2})@', '$3.$2.$1', $purchase['fromDay']);
+      unset($purchases[$key]['type'], $purchases[$key]['ivw'], $purchases[$key]['ident'], $purchases[$key]['accessCount']);
+      $purchases[$key]['date_start'] = preg_replace('@(\d{4})(\d{2})(\d{2})@', '$3.$2.$1', $purchase['fromDay']);
       if ($purchase['toDay'] < date('Ymd', strtotime('today +20 years'))) {
-        $purchase['date_end'] = preg_replace('@(\d{4})(\d{2})(\d{2})@', '$3.$2.$1', $purchase['toDay']);
+        $purchases[$key]['date_end'] = preg_replace('@(\d{4})(\d{2})(\d{2})@', '$3.$2.$1', $purchase['toDay']);
       }
       else {
-        $purchase['date_end'] = '–';
+        $purchases[$key]['date_end'] = '–';
       }
-      $purchase['label'] = $object_labels[$purchase['object']];
+      $purchases[$key]['label'] = $object_labels[$purchase['object']];
       if (!empty($purchase['edition'])) {
         if (isset($edition_labels[$purchase['edition']])) {
-          $purchase['label'] .= ' - ' . $edition_labels[$purchase['edition']];
+          $purchases[$key]['label'] .= ' - ' . $edition_labels[$purchase['edition']];
         }
         else {
-          $purchase['label'] .= ' - ' . $purchase['edition'];
+          $purchases[$key]['label'] .= ' - ' . $purchase['edition'];
         }
       }
     }

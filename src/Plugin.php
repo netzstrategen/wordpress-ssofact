@@ -488,11 +488,12 @@ class Plugin {
     $subscriber_id = $user_claims['subscriber_id'] ?? $user_claims['subscribernr'];
     update_user_meta($user_id, 'billing_subscriber_id', $subscriber_id);
     update_user_meta($user_id, 'alfa_purchases', $user_claims['alfa_purchases']);
+    update_user_meta($user_id, 'alfa_dummy_address', $user_claims['alfa_dummy_address']);
 
     // A user_status 'confirmed' (active/blocked) is not supported by WordPress
     // Core; the database table column exists but is unused. However, the user
     // will not be able to log in in the first place.
-    if ($subscriber_id) {
+    if (!empty($subscriber_id)) {
       $user->add_role('customer');
       $purchases = Alfa::getPurchases($user_claims['alfa_purchases']);
       update_user_meta($user_id, 'paying_customer', (int) !empty($purchases));
@@ -643,16 +644,15 @@ class Plugin {
     }
 
     // If a registered user has a subscriber ID already, then alfa GP/VM will
-    // reject any kind of change to the address. The submitted address will only
-    // be contained in the order confirmation email and manually processed by
-    // the customer service team. Even if the user only specified the ID in the
-    // checkout form, it has already been validated to be correct by now.
-    if (is_checkout()) {
-      $remove_address = $user_id > 0 && (!empty($address_source['billing_subscriber_id']) || get_user_meta($user_id, 'billing_subscriber_id', TRUE));
-    }
-    else {
-      $remove_address = $user_id > 0 && get_user_meta($user_id, 'billing_subscriber_id', TRUE);
-    }
+    // reject any kind of change to the address, unless it is a "dummy address";
+    // i.e., a partial address record only consisting of salutation, firstname,
+    // lastname, used for quicker trial subscription signups, which is filled up
+    // by alfa with placeholder values for all other required address fields.
+    // If address values are removed below, the submitted address will only be
+    // contained in the order notification email to the shop admin and manually
+    // processed by the customer service team.
+    // When processing a checkout, additionally check the checkAboNo data.
+    $remove_address = $user_id > 0 && !get_user_meta($user_id, 'alfa_dummy_address', TRUE);
     if ($remove_address) {
       $userinfo = array_diff_key($userinfo, [
         'salutation' => 0,

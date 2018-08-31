@@ -9,11 +9,11 @@ namespace Netzstrategen\Ssofact;
 
 class Server {
 
-  const ENDPOINT_IS_EMAIL_REGISTERED = '/REST/services/authenticate/user/IsEmailRegistered';
+  const ENDPOINT_EMAIL_VALIDATE_NEW = '/REST/services/authenticate/user/IsEmailRegistered';
 
   const ENDPOINT_LOGIN_VALIDATE = '/REST/services/authenticate/user/checkUserCredentials';
 
-  const ENDPOINT_SUBSCRIBER_ID = '/REST/services/authenticate/user/checkAboNo';
+  const ENDPOINT_SUBSCRIBER_VALIDATE = '/REST/services/authenticate/user/checkAboNo';
 
   const ENDPOINT_USER_UPDATE = '/REST/services/authenticate/user/updateUser';
 
@@ -32,7 +32,7 @@ class Server {
    * @return null|array
    */
   public static function isEmailRegistered($email) {
-    $response = Server::request('POST', static::ENDPOINT_IS_EMAIL_REGISTERED, ['email' => $email]);
+    $response = Server::request('POST', static::ENDPOINT_EMAIL_VALIDATE_NEW, ['email' => $email]);
     return $response;
   }
 
@@ -57,10 +57,11 @@ class Server {
   /**
    * Returns whether the subscriber ID matches the name and zipcode.
    *
-   * @return null!array
+   * @return null|array
    */
-  public static function checkSubscriberId($subscriber_id, $first_name, $last_name, $zip_code) {
-    $response = Server::request('POST', static::ENDPOINT_SUBSCRIBER_ID, [
+  public static function checkAboNo($email, $subscriber_id, $first_name, $last_name, $zip_code) {
+    $response = Server::request('POST', static::ENDPOINT_SUBSCRIBER_VALIDATE, [
+      'email' => $email,
       'abono' => $subscriber_id,
       'firstname' => $first_name,
       'lastname' => $last_name,

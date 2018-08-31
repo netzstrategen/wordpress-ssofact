@@ -1539,8 +1539,36 @@ var nfyFacebookAppId = '637920073225349';
    * @implements woocommerce_account_view-subscription_endpoint
    */
   public static function viewSubscription() {
+    echo "\n" . '<div class="pull">';
+    echo "\n" . '<h3 class="pull-left">Meine Bezüge</h3>' . "\n";
     Alfa::renderPurchases(Alfa::getPurchases(NULL, TRUE));
     // Alfa::mapPurchases(Alfa::getPurchasesFlattened());
+    echo "\n" . '<a class="button" href="/shop/abo">Zu unseren Abonnement-Angeboten</a>';
+
+    echo "\n" . '<div class="account-section"></div>';
+    echo "\n" . '</div>' . "\n"; // .pull
+    add_filter('woocommerce_my_account_edit_address_title', __CLASS__ . '::subscriptions_woocommerce_my_account_edit_address_title', 100);
+    add_filter('woocommerce_billing_fields', __CLASS__ . '::subscriptions_woocommerce_billing_fields', 100);
+    \WC_Shortcode_My_Account::edit_address('billing');
+  }
+
+  /**
+   * @implements woocommerce_my_account_edit_address_title
+   */
+  public static function subscriptions_woocommerce_my_account_edit_address_title() {
+    return 'Abonnement verknüpfen';
+  }
+
+  /**
+   * @implements woocommerce_billing_fields
+   */
+  public static function subscriptions_woocommerce_billing_fields(array $fields) {
+    foreach ($fields as $key => $field) {
+      if (FALSE === strpos($key, 'subscriber')) {
+        unset($fields[$key]);
+      }
+    }
+    return $fields;
   }
 
   /**

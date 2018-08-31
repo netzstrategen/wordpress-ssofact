@@ -179,6 +179,9 @@ class Alfa {
         }
       }
     }
+    if (empty($purchases)) {
+      return FALSE;
+    }
     $purchases = WooCommerce::sortFieldsByPriority($purchases);
     ?>
 <div class="pull">

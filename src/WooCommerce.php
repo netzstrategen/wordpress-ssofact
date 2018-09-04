@@ -1177,9 +1177,28 @@ var nfyFacebookAppId = '637920073225349';
         WC()->session->set('subscriber_data', '');
       }
 
-      // Save the subscriber ID returned by alfa (replacing the user input).
-      if (!empty($response['aboNo'])) {
-        $_POST['billing_subscriber_id'] = $response['aboNo'];
+      // Save the valid subscriber ID in the user account.
+      if (!empty($subscriber['subscriber_id'])) {
+        $subscriber_fields = [
+          'subscriber_id' => 'subscriber_id',
+          'salutation' => 'salutation',
+          'firstname' => 'first_name',
+          'lastname' => 'last_name',
+          'company' => 'company',
+          'company_contact' => 'company_contact',
+          'street' => 'address_1',
+          'housenr' => 'house_number',
+          'zipcode' => 'postcode',
+          'city' => 'city',
+          'country' => 'country',
+          'phone_prefix' => 'phone_prefix',
+          'phone' => 'phone',
+        ];
+        foreach ($subscriber_fields as $alfa_key => $field_name) {
+          if (isset($subscriber[$alfa_key])) {
+            update_user_meta($user_id, 'billing_' . $field_name, $subscriber[$alfa_key]);
+          }
+        }
       }
       return TRUE;
     }
@@ -1577,6 +1596,9 @@ var nfyFacebookAppId = '637920073225349';
    * Submits the subscriber association form.
    *
    * @implements woocommerce_account_subscriptions_endpoint
+   *
+   * @see WooCommerce::woocommerce_checkout_process()
+   * @see WooCommerce::woocommerce_after_save_address_validation()
    */
   public static function subscriptions_subscriber_associate_submit() {
     if (!empty($_POST['subscriber_associate_submit']) && WooCommerce::woocommerce_after_save_address_validation(get_current_user_ID(), 'billing', [])) {

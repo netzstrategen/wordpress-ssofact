@@ -253,12 +253,16 @@ class Plugin {
       $_POST['password_current'] = 'forgot-password-current-is-always-correct';
     }
 
+    // Validate and submit the subscriber association form on the subscriptions
+    // page. Hook woocommerce_account_subscriptions_endpoint runs too late,
+    // causing notices only to be printed on the second to next page load.
+    // WC()->session->set('subscriber_data', '');
+    if (!is_checkout() && !empty($_POST['subscriber_associate_submit'])) {
+      WooCommerce::woocommerce_checkout_process();
+      WooCommerce::subscriptions_subscriber_associate_submit();
+    }
     // Output current alfa purchases on subscriptions page of user account.
-    add_action('woocommerce_account_subscriptions_endpoint', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_process', 4);
-    add_action('woocommerce_account_subscriptions_endpoint', __NAMESPACE__ . '\WooCommerce::subscriptions_subscriber_associate_submit', 6);
     add_action('woocommerce_account_subscriptions_endpoint', __NAMESPACE__ . '\WooCommerce::viewSubscription', 8);
-    add_action('woocommerce_account_view-subscription_endpoint', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_process', 4);
-    add_action('woocommerce_account_view-subscription_endpoint', __NAMESPACE__ . '\WooCommerce::subscriptions_subscriber_associate_submit', 6);
     add_action('woocommerce_account_view-subscription_endpoint', __NAMESPACE__ . '\WooCommerce::viewSubscription', 8);
 
     add_action('wp_enqueue_scripts', __CLASS__ . '::wp_enqueue_scripts');

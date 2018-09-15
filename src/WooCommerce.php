@@ -682,8 +682,9 @@ var nfyFacebookAppId = '637920073225349';
     echo $form;
     if (!$is_subscriber) {
       $name = is_checkout() ? 'woocommerce_checkout_place_order' : 'subscriber_associate_submit';
+      $class= is_checkout() ? 'button' : 'button button--primary';
       echo '<p id="subscriber_submit_field" class="form-row form-actions" data-priority="-20">';
-      echo '<button id="subscriber_associate_submit" type="submit" name="' . $name . '" value="1" class="button button--primary">';
+      echo '<button id="subscriber_associate_submit" type="submit" name="' . $name . '" value="1" class="' . $class . '">';
       echo 'Meine bestehenden Daten verwenden';
       echo '</button>';
       echo '</p>';

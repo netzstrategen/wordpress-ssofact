@@ -18,6 +18,13 @@
   font-size: initial;
 }
 
+.subscriber-fields__field-wrapper:before {
+  display: block;
+  margin-bottom: 10px;
+  content: "Ihre Abonummer finden sie auf der Rechnung oder Ihrem Lastschrifttext.";
+  color: #999;
+}
+
 .form-actions {
   overflow: hidden;
   text-align: right;

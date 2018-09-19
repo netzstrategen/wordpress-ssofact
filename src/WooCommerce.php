@@ -1194,7 +1194,6 @@ var nfyFacebookAppId = '637920073225349';
         wc_add_notice(__('Please enter your current password.', 'woocommerce'), 'error');
       }
       else {
-        // Email and password cannot be changed at once currently.
         if (empty($_POST['password_1'])) {
           $all_notices = WC()->session->get('wc_notices', []);
           $index = array_search(__('Please fill out all password fields.', 'woocommerce'), $all_notices['error']);
@@ -1286,15 +1285,13 @@ var nfyFacebookAppId = '637920073225349';
     else {
       Server::addDebugMessage();
 
-      // If a new email address has been set, replace the success message to
-      // clarify that the user needs to confirm the change via email.
+      // If a new email address has been set, clarify that the change needs to
+      // be confirmed via email.
       if (isset($userinfo['action']) && $userinfo['action'] === 'changeEmail') {
-        $all_notices = WC()->session->get('wc_notices', []);
-        $index = array_search(__('Account details changed successfully.', 'woocommerce'), $all_notices['success']);
-        $all_notices['success'][$index] = vsprintf('Ihre E-Mail-Adresse wurde noch nicht aktualisiert. Bitte prüfen Sie Ihren Posteingang für <em>%s</em> und klicken Sie den Link zur Bestätigung Ihrer neuen E-Mail-Adresse.', [
+        $message = vsprintf('Ihre E-Mail-Adresse wurde noch nicht aktualisiert. Bitte prüfen Sie Ihren Posteingang für <em>%s</em> und klicken Sie den Link zur Bestätigung Ihrer neuen E-Mail-Adresse.', [
           esc_html($userinfo['temp_email']),
         ]);
-        WC()->session->set('wc_notices', $all_notices);
+        wc_add_notice($message, 'success');
       }
       // Perform the password change in a second request if email and password
       // were changed at once.

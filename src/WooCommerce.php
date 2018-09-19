@@ -574,7 +574,7 @@ var nfyFacebookAppId = '637920073225349';
       $greeting = esc_html('#' . $subscriber['abono'] . ': ' . $greeting);
       $fields['subscriber_associate'] = [
         'type' => 'checkbox',
-        'label' => 'Ich bin bereits Kunde' . ': <strong>' . $greeting . '</strong>',
+        'label' => 'Ich habe bereits ein Abonnement' . ': <strong>' . $greeting . '</strong>',
         'priority' => -100,
         'default' => 1,
       ];
@@ -586,7 +586,7 @@ var nfyFacebookAppId = '637920073225349';
       $has_associate_values = !empty($_POST) ? !empty($_POST['subscriber_associate']) : WC()->session->get('subscriber_associate');
       $fields['subscriber_associate'] = [
         'type' => 'checkbox',
-        'label' => 'Ich bin bereits Kunde',
+        'label' => 'Ich habe bereits ein Abonnement',
         'priority' => $subscriber_priority = -100,
         'default' => $has_associate_values,
       ];

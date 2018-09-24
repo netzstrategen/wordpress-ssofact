@@ -1456,8 +1456,14 @@ var nfyFacebookAppId = '637920073225349';
   public static function woocommerce_save_account_details_required_fields(array $fields) {
     if (Plugin::isArticleTestConfirmationPage()) {
       $fields['billing_salutation'] = __('Salutation', Plugin::L10N);
-      $fields['billing_first_name'] = $fields['account_first_name'];
-      $fields['billing_last_name'] = $fields['account_last_name'];
+      if (isset($_POST['billing_salutation']) && $_POST['billing_salutation'] === 'Firma') {
+        $fields['billing_company'] = __('Company', 'woocommerce');
+        $fields['billing_company_contact'] = __('Contact person', Plugin::L10N);
+      }
+      else {
+        $fields['billing_first_name'] = $fields['account_first_name'];
+        $fields['billing_last_name'] = $fields['account_last_name'];
+      }
     }
     unset($fields['account_first_name'], $fields['account_last_name']);
     unset($fields['account_display_name']);

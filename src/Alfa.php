@@ -124,15 +124,11 @@ class Alfa {
       'HST' => 0,
       'OABO' => 10,
       'EST' => 20,
-      'mST' => 30,
     ];
     $object_labels = [
       'HST' => 'Zeitung gedruckt',
       'EST' => 'E-Paper im Web und auf dem Tablet',
       'OABO' => 'Premium Zugang',
-      'mST' => 'mStimme App',
-      'BES' => 'BES?',
-      'TVS' => 'TVS?',
     ];
     $edition_labels = [
       'STDE' => 'Stimme.de',
@@ -152,9 +148,10 @@ class Alfa {
       'EW' => 'Heilbronner Stimme Ausgabe West',
     ];
     foreach ($purchases as $key => $purchase) {
+      // A user with EST (epaper) can always access iST (iStimme tablet app) and
+      // mST (mStimme mobile app); they are not sold separately.
       // BES ("Besen") and TVS ("TV app") are obsolete.
-      // A user with EST (epaper) can always access iST (iStimme tablet app).
-      if ($purchase['object'] === 'iST' || $purchase['object'] === 'BES' || $purchase['object'] === 'TVS') {
+      if ($purchase['object'] === 'iST' || $purchase['object'] === 'mST' || $purchase['object'] === 'BES' || $purchase['object'] === 'TVS') {
         unset($purchases[$key]);
         continue;
       }

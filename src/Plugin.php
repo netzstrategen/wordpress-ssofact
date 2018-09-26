@@ -156,6 +156,11 @@ class Plugin {
     // Adds the account login/register form elements to the checkout form.
     add_action('woocommerce_checkout_billing', __NAMESPACE__ . '\WooCommerce::woocommerce_checkout_billing', 0);
 
+    // Prevent false error about missing username during anonymous checkout in
+    // case a value for username was entered into the login form.
+    // @see WC_Form_Handler::process_login()
+    add_action('wp_loaded', __NAMESPACE__ . '\WooCommerce::wp_loaded_process_login', 19);
+
     // Disable WooCommerce German Market confirmation form manipulation if this
     // is a multistep checkout form submission.
     if (!empty($_POST['step']) && !empty($_POST['woocommerce_checkout_update_totals'])) {

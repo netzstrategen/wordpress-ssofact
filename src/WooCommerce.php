@@ -159,7 +159,7 @@ class WooCommerce {
 var nfycDisableRedirect = true;
 var nfyFacebookAppId = '637920073225349';
 </script>
-<script src="https://<?= SSOFACT_SERVER_DOMAIN ?>/cms_media/minify/2/javascript/javascript_4.js"></script>
+<script src="https://<?= SSOFACT_SERVER_DOMAIN ?>/pu_stimme/scripts_min/50_social_facebook.js"></script>
 
 <div class=nfy-sso-hs>
   <div class="nfy-box nfy-website-user nfy-box-login">

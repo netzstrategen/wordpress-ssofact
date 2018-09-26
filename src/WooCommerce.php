@@ -1161,6 +1161,27 @@ var nfyFacebookAppId = '637920073225349';
       if (!empty($response['aboNo'])) {
         update_user_meta($order->get_customer_id(), 'billing_subscriber_id', $response['aboNo']);
       }
+
+      // Save a fake purchase into user's metadata to prevent the trial
+      // subscription form from appearing on the user account edit form.
+      // @see Plugin::isArticleTestConfirmationPage()
+      // @todo Remove this when SSO server change events are implemented.
+      if ($sku === 'stite') {
+        $userinfo = get_user_meta($order->get_customer_id(), Plugin::USER_META_USERINFO, TRUE) ?: [];
+        $userinfo['alfa_purchases']['purchases'][] = [
+          'purchase' => [
+            'fake' => TRUE,
+            'type' => 'Product',
+            'object' => 'OABO',
+            'edition' => 'STDE',
+            'ivw' => 'i_121122',
+            'fromDay' => date_i18n('Ymd'),
+            'toDay' => date_i18n('Ymd', strtotime('+ 30 days')),
+          ],
+        ];
+        update_user_meta($order->get_customer_id(), Plugin::USER_META_USERINFO, $userinfo);
+      }
+
       // Remove subscriber validation response data from session, so that the
       // information in the user profile is based on the actual user profile data.
       $session = WC()->session;

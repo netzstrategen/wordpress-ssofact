@@ -487,7 +487,6 @@ class Plugin {
 
     $subscriber_id = $user_claims['subscriber_id'] ?? $user_claims['subscribernr'];
     update_user_meta($user_id, 'billing_subscriber_id', $subscriber_id);
-    update_user_meta($user_id, 'alfa_purchases', $user_claims['alfa_purchases']);
     update_user_meta($user_id, 'alfa_dummy_address', $user_claims['alfa_dummy_address']);
 
     // A user_status 'confirmed' (active/blocked) is not supported by WordPress

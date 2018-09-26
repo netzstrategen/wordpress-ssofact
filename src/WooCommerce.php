@@ -1232,6 +1232,9 @@ var nfyFacebookAppId = '637920073225349';
       }
     }
 
+    // The daily newsletter should only be available for users with an active
+    // premium subscription (but still exposed to all users, so they are aware
+    // of what they are missing out on).
     if (!empty($_POST['list_redaktion-stimmede-editorial-premium-daily'])) {
       $userinfo = get_user_meta(get_current_user_ID(), Plugin::USER_META_USERINFO, TRUE);
       $today = date_i18n('Ymd');

@@ -77,7 +77,8 @@ class Alfa {
 
   public static function getPurchases(array $alfa_purchases = NULL, $raw = FALSE) {
     if (!isset($alfa_purchases)) {
-      $alfa_purchases = get_user_meta(get_current_user_ID(), 'alfa_purchases', TRUE);
+      $userinfo = get_user_meta(get_current_user_ID(), Plugin::USER_META_USERINFO, TRUE);
+      $alfa_purchases = $userinfo['alfa_purchases'] ?: [];
     }
     if (empty($alfa_purchases)) {
       $alfa_purchases = ['purchases' => []];

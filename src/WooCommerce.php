@@ -275,6 +275,7 @@ var nfyFacebookAppId = '637920073225349';
       'label' => __('Existing subscription number', Plugin::L10N),
       'required' => FALSE,
       'priority' => 10,
+      'description' => 'Ihre Abonummer finden Sie auf der Rechnung oder dem Lastschrifttext.',
     ];
     if (isset($fields['email'])) {
       $fields['email']['priority'] = 15;

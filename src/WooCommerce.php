@@ -1027,6 +1027,45 @@ var nfyFacebookAppId = '637920073225349';
       }
     }
 
+    // Validate that the address is unique in SSO/alfa.
+    $address_type = !empty($_POST['ship_to_different_address']) ? 'shipping' : 'billing';
+    $userinfo = Plugin::buildUserInfo($address_type, get_current_user_ID());
+    $validate_user_fields = [
+      'firstname' => 1,
+      'lastname' => 1,
+      'street' => 1,
+      'housenr' => 1,
+      'zipcode' => 1,
+      'city' => 1,
+    ];
+    $userinfo = array_intersect_key($userinfo, $validate_user_fields);
+    $missing_fields = array_diff_key($validate_user_fields, array_filter($userinfo));
+    unset($missing_fields['firstname']);
+    if (empty($missing_fields)) {
+      $response = Server::validateUser($userinfo);
+      Server::addDebugMessage();
+      if (isset($response['abono'])) {
+        $show_error = TRUE;
+        $subscriber_id = get_user_meta(get_current_user_ID(), 'billing_subscriber_id', TRUE);
+        if ($subscriber_id === $response['abono']) {
+          $show_error = FALSE;
+        }
+        else {
+          $new_subscriber_id = WC()->session->get('subscriber_data');
+          $new_subscriber_id = $new_subscriber_id ? $new_subscriber_id['subscriber_id'] : FALSE;
+          if ($new_subscriber_id === $response['abono']) {
+            $show_error = FALSE;
+          }
+        }
+        if ($show_error) {
+          $message = vsprintf('Für die angegebene Adresse besteht bereits ein Kundenkonto. Bitte verknüpfen Sie Ihr bestehendes Abonnement oder <a href="%s" target="_blank">kontaktieren Sie unseren Kundenservice</a>.', [
+            site_url('/service/kontakt'),
+          ]);
+          $errors->add($address_type, $message);
+        }
+      }
+    }
+
     // WC_Checkout::process_customer() calls wp_set_current_user() after creating
     // the user account, causing the current user to be the customer account,
     // even though the user will not be authenticated (in our case). Therefore,

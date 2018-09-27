@@ -704,16 +704,6 @@ class Plugin {
       // 'type' => 'Product',
       // 'object' => 'Zeitung',
       'edition' => $edition,
-      // Payment method options:
-      // - german_market_purchase_on_account => 'r' (invoice)
-      // - german_market_sepa_direct_debit => 'a' (direct debit)
-      'paymentMethod' => isset($_POST['payment_method']) && $_POST['payment_method'] === 'german_market_sepa_direct_debit' ? 'a' : 'r',
-      // Payment schedule options:
-      // - 'm': monthly
-      // - 'v': quarterly
-      // - 'h': half-yearly
-      // - 'j': yearly
-      'paymentPattern' => $_POST['payment_interval'] ?? 'm',
       // Note: The name of the purchase opt-in in alfa uses an uppercase 'M'.
       'acquisitionEMail' => !empty($purchase['optins']['acquisitionEmail']) ? 'j' : 'n',
       'acquisitionMail' => !empty($purchase['optins']['acquisitionMail']) ? 'j' : 'n',
@@ -729,6 +719,18 @@ class Plugin {
     // For regional variations of epapers, send the product (object).
     elseif (stripos($edition, 'e') === 0) {
       $purchase['permission']['object'] = 'EST';
+    }
+    if (isset($_POST['payment_method'])) {
+      // Payment method options:
+      // - german_market_purchase_on_account => 'r' (invoice)
+      // - german_market_sepa_direct_debit => 'a' (direct debit)
+      $purchase['permission']['paymentMethod'] = $_POST['payment_method'] === 'german_market_sepa_direct_debit' ? 'a' : 'r';
+      // Payment schedule options:
+      // - 'm': monthly
+      // - 'v': quarterly
+      // - 'h': half-yearly
+      // - 'j': yearly
+      $purchase['permission']['paymentPattern'] = $_POST['payment_interval'] ?? 'm';
     }
     // Optional custom delivery start date for print subscriptions.
     if (!empty($_POST['h_deliverydate'])) {

@@ -15,6 +15,8 @@ class Server {
 
   const ENDPOINT_SUBSCRIBER_VALIDATE = '/REST/services/authenticate/user/checkAboNo';
 
+  const ENDPOINT_USER_VALIDATE = '/REST/services/authenticate/user/validateUser';
+
   const ENDPOINT_USER_UPDATE = '/REST/services/authenticate/user/updateUser';
 
   const ENDPOINT_USER_CREATE_WITH_PURCHASE = '/REST/services/authorize/purchase/registerUserAndPurchase';
@@ -67,6 +69,22 @@ class Server {
       'lastname' => $last_name,
       'zipcode' => $zip_code,
     ]);
+    return $response;
+  }
+
+  /**
+   * Returns whether a given address has a subscriber ID already.
+   *
+   * @param array $address
+   *   The customer address fields to validate.
+   *   - 'firstname' may be omitted for companies (salutation 'Firma').
+   *
+   * @return null|array
+   *
+   * @see Plugin::buildUserInfo()
+   */
+  public static function validateUser(array $address) {
+    $response = Server::request('POST', static::ENDPOINT_USER_VALIDATE, $address);
     return $response;
   }
 

@@ -24,7 +24,7 @@ class WooCommerce {
       'priority' => 100,
     ],
     'list_redaktion-stimmede-editorial-premium-daily' => [
-      'label' => 'Morgen-Briefing aus der Redaktion',
+      'label' => 'Morgen-Briefing aus der Redaktion <em>(nur für Premium-Abonnenten)</em>',
       'priority' => 110,
     ],
     /*
@@ -1257,6 +1257,23 @@ var nfyFacebookAppId = '637920073225349';
         wc_add_notice('Bitte klicken Sie die Einwilligung an, um das besondere Angebot zu erhalten!', 'error');
       }
     }
+
+    // The daily newsletter should only be available for users with an active
+    // premium subscription (but still exposed to all users, so they are aware
+    // of what they are missing out on).
+    if (!empty($_POST['list_redaktion-stimmede-editorial-premium-daily'])) {
+      $userinfo = get_user_meta(get_current_user_ID(), Plugin::USER_META_USERINFO, TRUE);
+      $today = date_i18n('Ymd');
+      $active_web_purchases = array_filter($userinfo['alfa_purchases']['purchases'] ?? [], function ($item) use ($today) {
+        return $item['purchase']['object'] === 'OABO' && $item['purchase']['fromDay'] <= $today && $item['purchase']['toDay'] >= $today;
+      });
+      if (empty($active_web_purchases)) {
+        $errors->add('list_redaktion-stimmede-editorial-premium-daily', vsprintf('Der ausgewählte Newsletter ist exklusiv für Abonnenten unserer Premium-Inhalte auf stimme.de. Testen Sie jetzt <a href="%s">Stimme Premium 30 Tage kostenlos</a>.', [
+          site_url('/shop/abo/digital/stimme-premium'),
+        ]));
+      }
+    }
+
     // Re-inject values for removed fields as they will be emptied otherwise.
     // @see WC_Form_Handler::save_account_details()
     $user->first_name = $current_user->first_name;

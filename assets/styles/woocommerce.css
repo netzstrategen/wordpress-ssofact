@@ -29,3 +29,7 @@
   overflow: hidden;
   text-align: right;
 }
+
+#optins .optional {
+  display: none;
+}

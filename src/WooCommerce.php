@@ -240,6 +240,32 @@ var nfyFacebookAppId = '637920073225349';
   }
 
   /**
+   * Disables (local) processing of built-in WooCommerce login form altogether.
+   *
+   * Prevents false error about missing username during anonymous checkout in
+   * case a value for username was entered into the login form first, but then
+   * the user decides to register instead (leaving the login value in place).
+   *
+   * A value for input field with name 'login' is interpreted as a value for the
+   * native WooCommerce login form "Login" button. However, the input name
+   * contains the username for the SSO login form, which is not processed by
+   * WordPress.
+   *
+   * @see WC_Form_Handler::process_login()
+   * @see WooCommerce::woocommerce_login_form_end()
+   *
+   * @implements wp_loaded
+   */
+  public static function wp_loaded_process_login() {
+    if (!empty($_POST['billing_email']) && !empty($_POST['login'])) {
+      // A 'billing_email' is only contained in the submitted form data, if the
+      // user wants to register. In that case, a possibly existing value for
+      // 'login' can be removed.
+      unset($_POST['login']);
+    }
+  }
+
+  /**
    * Defines default address fields for checkout and user account forms.
    *
    * @implements woocommerce_default_address_fields

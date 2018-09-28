@@ -650,7 +650,7 @@ var nfyFacebookAppId = '637920073225349';
     // check whether the given subscriber ID matches the registered address.
     // The current hook is invoked more than once during a form submission, so
     // ensure to run this only once, as POST data is manipulated.
-    if (!static::$isSubscriberAssociationProcessed && !empty($_POST['subscriber_associate_submit']) && get_query_var('address') === 'billing') {
+    if (!static::$isSubscriberAssociationProcessed && !empty($_POST['subscriber_associate_submit']) && !is_checkout()) {
       foreach ($fields as $key => $field) {
         if (strpos($key, 'subscriber') === FALSE) {
           // The address data returned by alfa may be incomplete; save nevertheless.
@@ -1156,7 +1156,7 @@ var nfyFacebookAppId = '637920073225349';
    */
   public static function woocommerce_after_save_address_validation($user_id, $address_type, $address) {
     if (wc_notice_count('error')) {
-      return;
+      return FALSE;
     }
     // Note: If the subscriber data is not valid, a form validation error is
     // output via WooCommerce::validateSubscriberId() resp.
@@ -1195,20 +1195,41 @@ var nfyFacebookAppId = '637920073225349';
     if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
       wc_add_notice(isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.'), 'error');
       Server::addDebugMessage();
+      return FALSE;
     }
     else {
+      Server::addDebugMessage();
       // Remove subscriber validation response data from session, so that the
       // information in the user profile is based on the actual user profile data.
       if (WC()->session->get('subscriber_data')) {
         WC()->session->set('subscriber_data', '');
       }
 
-      // Save the subscriber ID returned by alfa (replacing the user input).
-      if (!empty($response['aboNo'])) {
-        $_POST['billing_subscriber_id'] = $response['aboNo'];
+      // Save the valid subscriber ID in the user account.
+      if (!empty($subscriber['subscriber_id'])) {
+        $subscriber_fields = [
+          'subscriber_id' => 'subscriber_id',
+          'salutation' => 'salutation',
+          'firstname' => 'first_name',
+          'lastname' => 'last_name',
+          'company' => 'company',
+          'company_contact' => 'company_contact',
+          'street' => 'address_1',
+          'housenr' => 'house_number',
+          'zipcode' => 'postcode',
+          'city' => 'city',
+          'country' => 'country',
+          'phone_prefix' => 'phone_prefix',
+          'phone' => 'phone',
+        ];
+        foreach ($subscriber_fields as $alfa_key => $field_name) {
+          if (isset($subscriber[$alfa_key])) {
+            update_user_meta($user_id, 'billing_' . $field_name, $subscriber[$alfa_key]);
+          }
+        }
       }
+      return TRUE;
     }
-    Server::addDebugMessage();
   }
 
   /**
@@ -1567,9 +1588,9 @@ var nfyFacebookAppId = '637920073225349';
       echo $output;
     }
     elseif ($template_name === 'myaccount/my-subscriptions.php') {
+      // Replace the whole output until mapping from purchases back to
+      // subscription products works.
       $output = ob_get_clean();
-      echo WooCommerce::viewSubscription();
-      // echo $output;
     }
   }
 
@@ -1587,8 +1608,52 @@ var nfyFacebookAppId = '637920073225349';
    * @implements woocommerce_account_view-subscription_endpoint
    */
   public static function viewSubscription() {
+    echo "\n" . '<div class="pull">';
+    echo "\n" . '<h3 class="pull-left">Meine Bezüge</h3>' . "\n";
     Alfa::renderPurchases(Alfa::getPurchases(NULL, TRUE));
     // Alfa::mapPurchases(Alfa::getPurchasesFlattened());
+    echo "\n" . '<a class="button" href="/shop/abo">Weitere Angebote</a>';
+
+    echo "\n" . '<div class="account-section"></div>';
+    echo "\n" . '</div>' . "\n"; // .pull
+    add_filter('woocommerce_my_account_edit_address_title', __CLASS__ . '::subscriptions_woocommerce_my_account_edit_address_title', 100);
+    add_filter('woocommerce_billing_fields', __CLASS__ . '::subscriptions_woocommerce_billing_fields', 100);
+    \WC_Shortcode_My_Account::edit_address('billing');
+  }
+
+  /**
+   * @implements woocommerce_my_account_edit_address_title
+   */
+  public static function subscriptions_woocommerce_my_account_edit_address_title() {
+    return 'Abonnement verknüpfen';
+  }
+
+  /**
+   * @implements woocommerce_billing_fields
+   */
+  public static function subscriptions_woocommerce_billing_fields(array $fields) {
+    foreach ($fields as $key => $field) {
+      if (FALSE === strpos($key, 'subscriber')) {
+        unset($fields[$key]);
+      }
+    }
+    return $fields;
+  }
+
+  /**
+   * Submits the subscriber association form.
+   *
+   * @implements woocommerce_account_subscriptions_endpoint
+   *
+   * @see WooCommerce::woocommerce_checkout_process()
+   * @see WooCommerce::woocommerce_after_save_address_validation()
+   */
+  public static function subscriptions_subscriber_associate_submit() {
+    if (!empty($_POST['subscriber_associate_submit']) && WooCommerce::woocommerce_after_save_address_validation(get_current_user_ID(), 'billing', [])) {
+      wc_add_notice(vsprintf('Ihr Abonnement wurde mit Ihrem Benutzerkonto verknüpft. Um es zu aktivieren, <a href="%s">melden Sie sich bitte ab und erneut an</a>.', [
+        wc_logout_url(site_url('/shop/user')),
+      ]), 'notice');
+    }
   }
 
   /**

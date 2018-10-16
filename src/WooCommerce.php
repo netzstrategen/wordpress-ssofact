@@ -964,8 +964,14 @@ var nfyFacebookAppId = '637920073225349';
     }
     $replacements['{salutation}'] = !empty($fields['salutation']) ? $fields['salutation'] . ' ' : '';
     $replacements['{house_number}'] = !empty($fields['house_number']) ? ' ' . $fields['house_number'] : '';
-    $replacements['{phone}'] = !empty($fields['phone']) ? $fields['phone'] . ' ' : '';
-    $replacements['{phone_prefix}'] = !empty($fields['phone_prefix']) ? 'Telefon: ' . $fields['phone_prefix'] . '-' : '';
+    if (!empty($fields['phone'])) {
+      $replacements['{phone}'] = $fields['phone'] . ' ';
+      $replacements['{phone_prefix}'] = !empty($fields['phone_prefix']) ? 'Telefon: ' . $fields['phone_prefix'] . '-' : '';
+    }
+    else {
+      $replacements['{phone}'] = '';
+      $replacements['{phone_prefix}'] = '';
+    }
     return $replacements;
   }
 

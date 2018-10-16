@@ -149,6 +149,7 @@ class Plugin {
     add_filter('woocommerce_billing_fields', __NAMESPACE__ . '\WooCommerce::woocommerce_billing_fields');
     add_action('woocommerce_before_checkout_billing_form', 'ob_start', 0, 0);
     add_action('woocommerce_after_checkout_billing_form', __NAMESPACE__ . '\WooCommerce::woocommerce_after_checkout_billing_form');
+    add_action('woocommerce_before_checkout_shipping_form', __NAMESPACE__ . '\WooCommerce::woocommerce_before_checkout_shipping_form');
     add_action('woocommerce_before_edit_address_form_billing', 'ob_start', 0, 0);
     add_action('woocommerce_after_edit_address_form_billing', __NAMESPACE__ . '\WooCommerce::woocommerce_after_checkout_billing_form');
     add_filter('woocommerce_shipping_fields', __NAMESPACE__ . '\WooCommerce::woocommerce_shipping_fields');

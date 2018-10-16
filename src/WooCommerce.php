@@ -751,6 +751,26 @@ var nfyFacebookAppId = '637920073225349';
   }
 
   /**
+   * Fixes alternative shipping address checkbox to use default markup of WooCommerce.
+   *
+   * @implements woocommerce_before_checkout_shipping_form
+   */
+  public static function woocommerce_before_checkout_shipping_form() {
+    $output = ob_get_clean();
+    // @see woocommerce/templates/checkout/form-shipping.php
+    $output = strtr($output, [
+      '<h3 id="ship-to-different-address">' => '<p class="form-row" id="ship-to-different-address">',
+      'woocommerce-form__label woocommerce-form__label-for-checkbox checkbox' => 'checkbox choice-input',
+      'woocommerce-form__input woocommerce-form__input-checkbox input-checkbox' => 'input-checkbox',
+      '<span>' => '
+<span class="choice-input__indicator checkbox__indicator"></span>
+<span class="choice-input__label">',
+      '</h3>' => '</p>',
+    ]);
+    echo $output;
+  }
+
+  /**
    * @implements woocommerce_checkout_process
    *
    * Normally, woocommerce_checkout_posted_data would be the proper hook to
@@ -1652,7 +1672,11 @@ var nfyFacebookAppId = '637920073225349';
    * @implements woocommerce_before_template_part
    */
   public static function woocommerce_before_template_part($template_name, $template_path, $located, $args) {
-    if ($template_name === 'myaccount/form-lost-password.php' || $template_name === 'global/form-login.php' || $template_name === 'myaccount/my-subscriptions.php') {
+    if ($template_name === 'global/form-login.php'
+     || $template_name === 'myaccount/form-lost-password.php'
+     || $template_name === 'myaccount/my-subscriptions.php'
+     || $template_name === 'checkout/form-shipping.php'
+   ) {
       ob_start();
     }
     // User input is lost upon any form validation error.

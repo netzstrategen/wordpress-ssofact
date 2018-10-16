@@ -187,7 +187,7 @@ var nfyFacebookAppId = '637920073225349';
     </div>
   </div>
   <div class="nfy-social-login-text">Alternativ mit Facebook anmelden</div>
-  <div class="fb-login-button" data-scope="public_profile,email" data-width="500"
+  <div class="fb-login-button" data-scope="public_profile,email" data-width="100%" style="min-width: 100%;"
   onlogin="nfyFacebookStatusCallback()" data-max-rows="1" data-size="large"
   data-button-type="login_with" data-show-faces="false" data-auto-logout-link="false"
   data-use-continue-as="false"></div>

@@ -1342,6 +1342,17 @@ var nfyFacebookAppId = '637920073225349';
   }
 
   /**
+   * @implements woocommerce_before_edit_address_form_shipping
+   */
+  public static function woocommerce_before_edit_address_form_shipping() {
+    // Inform the customer that it can take a few days until physical products
+    // will be shipped to a new address.
+    echo '<p>';
+    echo 'Hinweis: Die Bearbeitung der Lieferadresse und anschließende Lieferung der Zeitung an eine neue Adresse kann 3-4 Werktage in Anspruch nehmen.';
+    echo '</p>';
+  }
+
+  /**
    * @implements woocommerce_save_account_details_errors
    */
   public static function woocommerce_save_account_details_errors(\WP_Error $errors, $user) {

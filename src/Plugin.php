@@ -151,6 +151,7 @@ class Plugin {
     add_action('woocommerce_after_checkout_billing_form', __NAMESPACE__ . '\WooCommerce::woocommerce_after_checkout_billing_form');
     add_action('woocommerce_before_edit_address_form_billing', 'ob_start', 0, 0);
     add_action('woocommerce_after_edit_address_form_billing', __NAMESPACE__ . '\WooCommerce::woocommerce_after_checkout_billing_form');
+    add_action('woocommerce_before_edit_address_form_shipping', __NAMESPACE__ . '\WooCommerce::woocommerce_before_edit_address_form_shipping');
     add_filter('woocommerce_shipping_fields', __NAMESPACE__ . '\WooCommerce::woocommerce_shipping_fields');
 
     // Adds the account login/register form elements to the checkout form.

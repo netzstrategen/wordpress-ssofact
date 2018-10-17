@@ -1676,7 +1676,7 @@ var nfyFacebookAppId = '637920073225349';
      || $template_name === 'myaccount/form-lost-password.php'
      || $template_name === 'myaccount/my-subscriptions.php'
      || $template_name === 'checkout/form-shipping.php'
-   ) {
+    ) {
       ob_start();
     }
     // User input is lost upon any form validation error.

@@ -836,6 +836,7 @@ class Plugin {
   public static function wp_enqueue_scripts() {
     wp_enqueue_style('ssofact/woocommerce', Plugin::getBaseUrl() . '/assets/styles/woocommerce.css');
     wp_enqueue_script('ssofact/woocommerce', Plugin::getBaseUrl() . '/assets/scripts/woocommerce.js', ['jquery']);
+    wp_enqueue_script('ssofact/shop-analytics', Plugin::getBaseUrl() . '/assets/scripts/shop-analytics.js', ['shop_analytics_datalayer_common']);
   }
 
   /**

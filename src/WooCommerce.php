@@ -172,7 +172,7 @@ var nfyFacebookAppId = '637920073225349';
         <div class="form-item field">
           <input maxlength="255" placeholder="Passwort eingeben" name="pass" type="password" />
         </div>
-        <div class="form-item field nfy-checkbox">
+        <div class="form-item field nfy-checkbox checkbox">
           <label class="choice-input checkbox">
             <input type="hidden" name="permanent_login" value="" />
             <input id="nfy-qform-checkbox" name="permanent_login" type="checkbox" value="1" />

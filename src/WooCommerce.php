@@ -1053,17 +1053,19 @@ var nfyFacebookAppId = '637920073225349';
       if (isset($response['abono'])) {
         $show_error = TRUE;
         $subscriber_id = get_user_meta(get_current_user_ID(), 'billing_subscriber_id', TRUE);
-        $new_subscriber_id = WC()->session->get('subscriber_data');
-        $new_subscriber_id = $new_subscriber_id ? $new_subscriber_id['subscriber_id'] : FALSE;
+        $new_subscriber_data = WC()->session->get('subscriber_data');
+        $new_subscriber_id = $new_subscriber_data ? $new_subscriber_data['subscriber_id'] : FALSE;
         if ($subscriber_id === $response['abono'] || $new_subscriber_id === $response['abono']) {
           $show_error = FALSE;
         }
         elseif (get_user_meta(get_current_user_ID(), 'alfa_dummy_address', TRUE)) {
           $show_error = FALSE;
-          $subscriber_data = [
-            'subscriber_id' => $response['abono'],
-          ] + $userinfo;
-          WC()->session->set('subscriber_data', $subscriber_data);
+          if (!$new_subscriber_data) {
+            $subscriber_data = [
+              'subscriber_id' => $response['abono'],
+            ] + $userinfo;
+            WC()->session->set('subscriber_data', $subscriber_data);
+          }
         }
 
         if ($show_error) {

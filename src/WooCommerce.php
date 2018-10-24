@@ -1044,25 +1044,28 @@ var nfyFacebookAppId = '637920073225349';
       'zipcode' => 1,
       'city' => 1,
     ];
-    $userinfo = array_intersect_key($userinfo, $validate_user_fields);
-    $missing_fields = array_diff_key($validate_user_fields, array_filter($userinfo));
+    $validate_user_data = array_intersect_key($userinfo, $validate_user_fields);
+    $missing_fields = array_diff_key($validate_user_fields, array_filter($validate_user_data));
     unset($missing_fields['firstname']);
     if (empty($missing_fields)) {
-      $response = Server::validateUser($userinfo);
+      $response = Server::validateUser($validate_user_data);
       Server::addDebugMessage();
       if (isset($response['abono'])) {
         $show_error = TRUE;
         $subscriber_id = get_user_meta(get_current_user_ID(), 'billing_subscriber_id', TRUE);
-        if ($subscriber_id === $response['abono']) {
+        $new_subscriber_id = WC()->session->get('subscriber_data');
+        $new_subscriber_id = $new_subscriber_id ? $new_subscriber_id['subscriber_id'] : FALSE;
+        if ($subscriber_id === $response['abono'] || $new_subscriber_id === $response['abono']) {
           $show_error = FALSE;
         }
-        else {
-          $new_subscriber_id = WC()->session->get('subscriber_data');
-          $new_subscriber_id = $new_subscriber_id ? $new_subscriber_id['subscriber_id'] : FALSE;
-          if ($new_subscriber_id === $response['abono']) {
-            $show_error = FALSE;
-          }
+        elseif (get_user_meta(get_current_user_ID(), 'alfa_dummy_address', TRUE)) {
+          $show_error = FALSE;
+          $subscriber_data = [
+            'subscriber_id' => $response['abono'],
+          ] + $userinfo;
+          WC()->session->set('subscriber_data', $subscriber_data);
         }
+
         if ($show_error) {
           $message = vsprintf('Für die angegebene Adresse besteht bereits ein Kundenkonto. Bitte verknüpfen Sie Ihr bestehendes Abonnement oder <a href="%s" target="_blank">kontaktieren Sie unseren Kundenservice</a>.', [
             site_url('/service/kontakt'),

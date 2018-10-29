@@ -1424,6 +1424,10 @@ var nfyFacebookAppId = '637920073225349';
 
     // Re-inject values for removed fields as they will be emptied otherwise.
     // @see WC_Form_Handler::save_account_details()
+    if (Plugin::isArticleTestConfirmationPage()) {
+      $user->first_name = $current_user->first_name;
+      $user->last_name = $current_user->last_name;
+    }
     $user->display_name = $current_user->display_name;
   }
 
@@ -1536,7 +1540,9 @@ var nfyFacebookAppId = '637920073225349';
    */
   public static function woocommerce_edit_account_form() {
     $form = ob_get_clean();
-    $form = preg_replace('@^\s*<p [a-z_ "=-]+>\s+<label for="(?:account_display_name).+?</p>@sm', '', $form);
+    preg_match_all('@^\s*<p [a-z_ "=-]+>\s+<label for="(?:account_first_name|account_last_name).+?</p>@sm', $form, $matches);
+    $account_fields = implode("\n", $matches[0]);
+    $form = preg_replace('@^\s*<p [a-z_ "=-]+>\s+<label for="(?:account_first_name|account_last_name|account_display_name).+?</p>@sm', '', $form);
     $form = preg_replace('@^\s*<legend>Passwor.+?$@m', '', $form);
     if (!Plugin::getPasswordResetToken()) {
       // Clarify that current password is also required to set new email address.
@@ -1552,11 +1558,14 @@ var nfyFacebookAppId = '637920073225349';
     $optins = get_user_meta(get_current_user_ID(), 'optins', TRUE);
 
     if (!Plugin::isArticleTestConfirmationPage()) {
+      echo $form;
       echo '
   <div class="account-section display-name">
     <h3 class="pull-left display-name">Name</h3>';
-      $form = preg_replace('@<div class="clear"></div>@', '</div>', $form, 1);
-      echo $form;
+      echo $account_fields;
+      echo '
+  </div>
+';
 
       echo '<div id="optins" class="account-section">';
       echo '<h3 class="pull-left">Newsletter</h3>';

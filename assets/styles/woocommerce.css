@@ -27,24 +27,14 @@
   display: none;
 }
 
-/* Account: Re-position display name fields before opt-ins. */
-form.edit-account {
-  display: flex;
-  flex-direction: column;
-}
-form.edit-account .account-section.display-name {
-  order: 10;
+/* Account: Place display name fields on one line. */
+form.edit-account .account-section.display-name .form-row-first {
+  float: left;
 }
 form.edit-account .account-section.display-name .form-row {
-  float: left;
+  display: inline-block;
   width: 48%;
 }
 form.edit-account .account-section.display-name .form-row:nth-of-type(-n+1) {
   margin-right: 4%;
-}
-form.edit-account #optins {
-  order: 20;
-}
-form.edit-account > p:last-child {
-  order: 30;
 }

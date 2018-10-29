@@ -1558,11 +1558,17 @@ var nfyFacebookAppId = '637920073225349';
     $optins = get_user_meta(get_current_user_ID(), 'optins', TRUE);
 
     if (!Plugin::isArticleTestConfirmationPage()) {
-      echo $form;
       echo '
-  <div class="account-section display-name">
+  <div class="display-name">
     <h3 class="pull-left display-name">Name</h3>';
       echo $account_fields;
+      echo '
+  </div>
+';
+echo '
+  <div class="account-section">
+    <h3 class="pull-left display-name">E-Mail-Adresse &amp; Passwort</h3>';
+      echo $form;
       echo '
   </div>
 ';

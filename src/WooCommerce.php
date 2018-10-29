@@ -1554,7 +1554,7 @@ var nfyFacebookAppId = '637920073225349';
     if (!Plugin::isArticleTestConfirmationPage()) {
       echo '
   <div class="account-section display-name">
-    <h3 class="pull-left display-name">Mein Name</h3>';
+    <h3 class="pull-left display-name">Name</h3>';
       $form = preg_replace('@<div class="clear"></div>@', '</div>', $form, 1);
       echo $form;
 

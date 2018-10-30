@@ -1438,7 +1438,7 @@ var nfyFacebookAppId = '637920073225349';
     $current_user = wp_get_current_user();
     if ((!empty($_POST['account_first_name']) && $_POST['account_first_name'] !== $current_user->first_name)
      || (!empty($_POST['account_last_name']) && $_POST['account_last_name'] !== $current_user->last_name)) {
-       wc_add_notice(vsprintf('Um Ihren geänderten Namen zu aktivieren, <a href="%s">melden Sie sich bitte ab und erneut an</a>.', [
+       wc_add_notice(vsprintf('Damit Ihre Änderungen wirksam werden, <a href="%s">melden Sie sich bitte ab und erneut an</a>.', [
          wc_logout_url(site_url('/shop/user')),
        ]), 'notice');
     }

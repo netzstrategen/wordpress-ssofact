@@ -284,7 +284,7 @@ var nfyFacebookAppId = '637920073225349';
     // though we are asking them to fill in their actual subscription ID.
     // @see WooCommerce::woocommerce_checkout_get_value()
     $user_id = get_current_user_ID();
-    if ($user_id && empty($_POST['billing_subscriber_associate']) && empty($_POST['billing_subscriber_id']) && get_user_meta($user_id, 'alfa_dummy_address', TRUE)) {
+    if ($user_id && empty($_POST['subscriber_associate']) && empty($_POST['billing_subscriber_id']) && get_user_meta($user_id, 'alfa_dummy_address', TRUE)) {
       // Manipulate POST data as the my-account edit form does not use a hook.
       $_POST['billing_subscriber_id'] = '';
     }

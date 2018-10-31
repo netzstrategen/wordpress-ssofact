@@ -1553,8 +1553,13 @@ var nfyFacebookAppId = '637920073225349';
    */
   public static function woocommerce_edit_account_form() {
     $form = ob_get_clean();
+
+    // Move the firstname and lastname fields into a new section, and remove
+    // their required markers.
     preg_match_all('@^\s*<p [a-z_ "=-]+>\s+<label for="(?:account_first_name|account_last_name).+?</p>@sm', $form, $matches);
     $account_fields = implode("\n", $matches[0]);
+    $account_fields = preg_replace('@(for="account_(?:first|last)_name.+)&nbsp;<span class="required">\*</span>@', '$1', $account_fields);
+
     $form = preg_replace('@^\s*<p [a-z_ "=-]+>\s+<label for="(?:account_first_name|account_last_name|account_display_name).+?</p>@sm', '', $form);
     $form = preg_replace('@^\s*<legend>Passwor.+?$@m', '', $form);
     if (!Plugin::getPasswordResetToken()) {
@@ -1578,7 +1583,7 @@ var nfyFacebookAppId = '637920073225349';
       echo '
   </div>
 ';
-echo '
+      echo '
   <div class="account-section">
     <h3 class="pull-left display-name">E-Mail-Adresse &amp; Passwort</h3>';
       echo $form;

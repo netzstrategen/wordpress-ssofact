@@ -26,3 +26,15 @@
 #optins .optional {
   display: none;
 }
+
+/* Account: Place display name fields on one line. */
+@media (min-width: 768px) {
+  form.edit-account .display-name .form-row-first {
+    float: left;
+    margin-right: 4%;
+  }
+  form.edit-account .display-name .form-row {
+    display: inline-block;
+    width: 48%;
+  }
+}

@@ -221,6 +221,8 @@ class Plugin {
 
     // Validate changed email address against SSO.
     add_action('woocommerce_save_account_details_errors', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details_errors', 20, 2);
+    // Display message to log in again after changing display name.
+    add_action('woocommerce_save_account_details_errors', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details_errors_message', 500, 2);
     // Updates user info in SSO upon editing account details.
     add_action('woocommerce_save_account_details', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details');
     // Do not redirect to dashboard after saving account details.
@@ -512,8 +514,12 @@ class Plugin {
     if ($last_edit && $last_edit > $user_claims['profile_update_date']) {
       return;
     }
-    update_user_meta($user_id, 'first_name', $user_claims['firstname']);
-    update_user_meta($user_id, 'last_name', $user_claims['lastname']);
+    if (isset($user_claims['display_firstname'])) {
+      update_user_meta($user_id, 'first_name', $user_claims['display_firstname']);
+    }
+    if (isset($user_claims['display_lastname'])) {
+      update_user_meta($user_id, 'last_name', $user_claims['display_lastname']);
+    }
 
     $address_type = 'shipping';
 
@@ -669,6 +675,13 @@ class Plugin {
         'phone_prefix' => 0,
         'phone' => 0,
       ]);
+    }
+
+    if (isset($address_source['account_first_name']) && isset($address_source['account_last_name'])) {
+      $userinfo += [
+        'display_firstname' => $address_source['account_first_name'],
+        'display_lastname' => $address_source['account_last_name'],
+      ];
     }
 
     $optin_source = $_POST;

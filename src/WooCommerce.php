@@ -1159,6 +1159,7 @@ var nfyFacebookAppId = '637920073225349';
 
       if ($subscriber = WC()->session->get('subscriber_data')) {
         $purchase['subscriber_id'] = $subscriber['subscriber_id'];
+        Server::checkPurchase($purchase['id'], $purchase['subscriber_id']);
       }
       $response = Server::registerPurchase($purchase);
     }
@@ -1302,6 +1303,7 @@ var nfyFacebookAppId = '637920073225349';
 
     if ($subscriber = WC()->session->get('subscriber_data')) {
       $userinfo['subscriber_id'] = $subscriber['subscriber_id'];
+      Server::checkPurchase($purchase['id'], $purchase['subscriber_id']);
     }
 
     $response = Server::updateUser($userinfo);

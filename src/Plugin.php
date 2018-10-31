@@ -60,6 +60,7 @@ class Plugin {
     add_filter('openid-connect-generic-alter-request', __CLASS__ . '::alterOpenIdConnectRequest', 11, 2);
 
     // Add /shop prefix to openid-connect-generic client callback permalink.
+    // Replace WordPress login URL with WooCommerce account URL.
     add_filter('site_url', __CLASS__ . '::site_url', 10, 3);
 
     // Automatically log in anonymous users having an SSO session cookie if all
@@ -316,8 +317,13 @@ class Plugin {
    * @implements site_url
    */
   public static function site_url($url, $path, $scheme) {
+    // Add /shop prefix to openid-connect-generic client callback permalink.
     if ($path === '/openid-connect-authorize') {
       $url = strtr($url, ['/openid-connect-authorize' => '/shop/openid-connect/ssofact']);
+    }
+    // Replace WordPress login URL with WooCommerce account URL.
+    elseif ($scheme === 'login' && $path === 'wp-login.php' && wc_get_page_id('myaccount')) {
+      $url = wc_get_page_permalink('myaccount');
     }
     return $url;
   }

@@ -514,10 +514,10 @@ class Plugin {
     if ($last_edit && $last_edit > $user_claims['profile_update_date']) {
       return;
     }
-    if (!empty($user_claims['display_firstname'])) {
+    if (isset($user_claims['display_firstname'])) {
       update_user_meta($user_id, 'first_name', $user_claims['display_firstname']);
     }
-    if (!empty($user_claims['display_lastname'])) {
+    if (isset($user_claims['display_lastname'])) {
       update_user_meta($user_id, 'last_name', $user_claims['display_lastname']);
     }
 

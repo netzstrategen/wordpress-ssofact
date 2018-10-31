@@ -28,13 +28,13 @@
 }
 
 /* Account: Place display name fields on one line. */
-form.edit-account > .display-name .form-row-first {
-  float: left;
-}
-form.edit-account > .display-name .form-row {
-  display: inline-block;
-  width: 48%;
-}
-form.edit-account > .display-name .form-row:nth-of-type(-n+1) {
-  margin-right: 4%;
+@media (min-width: 768px) {
+  form.edit-account .display-name .form-row-first {
+    float: left;
+    margin-right: 4%;
+  }
+  form.edit-account .display-name .form-row {
+    display: inline-block;
+    width: 48%;
+  }
 }

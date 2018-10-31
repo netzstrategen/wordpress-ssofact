@@ -916,12 +916,16 @@ var nfyFacebookAppId = '637920073225349';
       $fields[$address_type . '_company_contact']['required'] = TRUE;
       $fields[$address_type . '_first_name']['required'] = FALSE;
       $fields[$address_type . '_last_name']['required'] = FALSE;
+      unset($_POST[$address_type . '_first_name']);
+      unset($_POST[$address_type . '_last_name']);
     }
     else {
       $fields[$address_type . '_company']['required'] = FALSE;
       $fields[$address_type . '_company_contact']['required'] = FALSE;
       $fields[$address_type . '_first_name']['required'] = TRUE;
       $fields[$address_type . '_last_name']['required'] = TRUE;
+      unset($_POST[$address_type . '_company']);
+      unset($_POST[$address_type . '_company_contact']);
     }
     return $fields;
   }

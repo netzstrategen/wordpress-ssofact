@@ -236,7 +236,9 @@ class Plugin {
     // Output current alfa purchases on subscriptions page of user account.
     add_action('woocommerce_after_template_part', __NAMESPACE__ . '\WooCommerce::woocommerce_after_template_part');
 
-    // Skip nonce check for user logout.
+    // Skip nonce check for user logout on WooCommerce logout endpoint and
+    // wp-login.php?action=logout.
+    add_action('template_redirect', __CLASS__ . '::template_redirect', 11);
     add_action('check_admin_referer', __CLASS__ . '::check_admin_referer', 10, 2);
 
     if (is_admin()) {
@@ -270,6 +272,7 @@ class Plugin {
       WooCommerce::woocommerce_checkout_process();
       WooCommerce::subscriptions_subscriber_associate_submit();
     }
+
     // Output current alfa purchases on subscriptions page of user account.
     add_action('woocommerce_account_subscriptions_endpoint', __NAMESPACE__ . '\WooCommerce::viewSubscription', 8);
     add_action('woocommerce_account_view-subscription_endpoint', __NAMESPACE__ . '\WooCommerce::viewSubscription', 8);
@@ -558,6 +561,19 @@ class Plugin {
 
     // Take over the new modification timestamp from the SSO.
     update_user_meta($user_id, 'last_update', $user_claims['profile_update_date']);
+  }
+
+ /**
+  * @implements template_redirect
+  */
+  public static function template_redirect() {
+    global $wp_query, $wp;
+
+    // @see wc_template_redirect()
+    if (isset($wp->query_vars['customer-logout'])) {
+      wp_safe_redirect(str_replace('&amp;', '&', wp_logout_url(wc_get_page_permalink('myaccount'))));
+      exit;
+    }
   }
 
  /**

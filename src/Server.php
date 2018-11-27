@@ -21,6 +21,8 @@ class Server {
 
   const ENDPOINT_USER_CREATE_WITH_PURCHASE = '/REST/services/authorize/purchase/registerUserAndPurchase';
 
+  const ENDPOINT_PURCHASE_VALIDATE = '/REST/services/authorize/purchase/checkPurchase';
+
   const ENDPOINT_PURCHASE_CREATE = '/REST/services/authorize/purchase/registerPurchase';
 
   private static $debugLog = [];
@@ -85,6 +87,25 @@ class Server {
    */
   public static function validateUser(array $address) {
     $response = Server::request('POST', static::ENDPOINT_USER_VALIDATE, $address);
+    return $response;
+  }
+
+  /**
+   * Synchronizes previous purchases with new alfa subscriber account.
+   *
+   * @param int $sub
+   *   The ID of the user in the SSO.
+   * @param string $subscriber_id
+   *   The new subscriber ID; must be fully validated by either checkAboNo or
+   *   validateUser.
+   *
+   * @return null|array
+   */
+  public static function checkPurchase($sub, $subscriber_id) {
+    $response = Server::request('POST', static::ENDPOINT_PURCHASE_VALIDATE, [
+      'id' => $sub,
+      'subscriber_id' => $subscriber_id,
+    ]);
     return $response;
   }
 

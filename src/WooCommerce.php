@@ -1568,6 +1568,7 @@ var nfyFacebookAppId = '637920073225349';
    */
   public static function woocommerce_edit_account_form() {
     $form = ob_get_clean();
+    $is_required = '&nbsp;<span class="required">*</span>';
 
     // Move the firstname and lastname fields into a new section, and remove
     // their required markers.
@@ -1584,8 +1585,9 @@ var nfyFacebookAppId = '637920073225349';
     else {
       $form = preg_replace('@^\s*<p [a-z_ "=-]+>\s+<label for="(?:account_email|password_current).+?</p>@sm', '', $form);
       $form = str_replace(' (leer lassen für keine Änderung)', '', $form);
-      $form = str_replace('Neues Passwort<', 'Passwort vergeben<', $form);
+      $form = str_replace('Neues Passwort<', 'Passwort vergeben' . $is_required . '<', $form);
       $form = str_replace('Neues Passwort', 'Passwort', $form);
+      $form = str_replace('Passwort bestätigen', 'Passwort bestätigen' . $is_required, $form);
     }
 
     $optins = get_user_meta(get_current_user_ID(), 'optins', TRUE);

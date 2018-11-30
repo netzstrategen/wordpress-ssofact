@@ -358,7 +358,15 @@ var nfyFacebookAppId = '637920073225349';
       if ($sku === 'stite') {
         static::$isTrialSubscriptionCheckout = TRUE;
       }
-      if ($sku === 'stite' || (isset($_POST['form_submit']) && $_POST['form_submit'] === 'subscriber_associate_submit')) {
+      $is_subscriber_associate_submit = isset($_POST['form_submit']) && $_POST['form_submit'] === 'subscriber_associate_submit';
+      if ($is_subscriber_associate_submit) {
+        foreach (['salutation', 'first_name', 'last_name', 'company', 'company_contact'] as $key) {
+          if (isset($fields[$key])) {
+            $fields[$key]['required'] = FALSE;
+          }
+        }
+      }
+      if ($sku === 'stite' || $is_subscriber_associate_submit) {
         foreach (['address_1', 'house_number', 'postcode', 'city', 'country', 'phone_prefix', 'phone'] as $key) {
           if (isset($fields[$key])) {
             $fields[$key]['required'] = FALSE;

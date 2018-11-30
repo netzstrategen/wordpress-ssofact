@@ -357,6 +357,8 @@ var nfyFacebookAppId = '637920073225349';
       }
       if ($sku === 'stite') {
         static::$isTrialSubscriptionCheckout = TRUE;
+      }
+      if ($sku === 'stite' || (isset($_POST['form_submit']) && $_POST['form_submit'] === 'subscriber_associate_submit')) {
         foreach (['address_1', 'house_number', 'postcode', 'city', 'country', 'phone_prefix', 'phone'] as $key) {
           if (isset($fields[$key])) {
             $fields[$key]['required'] = FALSE;
@@ -442,7 +444,7 @@ var nfyFacebookAppId = '637920073225349';
       }
     }
 
-    if (!empty(static::$isTrialSubscriptionCheckout)) {
+    if (!empty(static::$isTrialSubscriptionCheckout) || (isset($_POST['form_submit']) && $_POST['form_submit'] === 'subscriber_associate_submit')) {
       // Phone field is added after default address fields.
       // @see WC_Countries::get_address_fields()
       $fields['billing']['billing_phone']['required'] = FALSE;
@@ -740,6 +742,7 @@ var nfyFacebookAppId = '637920073225349';
       $name = is_checkout() ? 'woocommerce_checkout_place_order' : 'subscriber_associate_submit';
       $class= is_checkout() ? 'button' : 'button button--primary';
       echo '<p id="subscriber_submit_field" class="form-row form-actions" data-priority="-20">';
+      echo '<input type="hidden" name="form_submit">';
       echo '<button id="subscriber_associate_submit" type="submit" name="' . $name . '" value="1" class="' . $class . '">';
       echo 'Meine bestehenden Daten verwenden';
       echo '</button>';

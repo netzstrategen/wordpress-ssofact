@@ -1471,84 +1471,86 @@ var nfyFacebookAppId = '637920073225349';
     $current_email = $userinfo['email'];
     unset($userinfo['email']);
 
+    // Update basic user profile fields first.
+    $response = Server::updateUser($userinfo);
+    Server::addDebugMessage();
+    if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
+      wc_add_notice(isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.'), 'error');
+      return;
+    }
+
+    // Any further actions must not send further parameters than the SSO ID.
+    $base_userinfo = ['id' => $userinfo['id']];
+    unset($userinfo);
+
+    // Update password.
     if ($token = Plugin::getPasswordResetToken()) {
+      $userinfo = $base_userinfo;
       $userinfo['pass'] = Plugin::encrypt($_POST['password_1']);
       $userinfo['code'] = $token;
       $userinfo['action'] = 'forgotPassword';
     }
-    elseif (!empty(static::$formStorage['account_email']) && static::$formStorage['account_email'] !== $current_email) {
-      $userinfo['temp_email'] = static::$formStorage['account_email'];
-      $userinfo['pass_verify'] = Plugin::encrypt($_POST['password_current']);
-      $userinfo['action'] = 'changeEmail';
-    }
-    if (!$token && !empty($_POST['password_1']) && !empty($_POST['password_current']) && $_POST['password_1'] !== $_POST['password_current']) {
-      $first_userinfo = $userinfo;
-
+    elseif (!empty($_POST['password_1']) && !empty($_POST['password_current']) && $_POST['password_1'] !== $_POST['password_current']) {
+      $userinfo = $base_userinfo;
       $userinfo['pass'] = Plugin::encrypt($_POST['password_1']);
       $userinfo['pass_verify'] = Plugin::encrypt($_POST['password_current']);
       $userinfo['action'] = 'changePassword';
-
-      // SSO server only supports one action at a time, so if the user changed
-      // the email and password at once, a second update needs to be performed.
-      if (!empty($first_userinfo['action'])) {
-        $second_userinfo = array_intersect_key($userinfo, ['id' => 1, 'pass' => 1, 'pass_verify' => 1, 'action' => 1]);
-        $userinfo = $first_userinfo;
-      }
     }
-
-    // @todo This can trigger form validation errors, so move the API call into
-    //   hook woocommerce_save_account_details_errors.
-    $response = Server::updateUser($userinfo);
-    if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
-      wc_add_notice(isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.'), 'error');
+    if (!empty($userinfo)) {
+      $response = Server::updateUser($userinfo);
       Server::addDebugMessage();
-    }
-    else {
-      Server::addDebugMessage();
-
-      // If a new email address has been set, clarify that the change needs to
-      // be confirmed via email.
-      if (isset($userinfo['action']) && $userinfo['action'] === 'changeEmail') {
-        $message = vsprintf('Ihre E-Mail-Adresse wurde noch nicht aktualisiert. Bitte prüfen Sie Ihren Posteingang für <em>%s</em> und klicken Sie den Link zur Bestätigung Ihrer neuen E-Mail-Adresse.', [
-          esc_html($userinfo['temp_email']),
-        ]);
-        wc_add_notice($message, 'success');
+      if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
+        wc_add_notice(isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.'), 'error');
+        return;
       }
-      // Perform the password change in a second request if email and password
-      // were changed at once.
-      if (!empty($second_userinfo)) {
-        $response = Server::updateUser($second_userinfo);
-        if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
-          wc_add_notice(isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.'), 'error');
-          Server::addDebugMessage();
-        }
-      }
-      // Save opt-ins manually, as new UserInfo is only retrieved with next login.
-      $optins = get_user_meta(get_current_user_ID(), 'optins', TRUE);
-      foreach (WooCommerce::OPTINS as $optin_name => $definition) {
-        if (isset($_POST[$optin_name])) {
-          $optins[$optin_name] = (int) $_POST[$optin_name];
-        }
-      }
-      update_user_meta(get_current_user_ID(), 'optins', $optins);
 
       // Invalidate the one-time token immediately on successful update.
       Plugin::invalidatePasswordResetToken();
+    }
 
-      // Note: This issues a redirect upon valid checkout form data.
-      if ($is_article_test_confirmation_page) {
-        // Disable woocommerce-german-market second checkout page customizations.
-        remove_action('woocommerce_after_checkout_validation', ['WGM_Template', 'do_de_checkout_after_validation'], 1, 2);
+    // Update email address.
+    if (!$token && !empty(static::$formStorage['account_email']) && static::$formStorage['account_email'] !== $current_email) {
+      $userinfo = $base_userinfo;
+      $userinfo['temp_email'] = static::$formStorage['account_email'];
+      $userinfo['pass_verify'] = Plugin::encrypt($_POST['password_1'] ?: $_POST['password_current']);
+      $userinfo['action'] = 'changeEmail';
 
-        // Add trial subscription to cart.
-        WC()->cart->empty_cart();
-        WC()->cart->add_to_cart(wc_get_product_id_by_sku('stite'));
-
-        // Trigger programmatic submission of checkout form.
-        $_REQUEST['woocommerce-process-checkout-nonce'] = wp_create_nonce('woocommerce-process_checkout');
-        $_POST['woocommerce_checkout_place_order'] = 1;
-        WC()->checkout->process_checkout();
+      $response = Server::updateUser($userinfo);
+      Server::addDebugMessage();
+      if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
+        wc_add_notice(isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.'), 'error');
+        return;
       }
+
+      // Clarify that the email change needs to be confirmed via email.
+      $message = vsprintf('Ihre E-Mail-Adresse wurde noch nicht aktualisiert. Bitte prüfen Sie Ihren Posteingang für <em>%s</em> und klicken Sie den Link zur Bestätigung Ihrer neuen E-Mail-Adresse.', [
+        esc_html($userinfo['temp_email']),
+      ]);
+      wc_add_notice($message, 'success');
+    }
+
+    // Save opt-ins manually, as new UserInfo is only retrieved with next login.
+    $optins = get_user_meta(get_current_user_ID(), 'optins', TRUE);
+    foreach (WooCommerce::OPTINS as $optin_name => $definition) {
+      if (isset($_POST[$optin_name])) {
+        $optins[$optin_name] = (int) $_POST[$optin_name];
+      }
+    }
+    update_user_meta(get_current_user_ID(), 'optins', $optins);
+
+    // Note: This issues a redirect upon valid checkout form data.
+    if ($is_article_test_confirmation_page) {
+      // Disable woocommerce-german-market second checkout page customizations.
+      remove_action('woocommerce_after_checkout_validation', ['WGM_Template', 'do_de_checkout_after_validation'], 1, 2);
+
+      // Add trial subscription to cart.
+      WC()->cart->empty_cart();
+      WC()->cart->add_to_cart(wc_get_product_id_by_sku('stite'));
+
+      // Trigger programmatic submission of checkout form.
+      $_REQUEST['woocommerce-process-checkout-nonce'] = wp_create_nonce('woocommerce-process_checkout');
+      $_POST['woocommerce_checkout_place_order'] = 1;
+      WC()->checkout->process_checkout();
     }
   }
 

@@ -1203,6 +1203,7 @@ var nfyFacebookAppId = '637920073225349';
         }
         if (isset($purchase['company_contact'])) {
           $purchase['lastname'] = $purchase['company_contact'];
+          unset($purchase['company_contact']);
         }
       }
       $purchase['confirmationUrl'] = wc_customer_edit_account_url();

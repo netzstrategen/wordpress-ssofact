@@ -18,4 +18,14 @@ jQuery(document).ready(function ($) {
       .find('input').prop({ required: !isCompany });
   }).trigger('change.ssofact');
 
+  /**
+   * Injects the pressed form button into AJAX form submissions.
+   *
+   * jQuery.serialize() does not include button elements, so the backend cannot
+   * identify which button has been pressed.
+   */
+  $('form.checkout :submit').on('click.ssofact', function (e) {
+    this.form.form_submit.value = this.id;
+  });
+
 });

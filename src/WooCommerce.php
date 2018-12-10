@@ -1065,7 +1065,7 @@ var nfyFacebookAppId = '637920073225349';
     if (empty($missing_fields)) {
       $response = Server::validateUser($validate_user_data);
       Server::addDebugMessage();
-      if (isset($response['abono']) || isset($response['id'])) {
+      if (isset($response['abono']) || isset($response['userId'])) {
         $show_error = TRUE;
         $subscriber_id = get_user_meta(get_current_user_ID(), 'billing_subscriber_id', TRUE);
         $new_subscriber_data = WC()->session->get('subscriber_data');
@@ -1075,11 +1075,11 @@ var nfyFacebookAppId = '637920073225349';
         // and if no SSO ID was returned, or if the returned SSO ID matches the
         // one of the current logged-in user.
         if (!empty($response['abono']) && ($subscriber_id === $response['abono'] || $new_subscriber_id === $response['abono'])
-        && (empty($response['id']) || (isset($userinfo['id']) && $response['id'] === $userinfo['id']))) {
+        && (empty($response['userId']) || (isset($userinfo['id']) && $response['userId'] === $userinfo['id']))) {
           $show_error = FALSE;
         }
         // Do not output an error if a subscriber ID and no SSO ID was returned.
-        elseif (!empty($response['abono']) && empty($response['id'])) {
+        elseif (!empty($response['abono']) && empty($response['userId'])) {
           $show_error = FALSE;
           // Automatically associate the existing subscription, if a subscriber
           // ID and no SSO ID was returned, and if the current user has a dummy

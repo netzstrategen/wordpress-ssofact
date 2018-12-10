@@ -265,7 +265,6 @@ class Plugin {
     // Validate and submit the subscriber association form on the subscriptions
     // page. Hook woocommerce_account_subscriptions_endpoint runs too late,
     // causing notices only to be printed on the second to next page load.
-    // WC()->session->set('subscriber_data', '');
     if (!is_checkout() && !empty($_POST['subscriber_associate_submit'])) {
       WooCommerce::woocommerce_checkout_process();
       WooCommerce::subscriptions_subscriber_associate_submit();

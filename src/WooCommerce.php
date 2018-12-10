@@ -1201,7 +1201,7 @@ var nfyFacebookAppId = '637920073225349';
             unset($purchase[$key]);
           }
         }
-        if (isset($purchase['company_contact'])) {
+        if (isset($purchase['salutation']) && $purchase['salutation'] === 'Firma' && isset($purchase['company_contact'])) {
           $purchase['lastname'] = $purchase['company_contact'];
           unset($purchase['company_contact']);
         }

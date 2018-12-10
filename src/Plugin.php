@@ -739,8 +739,6 @@ class Plugin {
       'edition' => $edition,
       // Note: The name of the purchase opt-in in alfa uses an uppercase 'M'.
       'acquisitionEMail' => !empty($purchase['optins']['acquisitionEmail']) ? 'j' : 'n',
-      'acquisitionMail' => !empty($purchase['optins']['acquisitionMail']) ? 'j' : 'n',
-      'acquisitionPhone' => !empty($purchase['optins']['acquisitionPhone']) ? 'j' : 'n',
       // 'accessCount' => 1,
       // 'promotionId' => '',
       // 'agentNumber' => '',

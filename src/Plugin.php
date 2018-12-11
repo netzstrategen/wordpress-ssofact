@@ -222,8 +222,6 @@ class Plugin {
 
     // Validate changed email address against SSO.
     add_action('woocommerce_save_account_details_errors', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details_errors', 20, 2);
-    // Display message to log in again after changing display name.
-    add_action('woocommerce_save_account_details_errors', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details_errors_message', 500, 2);
     // Updates user info in SSO upon editing account details.
     add_action('woocommerce_save_account_details', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details');
     // Do not redirect to dashboard after saving account details.
@@ -324,7 +322,13 @@ class Plugin {
     }
     // Replace WordPress login URL with WooCommerce account URL.
     elseif ($scheme === 'login' && $path === 'wp-login.php' && wc_get_page_id('myaccount')) {
-      $url = wc_get_page_permalink('myaccount');
+      // The redirect from /shop/user/logout to the native logout URL must
+      // remain as-is for the openid-connect plugin to work and, most importantly,
+      // trigger the hook 'logout_redirect'.
+      // @see wc_template_redirect()
+      if (!isset($GLOBALS['wp']->query_vars['customer-logout'])) {
+        $url = wc_get_page_permalink('myaccount');
+      }
     }
     return $url;
   }

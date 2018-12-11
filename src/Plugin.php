@@ -322,7 +322,13 @@ class Plugin {
     }
     // Replace WordPress login URL with WooCommerce account URL.
     elseif ($scheme === 'login' && $path === 'wp-login.php' && wc_get_page_id('myaccount')) {
-      $url = wc_get_page_permalink('myaccount');
+      // The redirect from /shop/user/logout to the native logout URL must
+      // remain as-is for the openid-connect plugin to work and, most importantly,
+      // trigger the hook 'logout_redirect'.
+      // @see wc_template_redirect()
+      if (!isset($GLOBALS['wp']->query_vars['customer-logout'])) {
+        $url = wc_get_page_permalink('myaccount');
+      }
     }
     return $url;
   }

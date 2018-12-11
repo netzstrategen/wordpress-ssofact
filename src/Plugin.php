@@ -222,8 +222,6 @@ class Plugin {
 
     // Validate changed email address against SSO.
     add_action('woocommerce_save_account_details_errors', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details_errors', 20, 2);
-    // Display message to log in again after changing display name.
-    add_action('woocommerce_save_account_details_errors', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details_errors_message', 500, 2);
     // Updates user info in SSO upon editing account details.
     add_action('woocommerce_save_account_details', __NAMESPACE__ . '\WooCommerce::woocommerce_save_account_details');
     // Do not redirect to dashboard after saving account details.

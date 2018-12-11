@@ -82,6 +82,13 @@ class WooCommerce {
   private static $formStorage;
 
   /**
+   * Copy of user object before update.
+   *
+   * @var WP_User
+   */
+  private static $userBeforeUpdate;
+
+  /**
    * @implements woocommerce_email_actions
    */
   public static function woocommerce_email_actions($actions) {
@@ -1394,6 +1401,12 @@ var nfyFacebookAppId = '637920073225349';
    */
   public static function woocommerce_save_account_details_errors(\WP_Error $errors, $user) {
     $current_user = wp_get_current_user();
+
+    // Store a copy to conditionally display a message after form submission.
+    static::$userBeforeUpdate = clone $current_user;
+    static::$userBeforeUpdate->first_name = static::$userBeforeUpdate->first_name;
+    static::$userBeforeUpdate->last_name = static::$userBeforeUpdate->last_name;
+
     if (!empty($_POST['account_email']) && $_POST['account_email'] !== $current_user->user_email && !Plugin::getPasswordResetToken()) {
       if (empty($_POST['password_current'])) {
         wc_add_notice(__('Please enter your current password.', 'woocommerce'), 'error');
@@ -1463,19 +1476,6 @@ var nfyFacebookAppId = '637920073225349';
   }
 
   /**
-   * @implements woocommerce_save_account_details_errors
-   */
-  public static function woocommerce_save_account_details_errors_message(\WP_Error $errors, $user) {
-    $current_user = wp_get_current_user();
-    if ((!empty($_POST['account_first_name']) && $_POST['account_first_name'] !== $current_user->first_name)
-     || (!empty($_POST['account_last_name']) && $_POST['account_last_name'] !== $current_user->last_name)) {
-       wc_add_notice(vsprintf('Damit Ihre Änderungen wirksam werden, <a href="%s">melden Sie sich bitte ab und erneut an</a>.', [
-         wc_logout_url(site_url('/shop/user')),
-       ]), 'notice');
-    }
-  }
-
-  /**
    * @implements woocommerce_save_account_details
    */
   public static function woocommerce_save_account_details($user_id) {
@@ -1493,6 +1493,13 @@ var nfyFacebookAppId = '637920073225349';
     if (!isset($response['statuscode']) || $response['statuscode'] !== 200) {
       wc_add_notice(isset($response['userMessages']) ? implode('<br>', $response['userMessages']) : __('Error while saving the changes.'), 'error');
       return;
+    }
+    // Display message to log in again after changing display name.
+    if ((!empty($_POST['account_first_name']) && $_POST['account_first_name'] !== static::$userBeforeUpdate->first_name)
+     || (!empty($_POST['account_last_name']) && $_POST['account_last_name'] !== static::$userBeforeUpdate->last_name)) {
+       wc_add_notice(vsprintf('Damit Ihre Änderungen wirksam werden, <a href="%s">melden Sie sich bitte ab und erneut an</a>.', [
+         wc_logout_url(site_url('/shop/user')),
+       ]), 'notice');
     }
 
     // Any further actions must not send further parameters than the SSO ID.
